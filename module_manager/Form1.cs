@@ -14,24 +14,42 @@ namespace module_manager
 {
     public partial class Form1 : Form
     {
-        public static List<string> repoList = new List<string>();
-        public static List<List<string>> projList = new List<List<string>>();
-        private List<string> smartList = new List<string>();
+        public static List<string> repoList;
+        public static List<List<string>> projList;
+        private List<string> smartList;
+        Functions functions;
 
         public Form1()
         {
             InitializeComponent();
-            toolStripStatusLabel1.Text = "Chargement...";
-            backgroundWorker1.RunWorkerAsync();
-            this.metroTextBox1.KeyPress += new System.Windows.Forms.KeyPressEventHandler(CheckEnterKeyPress);
+            functions = new Functions();
         }
 
         private void Form1_Load(object sender, EventArgs e)
         {
+            LoadForm();
+        }
+
+        private void LoadForm()
+        {
+            repoList = new List<string>();
+            projList = new List<List<string>>();
+            smartList = new List<string>();
+            treeView1.Nodes.Clear();
+            treeView1.Enabled = false;
+            metroTabControl1.Enabled = false;
+            dataGridView1.Rows.Clear();
+            dataGridView1.Refresh();
+            metroLabel5.Text = "";
+            toolStripStatusLabel1.Text = "Chargement...";
+            toolStripProgressBar1.Visible = true;
+            toolStripProgressBar1.Value = 0;
+            toolStripSplitButton1.Visible = true;
+            toolStripSplitButton2.Visible = false;
+            backgroundWorker1.RunWorkerAsync();
+            this.metroTextBox1.KeyPress += new KeyPressEventHandler(CheckEnterKeyPress);
             metroTabPage1.Text = "Informations";
             metroTabPage2.Text = "Dépendances";
-
-            Functions functions = new Functions();
 
             try
             {
@@ -71,7 +89,6 @@ namespace module_manager
             {
                 Console.WriteLine(ex.Message);
             }
-
         }
 
         private void BackgroundWorker1_DoWork(object sender, DoWorkEventArgs e)
@@ -79,7 +96,6 @@ namespace module_manager
             BackgroundWorker worker = sender as BackgroundWorker;
 
             // Récupère la liste des projets dépendants du module en parcourant tous les prjets et en lisant le fichier .gitmodule
-            Functions functions = new Functions();
             repoList = functions.DispRepoList();
             int i = 1;
             foreach(string rep in repoList)
@@ -96,13 +112,18 @@ namespace module_manager
                 }
                 worker.ReportProgress((i * 100) / repoList.Count);
                 i++;
+                if (backgroundWorker1.CancellationPending)
+                {
+                    e.Cancel = true;
+                    return;
+                }
             }
                         
         }
 
         private void TreeView1_AfterSelect(object sender, TreeViewEventArgs e)
         {
-            Functions functions = new Functions();
+            
             metroLabel3.Text = e.Node.Text;
             metroLabel5.Text = e.Node.Text;
             if(e.Node.Name != "module")
@@ -157,7 +178,9 @@ namespace module_manager
                     
                     i++;
                 }
-                if(!repoList.Contains(e.Node.Text))
+
+                var match = repoList.FirstOrDefault(stringToCheck => stringToCheck.Contains(e.Node.Text));
+                if (match == null)
                 {
                     foreach (string module in functions.SearchGitmodulesFile(@toolStripStatusLabel2.Text))
                     {
@@ -178,8 +201,9 @@ namespace module_manager
         {
             toolStripStatusLabel1.Text = "Prêt";
             toolStripProgressBar1.Visible = false;
-            Functions.affiche = true;
+            toolStripSplitButton1.Visible = false;
             metroTabControl1.Enabled = true;
+            treeView1.Enabled = true;
         }
 
         private void BackgroundWorker1_ProgressChanged(object sender, ProgressChangedEventArgs e)
@@ -202,23 +226,12 @@ namespace module_manager
                 string modName = dataGridView1.Rows[e.RowIndex].Cells[0].Value.ToString();
                 if (MessageBox.Show("Voulez vous supprimer le module " + modName + " du projet " + metroLabel5.Text + " ?", "Supprimer un module", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
                 {
-                    Process process = new Process();
-                    process.StartInfo.FileName = @"C:\Users\STBE\Downloads\PortableGit\git-bash.exe";
-                    process.StartInfo.WorkingDirectory = @"C:\Users\STBE\";
-                    string projectPath = toolStripStatusLabel2.Text;
-
-                    
-                    if (projectPath.Contains(modName.Replace("/", "\\").Replace(".git", "")))
-                    {
-                        
-                        process.StartInfo.Arguments = @"C:\Users\STBE\Downloads\PortableGit\home\TestMaster\del_sub.sh " + "\"" + @projectPath + "\"";
-                    }
-                    else
-                    {
-                        process.StartInfo.Arguments = @"C:\Users\STBE\Downloads\PortableGit\home\TestMaster\del_sub.sh " + "\"" + @projectPath + "\\" + modName.Replace("/","\\").Replace(".git","") + "\"";
-                    }
-
-                    process.Start();
+                    toolStripProgressBar1.Visible = true;
+                    toolStripSplitButton2.Visible = true;
+                    toolStripProgressBar1.Value = 0;
+                    toolStripStatusLabel1.Text = "Suppression...";
+                    metroTabControl1.Enabled = false;
+                    backgroundWorker2.RunWorkerAsync(argument: modName);
                 }
             }
         }
@@ -252,6 +265,80 @@ namespace module_manager
             frm.Location = this.Location;
             frm.StartPosition = FormStartPosition.Manual;
             frm.Show();
+        }
+
+        private void ToolStripDropDownButton1_Click(object sender, EventArgs e)
+        {
+            
+        }
+
+        private void ToolStripSplitButton1_ButtonClick(object sender, EventArgs e)
+        {
+            backgroundWorker1.CancelAsync();
+        }
+
+        private void BackgroundWorker2_DoWork(object sender, DoWorkEventArgs e)
+        {
+            BackgroundWorker worker = sender as BackgroundWorker;
+
+            Process process = new Process();
+            process.StartInfo.FileName = @"C:\Users\STBE\Downloads\PortableGit\home\TestMaster\del_sub.bat";
+            process.StartInfo.UseShellExecute = false;
+            process.StartInfo.CreateNoWindow = true;
+            process.StartInfo.RedirectStandardError = true;
+            process.StartInfo.RedirectStandardOutput = true;
+            process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+            process.StartInfo.WorkingDirectory = @toolStripStatusLabel2.Text;
+            process.StartInfo.Arguments = (string) e.Argument;
+            process.Start();
+            e.Result = process.StandardError.ReadToEnd();
+            while (!process.StandardOutput.EndOfStream)
+            {
+                string line = process.StandardOutput.ReadLine();
+                Console.WriteLine(line);
+                if (line == "\"status 25\"")
+                {
+                    worker.ReportProgress(25);
+                }
+                else if (line == "\"status 50\"")
+                {
+                    worker.ReportProgress(50);
+                }
+                else if (line == "\"status 75\"")
+                {
+                    worker.ReportProgress(75);
+                }
+                else if (line == "\"status 100\"")
+                {
+                    worker.ReportProgress(100);
+                }
+            }
+        }
+
+        private void BackgroundWorker2_ProgressChanged(object sender, ProgressChangedEventArgs e)
+        {
+            toolStripProgressBar1.Value = e.ProgressPercentage;
+        }
+
+        private void BackgroundWorker2_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            toolStripProgressBar1.Value = 0;
+            toolStripProgressBar1.Visible = false;
+            toolStripSplitButton2.Visible = false;
+            toolStripStatusLabel1.Text = "Prêt";
+            metroTabControl1.Enabled = true;
+            if(e.Result.ToString().Length != 0)
+                MessageBox.Show(e.Result.ToString(), "Message", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+
+        private void ToolStripSplitButton2_ButtonClick(object sender, EventArgs e)
+        {
+            backgroundWorker2.CancelAsync();
+        }
+
+        private void ToolStripSplitButton3_ButtonClick(object sender, EventArgs e)
+        {
+            LoadForm();
         }
     }
     

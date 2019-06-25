@@ -14,18 +14,25 @@ namespace module_manager
     {
 
         private string repo;
+        public static string path;
+        Functions functions;
 
         public Form2(string[] args)
         {
             repo = args[0];
             InitializeComponent();
-            toolStripStatusLabel2.Text = repo;
-            toolStripStatusLabel1.Text = "Chargement...";
-            Thread getModList = new Thread(new ThreadStart(ThreadLoop));
-            getModList.Start();
+            //Thread getModList = new Thread(new ThreadStart(ThreadLoop));
+            //getModList.Start();
         }
 
-
+        private void Form2_Load(object sender, EventArgs e)
+        {
+            toolStripStatusLabel2.Text = repo;
+            path = repo;
+            toolStripStatusLabel1.Text = "Chargement...";
+            functions = new Functions();
+            backgroundWorker1.RunWorkerAsync();
+        }
 
         private void MetroLabel1_Click(object sender, EventArgs e)
         {
@@ -35,8 +42,8 @@ namespace module_manager
         private void ThreadLoop()
         {
             List<string> projModules = new List<string>();
-            List<string> repoList = Form1.repoList;
-            List<List<string>> projList = Form1.projList;
+            List<string> repoList = Form1.repoList.ToList();
+            List<List<string>> projList = Form1.projList.ToList();
             repo = repo.Substring(repo.LastIndexOf("\\") + 1, repo.Length - repo.LastIndexOf("\\") - 1);
             
             int i = 0;
@@ -72,6 +79,7 @@ namespace module_manager
                 }
                 i++;
                 ReportProgress(i * 100 / repoList.Count());
+                Thread.Sleep(500);
             }
 
             ReportProgress(0);
@@ -108,34 +116,85 @@ namespace module_manager
 
         private void MetroButton1_Click(object sender, EventArgs e)
         {
-            StringBuilder sb = new StringBuilder();
-            List<string> installList = new List<string>();
-            sb.AppendLine("les modules suivant vont être ajoutés au projet " + repo + " :");
-            sb.AppendLine("");
-            foreach (object item in checkedListBox1.CheckedItems)
+            if(checkedListBox1.CheckedItems.Count != 0)
             {
-                if(!item.ToString().Contains("(✓)"))
+                List<string> installList = new List<string>();
+                foreach (object item in checkedListBox1.CheckedItems)
                 {
-                    installList.Add(item.ToString());
-                    sb.AppendLine(item.ToString());
+                    if (!item.ToString().Contains("(✓)"))
+                    {
+                        installList.Add(item.ToString());
+                        // sb.AppendLine(item.ToString());
+                    }
                 }
 
-            }
-            if(MessageBox.Show(sb.ToString(),"Ajouter des modules", MessageBoxButtons.OKCancel, MessageBoxIcon.Information) == DialogResult.OK)
+                var frm = new Form3(installList);
+                frm.Location = this.Location;
+                frm.StartPosition = FormStartPosition.Manual;
+                frm.Show();
+            } else
             {
-                foreach(string module in installList)
-                {
-                    Process process = new Process();
-                    process.StartInfo.FileName = @"C:\Users\STBE\Downloads\PortableGit\git-bash.exe";
-                    process.StartInfo.UseShellExecute = false;
-                    process.StartInfo.CreateNoWindow = true;
-                    process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
-                    process.StartInfo.WorkingDirectory = @toolStripStatusLabel2.Text;
-                    process.StartInfo.Arguments = @"C:\Users\STBE\Downloads\PortableGit\home\TestMaster\clone.sh http://192.168.55.218:8082/r/" + module + " " + module;
-                    process.Start();
-                    process.WaitForExit();
-                }
+                MessageBox.Show("Veuillez sélectionner un module", "Aucun module séléctionné", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
+            
+        }
+
+        private void BackgroundWorker1_DoWork(object sender, DoWorkEventArgs e)
+        {
+            BackgroundWorker worker = sender as BackgroundWorker;
+
+            List<string> projModules = new List<string>();
+            List<string> repoList = Form1.repoList.ToList();
+            List<List<string>> projList = Form1.projList.ToList();
+            repo = repo.Substring(repo.LastIndexOf("\\") + 1, repo.Length - repo.LastIndexOf("\\") - 1);
+
+            int i = 0;
+            foreach (string rep in repoList)
+            {
+                if (rep.Contains(repo))
+                {
+                    projModules = projList.ElementAt(i);
+                    break;
+                }
+                i++;
+            }
+
+            repoList.Sort();
+            i = 0;
+            foreach (string mod in repoList)
+            {
+                int toAdd = 1;
+
+                foreach (string module in projModules)
+                {
+                    if (module.Contains(mod.Replace(".git", "")))
+                    {
+                        checkedListBox1.Invoke(new Action(() => checkedListBox1.Items.Add(mod.Replace(".git", "") + " (✓)", true)));
+                        checkedListBox1.Invoke(new Action(() => checkedListBox1.SetItemCheckState(i, CheckState.Indeterminate)));
+                        toAdd = 0;
+                        break;
+                    }
+                }
+                if (toAdd == 1)
+                {
+                    checkedListBox1.Invoke(new Action(() => checkedListBox1.Items.Add(mod.Replace(".git", ""))));
+                }
+
+                i++;
+                worker.ReportProgress(i * 100 / repoList.Count());
+            }
+            worker.ReportProgress(0);
+        }
+
+        private void BackgroundWorker1_ProgressChanged(object sender, ProgressChangedEventArgs e)
+        {
+            toolStripProgressBar1.Value = e.ProgressPercentage; 
+        }
+
+        private void BackgroundWorker1_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            toolStripStatusLabel1.Text = "Prêt";
+            toolStripProgressBar1.Visible = false;
         }
     }
 }

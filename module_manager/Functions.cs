@@ -155,7 +155,6 @@ public class Functions
                     {
                         affiche = !ShowDialog("Ne plus afficher", "Le projet " + rep + " ne contient pas de branche _DEV_ ! \n\nRecherche sur la branche master\n ");
                     }
-                    //Console.WriteLine("Project " + rep + " doesn't contain a DEV branch ! Switching to master");
                     modList.AddRange(GetModList("master", rep));
                     break;
                 }
@@ -174,13 +173,32 @@ public class Functions
                 }
                 if (ligne.Contains("url"))
                 {
-                   // Console.WriteLine(rep + " contains mdule" + ligne1);
                     modList.Add(ligne.Replace("url = ", ""));
                 }
             }
         }
 
         return modList;
+    }
+
+    public List<string> GetCheckedNodes(TreeNodeCollection treeNode)
+    {
+        List<string> checkedList = new List<string>();
+
+        foreach (TreeNode node in treeNode)
+        {
+            if (node.Checked)
+            {
+                checkedList.Add(node.Text);
+            }
+
+            if(node.Nodes.Count != 0)
+            {
+                checkedList.AddRange(GetCheckedNodes(node.Nodes));
+            }
+        }
+
+        return checkedList;
     }
 
 }
