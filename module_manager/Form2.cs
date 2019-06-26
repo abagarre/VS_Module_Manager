@@ -98,7 +98,6 @@ namespace module_manager
         {
             List<string> allItems = checkedListBox1.Items.OfType<string>().ToList();
             string curItem = checkedListBox1.SelectedItem.ToString();
-            metroLabel2.Text = curItem;
         }
 
         private void CheckedListBox1_ItemCheck(object sender, ItemCheckEventArgs e)
@@ -144,8 +143,44 @@ namespace module_manager
             BackgroundWorker worker = sender as BackgroundWorker;
 
             List<string> projModules = new List<string>();
-            List<string> repoList = Form1.repoList.ToList();
-            List<List<string>> projList = Form1.projList.ToList();
+            List<string> repoList = new List<string>();
+            try
+            {
+                repoList = Form1.repoList.ToList();
+            }
+            catch (Exception ex)
+            {
+                repoList = functions.DispRepoList();
+                Console.WriteLine(ex.Message);
+            }
+
+            List<List<string>> projList = new List<List<string>>();
+            try
+            {
+                projList = Form1.projList.ToList();
+            }
+            catch (Exception ex)
+            {
+                int j = 0;
+                foreach (string rep in repoList)
+                {
+                    try
+                    {
+                        List<string> proj = functions.GetModList("_DEV_", rep);
+                        projList.Add(proj);
+                    }
+                    catch (Exception exe)
+                    {
+                        projList.Add(new List<string>());
+                        Console.WriteLine(exe.Message);
+                    }
+                    worker.ReportProgress(j * 100 / repoList.Count());
+                    j++;
+                }
+                Console.WriteLine(ex.Message);
+            }
+                
+               
             repo = repo.Substring(repo.LastIndexOf("\\") + 1, repo.Length - repo.LastIndexOf("\\") - 1);
 
             int i = 0;

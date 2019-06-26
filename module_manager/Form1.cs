@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Data;
 using System.Diagnostics;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -35,9 +36,14 @@ namespace module_manager
             repoList = new List<string>();
             projList = new List<List<string>>();
             smartList = new List<string>();
+            toolStripStatusLabel2.Text = "";
+            metroLabel3.Text = "";
+            metroLabel6.Text = "";
             treeView1.Nodes.Clear();
             treeView1.Enabled = false;
             metroTabControl1.Enabled = false;
+            metroButton1.Enabled = false;
+            treeView1.Nodes.Clear();
             dataGridView1.Rows.Clear();
             dataGridView1.Refresh();
             metroLabel5.Text = "";
@@ -100,6 +106,9 @@ namespace module_manager
             int i = 1;
             foreach(string rep in repoList)
             {
+                if(rep.Contains("MODULE"))
+                    treeView2.Invoke(new Action(() => treeView2.Nodes.Add(new TreeNode(rep.Replace(".git","")))));
+                // else {
                 try
                 {
                     List<string> proj = functions.GetModList("_DEV_", rep);
@@ -117,20 +126,23 @@ namespace module_manager
                     e.Cancel = true;
                     return;
                 }
+                // }
+                
             }
                         
         }
 
         private void TreeView1_AfterSelect(object sender, TreeViewEventArgs e)
         {
-            
             metroLabel3.Text = e.Node.Text;
             metroLabel5.Text = e.Node.Text;
             if(e.Node.Name != "module")
             {
+                metroButton1.Enabled = true;
                 toolStripStatusLabel2.Text = e.Node.Name;
             } else
             {
+                metroButton1.Enabled = false;
                 toolStripStatusLabel2.Text = e.Node.Parent.Name;
             }
             int item = 0;
@@ -155,14 +167,16 @@ namespace module_manager
                     {
                         if(module.Contains(e.Node.Text))
                         {
-                            dataGridView1.Rows.Add(repoList.ElementAt(i),i,"Détails");
+                            dataGridView1.Rows.Add(repoList.ElementAt(i), "", "Détails");
                         }
                     }
                     i++;
                 }
-                
-            } else
+            }
+            else
             {
+                List<string> localModules = functions.SearchGitmodulesFile(@toolStripStatusLabel2.Text);
+                List<string> distantModules = new List<string>();
                 metroLabel4.Text = "Modules présents dans le projet";
                 int i = 0;
                 foreach(List<string> proj in projList)
@@ -171,7 +185,15 @@ namespace module_manager
                     {
                         foreach(string module in proj)
                         {
-                            dataGridView1.Rows.Add(module.Substring(module.IndexOf(@"/r/") + 4, module.Length - module.IndexOf(@"/r/") - 4), i, "Supprimer");
+                            if(localModules.Contains(module))
+                            {
+                                dataGridView1.Rows.Add(module.Substring(module.IndexOf(@"/r/") + 3, module.Length - module.IndexOf(@"/r/") - 3), "Distant / Local", "Supprimer");
+                            }
+                            else
+                            {
+                                dataGridView1.Rows.Add(module.Substring(module.IndexOf(@"/r/") + 3, module.Length - module.IndexOf(@"/r/") - 3), "Distant", "Supprimer");
+                            }
+                            distantModules.Add(module);
                         }
                         break;
                     }
@@ -179,13 +201,10 @@ namespace module_manager
                     i++;
                 }
 
-                var match = repoList.FirstOrDefault(stringToCheck => stringToCheck.Contains(e.Node.Text));
-                if (match == null)
+                foreach (string module in localModules)
                 {
-                    foreach (string module in functions.SearchGitmodulesFile(@toolStripStatusLabel2.Text))
-                    {
-                        dataGridView1.Rows.Add(module.Substring(module.IndexOf(@"/r/") + 3, module.Length - module.IndexOf(@"/r/") - 3), i, "Supprimer");
-                    }
+                    if(!distantModules.Contains(module))
+                        dataGridView1.Rows.Add(module.Substring(module.IndexOf(@"/r/") + 3, module.Length - module.IndexOf(@"/r/") - 3), "Local", "Supprimer");
                 }
             }
         }
@@ -220,18 +239,87 @@ namespace module_manager
         {
             var senderGrid = (DataGridView)sender;
 
-            if (senderGrid.Columns[e.ColumnIndex] is DataGridViewButtonColumn &&
-                e.RowIndex >= 0)
+            if (senderGrid.Columns[e.ColumnIndex] is DataGridViewButtonColumn && e.RowIndex >= 0)
             {
-                string modName = dataGridView1.Rows[e.RowIndex].Cells[0].Value.ToString();
-                if (MessageBox.Show("Voulez vous supprimer le module " + modName + " du projet " + metroLabel5.Text + " ?", "Supprimer un module", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+                if((string) senderGrid.Rows[e.RowIndex].Cells[e.ColumnIndex].Value == "Supprimer")
                 {
-                    toolStripProgressBar1.Visible = true;
-                    toolStripSplitButton2.Visible = true;
-                    toolStripProgressBar1.Value = 0;
-                    toolStripStatusLabel1.Text = "Suppression...";
-                    metroTabControl1.Enabled = false;
-                    backgroundWorker2.RunWorkerAsync(argument: modName);
+                    string modName = dataGridView1.Rows[e.RowIndex].Cells[0].Value.ToString();
+                    if (MessageBox.Show("Voulez vous supprimer le module " + modName + " du projet " + metroLabel5.Text + " ?", "Supprimer un module", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+                    {
+                        toolStripProgressBar1.Visible = true;
+                        toolStripSplitButton2.Visible = true;
+                        toolStripProgressBar1.Value = 0;
+                        toolStripStatusLabel1.Text = "Suppression...";
+                        metroTabControl1.Enabled = false;
+                        backgroundWorker2.RunWorkerAsync(argument: modName);
+                    }
+                }
+                else if ((string)senderGrid.Rows[e.RowIndex].Cells[e.ColumnIndex].Value == "Détails")
+                {
+                    treeView1.SelectedNode = null;
+                    string projName = dataGridView1.Rows[e.RowIndex].Cells[0].Value.ToString().Replace(".git", "");
+                    metroLabel3.Text = projName;
+                    metroLabel5.Text = projName;
+                    toolStripStatusLabel2.Text = "";
+                    int item = 0;
+                    foreach (string rep in repoList)
+                    {
+                        if (rep.Contains(projName))
+                        {
+                            metroLabel6.Text = Functions.descList.ElementAt(item);
+                            break;
+                        }
+                        item++;
+                    }
+                    dataGridView1.Rows.Clear();
+                    dataGridView1.Refresh();
+                    metroLabel4.Text = "Modules présents dans le projet";
+                    int i = 0;
+                    foreach (List<string> proj in projList)
+                    {
+                        if (repoList.ElementAt(i).Contains(projName))
+                        {
+                            foreach (string module in proj)
+                            {
+                                dataGridView1.Rows.Add(module.Substring(module.IndexOf(@"/r/") + 3, module.Length - module.IndexOf(@"/r/") - 3), "Distant", "Dépendances");
+                            }
+                            break;
+                        }
+                        i++;
+                    }
+                }
+                else if ((string)senderGrid.Rows[e.RowIndex].Cells[e.ColumnIndex].Value == "Dépendances")
+                {
+                    string modName = dataGridView1.Rows[e.RowIndex].Cells[0].Value.ToString();
+                    metroLabel3.Text = modName;
+                    metroLabel5.Text = modName;
+                    metroButton1.Enabled = false;
+                    toolStripStatusLabel2.Text = "";
+                    int item = 0;
+                    foreach (string rep in repoList)
+                    {
+                        if (rep.Contains(modName))
+                        {
+                            metroLabel6.Text = Functions.descList.ElementAt(item);
+                            break;
+                        }
+                        item++;
+                    }
+                    dataGridView1.Rows.Clear();
+                    dataGridView1.Refresh();
+                    metroLabel4.Text = "Projets dépendants du module";
+                    int i = 0;
+                    foreach (List<string> proj in projList)
+                    {
+                        foreach (string module in proj)
+                        {
+                            if (module.Replace(".git", "").Contains(modName.Replace(".git", "")))
+                            {
+                                dataGridView1.Rows.Add(repoList.ElementAt(i), "", "Détails");
+                            }
+                        }
+                        i++;
+                    }
                 }
             }
         }
@@ -265,11 +353,6 @@ namespace module_manager
             frm.Location = this.Location;
             frm.StartPosition = FormStartPosition.Manual;
             frm.Show();
-        }
-
-        private void ToolStripDropDownButton1_Click(object sender, EventArgs e)
-        {
-            
         }
 
         private void ToolStripSplitButton1_ButtonClick(object sender, EventArgs e)
@@ -339,6 +422,82 @@ namespace module_manager
         private void ToolStripSplitButton3_ButtonClick(object sender, EventArgs e)
         {
             LoadForm();
+        }
+
+        private void MetroButton2_Click(object sender, EventArgs e)
+        {
+            var dialog = new FolderBrowserDialog();
+            DialogResult result = dialog.ShowDialog();
+            string path = dialog.SelectedPath;
+            if (path.Length != 0)
+            {
+                var directories = Directory.GetDirectories(path, ".git");
+                if (directories.Length == 0) // Si le dossier n'est pas un repo git
+                {
+                    MessageBox.Show("Le répertoire sélectionné n'est pas un dépôt Git", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+                else
+                {
+                    TreeNode treeNode = new TreeNode(path.Substring(path.LastIndexOf("\\") + 1, path.Length - path.LastIndexOf("\\") - 1));
+                    treeNode.Name = path;
+                    treeView1.Nodes.Add(treeNode);
+                    smartList.Add(path);
+
+                    List<string> subrepo = functions.SearchGitmodulesFile(path); // Liste contenant les subrepo = modules
+                    foreach (string rep in subrepo) // Pour chaque module, créé un bouton redirigeant vers la page du module
+                    {
+                        string name = rep.Substring(rep.LastIndexOf("/") + 1, rep.Length - rep.LastIndexOf("/") - 1);
+                        TreeNode childNode = new TreeNode(name);
+                        childNode.Name = "module";
+                        treeNode.Nodes.Add(childNode);
+                    }
+                }
+            }
+            
+        }
+
+        private void ToolStripStatusLabel2_Click(object sender, EventArgs e)
+        {
+            if(toolStripStatusLabel2.Text != "")
+                Process.Start(@toolStripStatusLabel2.Text);
+        }
+
+        private void MetroTabPage4_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void TreeView2_AfterSelect(object sender, TreeViewEventArgs e)
+        {
+            metroLabel3.Text = e.Node.Text;
+            metroLabel5.Text = e.Node.Text;
+            metroButton1.Enabled = false;
+            toolStripStatusLabel2.Text = "";
+            int item = 0;
+            foreach (string rep in repoList)
+            {
+                if (rep.Contains(e.Node.Text))
+                {
+                    metroLabel6.Text = Functions.descList.ElementAt(item);
+                    break;
+                }
+                item++;
+            }
+            dataGridView1.Rows.Clear();
+            dataGridView1.Refresh();
+            metroLabel4.Text = "Projets dépendants du module";
+            int i = 0;
+            foreach (List<string> proj in projList)
+            {
+                foreach (string module in proj)
+                {
+                    if (module.Contains(e.Node.Text))
+                    {
+                        dataGridView1.Rows.Add(repoList.ElementAt(i), "", "Détails");
+                    }
+                }
+                i++;
+            }
         }
     }
     
