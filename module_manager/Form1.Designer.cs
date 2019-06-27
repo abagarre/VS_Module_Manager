@@ -38,6 +38,9 @@
             this.metroTextBox1 = new MetroFramework.Controls.MetroTextBox();
             this.metroLabel4 = new MetroFramework.Controls.MetroLabel();
             this.dataGridView1 = new System.Windows.Forms.DataGridView();
+            this.Nom = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.Version = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.Actions = new System.Windows.Forms.DataGridViewButtonColumn();
             this.treeView1 = new System.Windows.Forms.TreeView();
             this.metroLabel1 = new MetroFramework.Controls.MetroLabel();
             this.metroLabel2 = new MetroFramework.Controls.MetroLabel();
@@ -54,11 +57,9 @@
             this.backgroundWorker2 = new System.ComponentModel.BackgroundWorker();
             this.metroButton2 = new MetroFramework.Controls.MetroButton();
             this.folderBrowserDialog1 = new System.Windows.Forms.FolderBrowserDialog();
-            this.Nom = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.Version = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.Actions = new System.Windows.Forms.DataGridViewButtonColumn();
             this.metroTabControl2 = new MetroFramework.Controls.MetroTabControl();
             this.metroTabPage3 = new MetroFramework.Controls.MetroTabPage();
+            this.metroLabel7 = new MetroFramework.Controls.MetroLabel();
             this.metroTabPage4 = new MetroFramework.Controls.MetroTabPage();
             this.treeView2 = new System.Windows.Forms.TreeView();
             this.metroTabControl1.SuspendLayout();
@@ -224,6 +225,21 @@
             this.dataGridView1.TabIndex = 2;
             this.dataGridView1.CellContentClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.DataGridView1_CellContentClick);
             // 
+            // Nom
+            // 
+            this.Nom.HeaderText = "Nom";
+            this.Nom.Name = "Nom";
+            // 
+            // Version
+            // 
+            this.Version.HeaderText = "Emplacement";
+            this.Version.Name = "Version";
+            // 
+            // Actions
+            // 
+            this.Actions.HeaderText = "Action";
+            this.Actions.Name = "Actions";
+            // 
             // treeView1
             // 
             this.treeView1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
@@ -233,7 +249,7 @@
             this.treeView1.ItemHeight = 30;
             this.treeView1.Location = new System.Drawing.Point(3, 3);
             this.treeView1.Name = "treeView1";
-            this.treeView1.Size = new System.Drawing.Size(259, 319);
+            this.treeView1.Size = new System.Drawing.Size(259, 302);
             this.treeView1.TabIndex = 1;
             this.treeView1.AfterSelect += new System.Windows.Forms.TreeViewEventHandler(this.TreeView1_AfterSelect);
             // 
@@ -262,10 +278,10 @@
             // 
             this.panel1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left)));
-            this.panel1.BackColor = System.Drawing.SystemColors.ScrollBar;
-            this.panel1.Location = new System.Drawing.Point(293, 13);
+            this.panel1.BackColor = System.Drawing.SystemColors.AppWorkspace;
+            this.panel1.Location = new System.Drawing.Point(293, -2);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(3, 412);
+            this.panel1.Size = new System.Drawing.Size(1, 430);
             this.panel1.TabIndex = 4;
             // 
             // statusStrip1
@@ -355,6 +371,7 @@
             // metroLabel5
             // 
             this.metroLabel5.FontSize = MetroFramework.MetroLabelSize.Tall;
+            this.metroLabel5.FontWeight = MetroFramework.MetroLabelWeight.Regular;
             this.metroLabel5.Location = new System.Drawing.Point(392, 13);
             this.metroLabel5.Name = "metroLabel5";
             this.metroLabel5.Size = new System.Drawing.Size(379, 34);
@@ -373,28 +390,13 @@
             // 
             this.metroButton2.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.metroButton2.AutoSize = true;
-            this.metroButton2.Location = new System.Drawing.Point(60, 328);
+            this.metroButton2.Location = new System.Drawing.Point(59, 311);
             this.metroButton2.Name = "metroButton2";
             this.metroButton2.Size = new System.Drawing.Size(143, 23);
             this.metroButton2.TabIndex = 7;
             this.metroButton2.Text = "Parcourir";
             this.metroButton2.UseSelectable = true;
             this.metroButton2.Click += new System.EventHandler(this.MetroButton2_Click);
-            // 
-            // Nom
-            // 
-            this.Nom.HeaderText = "Nom";
-            this.Nom.Name = "Nom";
-            // 
-            // Version
-            // 
-            this.Version.HeaderText = "Emplacement";
-            this.Version.Name = "Version";
-            // 
-            // Actions
-            // 
-            this.Actions.HeaderText = "Action";
-            this.Actions.Name = "Actions";
             // 
             // metroTabControl2
             // 
@@ -413,6 +415,7 @@
             // 
             // metroTabPage3
             // 
+            this.metroTabPage3.Controls.Add(this.metroLabel7);
             this.metroTabPage3.Controls.Add(this.metroButton2);
             this.metroTabPage3.Controls.Add(this.treeView1);
             this.metroTabPage3.HorizontalScrollbarBarColor = true;
@@ -426,6 +429,19 @@
             this.metroTabPage3.VerticalScrollbarBarColor = true;
             this.metroTabPage3.VerticalScrollbarHighlightOnWheel = false;
             this.metroTabPage3.VerticalScrollbarSize = 10;
+            // 
+            // metroLabel7
+            // 
+            this.metroLabel7.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.metroLabel7.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.metroLabel7.FontSize = MetroFramework.MetroLabelSize.Small;
+            this.metroLabel7.Location = new System.Drawing.Point(59, 338);
+            this.metroLabel7.Name = "metroLabel7";
+            this.metroLabel7.Size = new System.Drawing.Size(143, 16);
+            this.metroLabel7.TabIndex = 8;
+            this.metroLabel7.Text = "Charger un projet distant";
+            this.metroLabel7.TextAlign = System.Drawing.ContentAlignment.TopCenter;
+            this.metroLabel7.Click += new System.EventHandler(this.MetroLabel7_Click);
             // 
             // metroTabPage4
             // 
@@ -450,8 +466,9 @@
             this.treeView2.BorderStyle = System.Windows.Forms.BorderStyle.None;
             this.treeView2.Font = new System.Drawing.Font("Century Gothic", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.treeView2.ItemHeight = 25;
-            this.treeView2.Location = new System.Drawing.Point(4, 4);
+            this.treeView2.Location = new System.Drawing.Point(-3, 4);
             this.treeView2.Name = "treeView2";
+            this.treeView2.ShowPlusMinus = false;
             this.treeView2.Size = new System.Drawing.Size(260, 347);
             this.treeView2.TabIndex = 1;
             this.treeView2.AfterSelect += new System.Windows.Forms.TreeViewEventHandler(this.TreeView2_AfterSelect);
@@ -521,6 +538,7 @@
         private MetroFramework.Controls.MetroTabPage metroTabPage3;
         private MetroFramework.Controls.MetroTabPage metroTabPage4;
         private System.Windows.Forms.TreeView treeView2;
+        private MetroFramework.Controls.MetroLabel metroLabel7;
     }
 }
 

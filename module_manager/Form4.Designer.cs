@@ -43,31 +43,32 @@
             this.statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.toolStripProgressBar1,
             this.toolStripStatusLabel1});
-            this.statusStrip1.Location = new System.Drawing.Point(0, 170);
+            this.statusStrip1.Location = new System.Drawing.Point(0, 224);
             this.statusStrip1.Name = "statusStrip1";
-            this.statusStrip1.Size = new System.Drawing.Size(413, 22);
+            this.statusStrip1.Padding = new System.Windows.Forms.Padding(1, 0, 19, 0);
+            this.statusStrip1.Size = new System.Drawing.Size(551, 27);
             this.statusStrip1.TabIndex = 0;
             this.statusStrip1.Text = "statusStrip1";
             // 
             // toolStripProgressBar1
             // 
             this.toolStripProgressBar1.Name = "toolStripProgressBar1";
-            this.toolStripProgressBar1.Size = new System.Drawing.Size(100, 16);
+            this.toolStripProgressBar1.Size = new System.Drawing.Size(133, 21);
             // 
             // toolStripStatusLabel1
             // 
             this.toolStripStatusLabel1.BackColor = System.Drawing.SystemColors.Control;
             this.toolStripStatusLabel1.ForeColor = System.Drawing.SystemColors.GrayText;
             this.toolStripStatusLabel1.Name = "toolStripStatusLabel1";
-            this.toolStripStatusLabel1.Size = new System.Drawing.Size(118, 17);
+            this.toolStripStatusLabel1.Size = new System.Drawing.Size(118, 22);
             this.toolStripStatusLabel1.Text = "toolStripStatusLabel1";
             // 
             // metroLabel1
             // 
-            this.metroLabel1.Location = new System.Drawing.Point(21, 31);
-            this.metroLabel1.Margin = new System.Windows.Forms.Padding(50, 0, 50, 0);
+            this.metroLabel1.Location = new System.Drawing.Point(28, 41);
+            this.metroLabel1.Margin = new System.Windows.Forms.Padding(67, 0, 67, 0);
             this.metroLabel1.Name = "metroLabel1";
-            this.metroLabel1.Size = new System.Drawing.Size(370, 78);
+            this.metroLabel1.Size = new System.Drawing.Size(493, 102);
             this.metroLabel1.TabIndex = 1;
             this.metroLabel1.Text = "metroLabel1";
             this.metroLabel1.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
@@ -75,9 +76,10 @@
             // 
             // button1
             // 
-            this.button1.Location = new System.Drawing.Point(129, 128);
+            this.button1.Location = new System.Drawing.Point(172, 167);
+            this.button1.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(75, 23);
+            this.button1.Size = new System.Drawing.Size(100, 30);
             this.button1.TabIndex = 2;
             this.button1.Text = "OK";
             this.button1.UseVisualStyleBackColor = true;
@@ -85,9 +87,10 @@
             // 
             // button2
             // 
-            this.button2.Location = new System.Drawing.Point(210, 128);
+            this.button2.Location = new System.Drawing.Point(280, 167);
+            this.button2.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.button2.Name = "button2";
-            this.button2.Size = new System.Drawing.Size(75, 23);
+            this.button2.Size = new System.Drawing.Size(100, 30);
             this.button2.TabIndex = 3;
             this.button2.Text = "Annuler";
             this.button2.UseVisualStyleBackColor = true;
@@ -103,14 +106,16 @@
             // 
             // Form4
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 17F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.Window;
-            this.ClientSize = new System.Drawing.Size(413, 192);
+            this.ClientSize = new System.Drawing.Size(551, 251);
             this.Controls.Add(this.button2);
             this.Controls.Add(this.button1);
             this.Controls.Add(this.metroLabel1);
             this.Controls.Add(this.statusStrip1);
+            this.Font = new System.Drawing.Font("Century Gothic", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.Name = "Form4";
             this.Text = "Form4";
             this.Load += new System.EventHandler(this.Form4_Load);

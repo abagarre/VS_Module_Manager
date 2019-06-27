@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Diagnostics;
-using System.Drawing;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Windows.Forms;
 
@@ -130,12 +127,18 @@ namespace module_manager
                 var frm = new Form3(installList);
                 frm.Location = this.Location;
                 frm.StartPosition = FormStartPosition.Manual;
+                frm.FormClosed += CloseForm;
                 frm.Show();
             } else
             {
                 MessageBox.Show("Veuillez sélectionner un module", "Aucun module séléctionné", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
             
+        }
+
+        private void CloseForm(object sender, FormClosedEventArgs e)
+        {
+            this.Close();
         }
 
         private void BackgroundWorker1_DoWork(object sender, DoWorkEventArgs e)

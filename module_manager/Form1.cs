@@ -3,11 +3,8 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Diagnostics;
-using System.Drawing;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Xml.Linq;
 
@@ -28,6 +25,7 @@ namespace module_manager
 
         private void Form1_Load(object sender, EventArgs e)
         {
+            metroTabControl2.SelectedTab = metroTabPage3;
             LoadForm();
         }
 
@@ -39,6 +37,8 @@ namespace module_manager
             toolStripStatusLabel2.Text = "";
             metroLabel3.Text = "";
             metroLabel6.Text = "";
+            treeView2.Nodes.Clear();
+            treeView2.Enabled = false;
             treeView1.Nodes.Clear();
             treeView1.Enabled = false;
             metroTabControl1.Enabled = false;
@@ -191,7 +191,7 @@ namespace module_manager
                             }
                             else
                             {
-                                dataGridView1.Rows.Add(module.Substring(module.IndexOf(@"/r/") + 3, module.Length - module.IndexOf(@"/r/") - 3), "Distant", "Supprimer");
+                                dataGridView1.Rows.Add(module.Substring(module.IndexOf(@"/r/") + 3, module.Length - module.IndexOf(@"/r/") - 3), "Distant", "Dépendances");
                             }
                             distantModules.Add(module);
                         }
@@ -223,6 +223,7 @@ namespace module_manager
             toolStripSplitButton1.Visible = false;
             metroTabControl1.Enabled = true;
             treeView1.Enabled = true;
+            treeView2.Enabled = true;
         }
 
         private void BackgroundWorker1_ProgressChanged(object sender, ProgressChangedEventArgs e)
@@ -352,7 +353,15 @@ namespace module_manager
             var frm = new Form2(arg);
             frm.Location = this.Location;
             frm.StartPosition = FormStartPosition.Manual;
+            frm.FormClosed += AddModuleFormClosed;
             frm.Show();
+        }
+
+        private void AddModuleFormClosed(object sender, FormClosedEventArgs e)
+        {
+            TreeNode selectedNode = treeView1.SelectedNode;
+            treeView1.SelectedNode = null;
+            treeView1.SelectedNode = selectedNode;
         }
 
         private void ToolStripSplitButton1_ButtonClick(object sender, EventArgs e)
@@ -405,6 +414,9 @@ namespace module_manager
 
         private void BackgroundWorker2_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
+            TreeNode selectedNode = treeView1.SelectedNode;
+            treeView1.SelectedNode = null;
+            treeView1.SelectedNode = selectedNode;
             toolStripProgressBar1.Value = 0;
             toolStripProgressBar1.Visible = false;
             toolStripSplitButton2.Visible = false;
@@ -497,6 +509,24 @@ namespace module_manager
                     }
                 }
                 i++;
+            }
+        }
+
+        private void MetroLabel7_Click(object sender, EventArgs e)
+        {
+            using (Form5 formOptions = new Form5())
+            {
+                formOptions.ShowDialog();
+                try
+                {
+                    string result = formOptions.path;
+                    if(result.Length != 0)
+                        treeView1.Nodes.Add(new TreeNode(result));
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+                }
             }
         }
     }

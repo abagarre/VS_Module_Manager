@@ -1,13 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data;
 using System.Diagnostics;
-using System.Drawing;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace module_manager
@@ -31,14 +25,14 @@ namespace module_manager
         {
             toolStripStatusLabel1.Text = path;
             metroLabel1.Text = "Voulez vous supprimer le module " + modName + " du projet " + path.Substring(path.Remove(path.Length - 2).LastIndexOf(@"\") + 1, path.Length - path.Remove(path.Length - 2).LastIndexOf(@"\") - 2) + " ?";
-            /*
+            
             var files = Directory.GetFiles(path + modName, ".git");
             if (files.Length == 0) // Si le dossier n'est pas un submodule git
             {
                 MessageBox.Show("Le répertoire sélectionné n'est pas un module", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 this.Close();
             }
-            */
+            
         }
 
         private void Button2_Click(object sender, EventArgs e)
