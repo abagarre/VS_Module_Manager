@@ -6,13 +6,13 @@ using System.Windows.Forms;
 
 namespace module_manager
 {
-    public partial class Form3 : Form
+    public partial class AddConfirmForm : Form
     {
 
         private List<string> modules;
         Functions functions;
 
-        public Form3(List<string> args)
+        public AddConfirmForm(List<string> args)
         {
             InitializeComponent();
             modules = args;
@@ -72,7 +72,7 @@ namespace module_manager
                 process.StartInfo.CreateNoWindow = true;
                 process.StartInfo.RedirectStandardOutput = true;
                 process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
-                process.StartInfo.WorkingDirectory = Form2.path;
+                process.StartInfo.WorkingDirectory = AddSubForm.path;
                 process.StartInfo.Arguments = @"http://192.168.55.218:8082/r/" + node + " " + node;
                 process.Start();
                 while (!process.StandardOutput.EndOfStream)

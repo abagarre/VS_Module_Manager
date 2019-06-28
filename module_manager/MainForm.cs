@@ -5,19 +5,23 @@ using System.Data;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Security.Cryptography;
+using System.Text;
 using System.Windows.Forms;
 using System.Xml.Linq;
 
 namespace module_manager
 {
-    public partial class Form1 : Form
+    public partial class MainForm : Form
     {
         public static List<string> repoList;
         public static List<List<string>> projList;
         private List<string> smartList;
         Functions functions;
+        bool bg3IsWorking = false;
 
-        public Form1()
+        public MainForm()
         {
             InitializeComponent();
             functions = new Functions();
@@ -35,7 +39,6 @@ namespace module_manager
             projList = new List<List<string>>();
             smartList = new List<string>();
             toolStripStatusLabel2.Text = "";
-            metroLabel3.Text = "";
             metroLabel6.Text = "";
             treeView2.Nodes.Clear();
             treeView2.Enabled = false;
@@ -134,8 +137,8 @@ namespace module_manager
 
         private void TreeView1_AfterSelect(object sender, TreeViewEventArgs e)
         {
-            metroLabel3.Text = e.Node.Text;
             metroLabel5.Text = e.Node.Text;
+            
             if(e.Node.Name != "module")
             {
                 metroButton1.Enabled = true;
@@ -151,6 +154,8 @@ namespace module_manager
                 if(rep.Contains(e.Node.Text))
                 {
                     metroLabel6.Text = Functions.descList.ElementAt(item);
+                    if(!bg3IsWorking)
+                        backgroundWorker3.RunWorkerAsync(argument: rep.Replace(".git", ""));
                     break;
                 }
                 item++;
@@ -209,8 +214,6 @@ namespace module_manager
             }
         }
 
-        
-
         private void StatusStrip1_ItemClicked(object sender, ToolStripItemClickedEventArgs e)
         {
 
@@ -259,7 +262,6 @@ namespace module_manager
                 {
                     treeView1.SelectedNode = null;
                     string projName = dataGridView1.Rows[e.RowIndex].Cells[0].Value.ToString().Replace(".git", "");
-                    metroLabel3.Text = projName;
                     metroLabel5.Text = projName;
                     toolStripStatusLabel2.Text = "";
                     int item = 0;
@@ -268,6 +270,8 @@ namespace module_manager
                         if (rep.Contains(projName))
                         {
                             metroLabel6.Text = Functions.descList.ElementAt(item);
+                            if (!bg3IsWorking)
+                                backgroundWorker3.RunWorkerAsync(argument: rep.Replace(".git", ""));
                             break;
                         }
                         item++;
@@ -292,7 +296,6 @@ namespace module_manager
                 else if ((string)senderGrid.Rows[e.RowIndex].Cells[e.ColumnIndex].Value == "Dépendances")
                 {
                     string modName = dataGridView1.Rows[e.RowIndex].Cells[0].Value.ToString();
-                    metroLabel3.Text = modName;
                     metroLabel5.Text = modName;
                     metroButton1.Enabled = false;
                     toolStripStatusLabel2.Text = "";
@@ -302,6 +305,8 @@ namespace module_manager
                         if (rep.Contains(modName))
                         {
                             metroLabel6.Text = Functions.descList.ElementAt(item);
+                            if (!bg3IsWorking)
+                                backgroundWorker3.RunWorkerAsync(argument: rep.Replace(".git", ""));
                             break;
                         }
                         item++;
@@ -350,7 +355,7 @@ namespace module_manager
         private void MetroButton1_Click(object sender, EventArgs e)
         {
             string[] arg = { toolStripStatusLabel2.Text };
-            var frm = new Form2(arg);
+            var frm = new AddSubForm(arg);
             frm.Location = this.Location;
             frm.StartPosition = FormStartPosition.Manual;
             frm.FormClosed += AddModuleFormClosed;
@@ -481,7 +486,6 @@ namespace module_manager
 
         private void TreeView2_AfterSelect(object sender, TreeViewEventArgs e)
         {
-            metroLabel3.Text = e.Node.Text;
             metroLabel5.Text = e.Node.Text;
             metroButton1.Enabled = false;
             toolStripStatusLabel2.Text = "";
@@ -491,6 +495,8 @@ namespace module_manager
                 if (rep.Contains(e.Node.Text))
                 {
                     metroLabel6.Text = Functions.descList.ElementAt(item);
+                    if (!bg3IsWorking)
+                        backgroundWorker3.RunWorkerAsync(argument: rep.Replace(".git", ""));
                     break;
                 }
                 item++;
@@ -514,7 +520,7 @@ namespace module_manager
 
         private void MetroLabel7_Click(object sender, EventArgs e)
         {
-            using (Form5 formOptions = new Form5())
+            using (LoadProjForm formOptions = new LoadProjForm())
             {
                 formOptions.ShowDialog();
                 try
@@ -528,6 +534,122 @@ namespace module_manager
                     Console.WriteLine(ex.Message);
                 }
             }
+        }
+
+        private void DepuisUnDépôtLocalToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            var dialog = new FolderBrowserDialog();
+            DialogResult result = dialog.ShowDialog();
+            string path = dialog.SelectedPath;
+            if (path.Length != 0)
+            {
+                var directories = Directory.GetDirectories(path, ".git");
+                if (directories.Length == 0) // Si le dossier n'est pas un repo git
+                {
+                    MessageBox.Show("Le répertoire sélectionné n'est pas un dépôt Git", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+                else
+                {
+                    TreeNode treeNode = new TreeNode(path.Substring(path.LastIndexOf("\\") + 1, path.Length - path.LastIndexOf("\\") - 1));
+                    treeNode.Name = path;
+                    treeView1.Nodes.Add(treeNode);
+                    smartList.Add(path);
+
+                    List<string> subrepo = functions.SearchGitmodulesFile(path); // Liste contenant les subrepo = modules
+                    foreach (string rep in subrepo) // Pour chaque module, créé un bouton redirigeant vers la page du module
+                    {
+                        string name = rep.Substring(rep.LastIndexOf("/") + 1, rep.Length - rep.LastIndexOf("/") - 1);
+                        TreeNode childNode = new TreeNode(name);
+                        childNode.Name = "module";
+                        treeNode.Nodes.Add(childNode);
+                    }
+                }
+            }
+        }
+
+        private void DepuisUnURLToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            using (LoadProjForm formOptions = new LoadProjForm())
+            {
+                formOptions.ShowDialog();
+                try
+                {
+                    string result = formOptions.path;
+                    if (result.Length != 0)
+                        treeView1.Nodes.Add(new TreeNode(result));
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+                }
+            }
+        }
+
+        private void BackgroundWorker3_DoWork(object sender, DoWorkEventArgs e)
+        {
+            bg3IsWorking = true;
+            string project = (string) e.Argument;
+            string md = functions.GetMarkdown(project, "_DEV_");
+            string html = "";
+            try
+            {
+                html = Markdig.Markdown.ToHtml(md);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Markdow ToHTML error : " + ex.Message);
+            }
+            html = html.Replace("img src=\"", "img src=\"http://192.168.55.218:8082/raw/" + project + ".git/master/");
+            html = html.Replace(@"%5C", @"/");
+            e.Result = html;
+        }
+
+        private void BackgroundWorker3_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            webBrowser1.Navigate("about:blank");
+            try
+            {
+                if (webBrowser1.Document != null)
+                {
+                    webBrowser1.Document.Write(string.Empty);
+                }
+                webBrowser1.DocumentText = (string)e.Result.ToString();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Web brower error : " + ex.Message);
+            }
+            bg3IsWorking = false;
+        }
+
+        private void QuitterToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            this.Close();
+        }
+
+        private void GérerLesSourcesToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Console.WriteLine(functions.GetRepoListBitBucket());
+        }
+
+        private void ComptesEtConnexionsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            byte[] entropy = File.ReadAllBytes(@"./.creditEnt"); //TODO: Change to global password
+            byte[] ciphertext = File.ReadAllBytes(@"./.creditCip");
+            byte[] returntext = ProtectedData.Unprotect(ciphertext, entropy, DataProtectionScope.CurrentUser);
+            string result = Encoding.UTF8.GetString(returntext);
+
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+            string url = "https://api.bitbucket.org/2.0/repositories/bglx/projet_002/src/master/.gitmodules";
+            WebRequest myReq = WebRequest.Create(url);
+            myReq.Method = "GET";
+            string credentials = "bglx:" + result;
+            CredentialCache mycache = new CredentialCache();
+            myReq.Headers["Authorization"] = "Basic " + Convert.ToBase64String(Encoding.ASCII.GetBytes(credentials));
+            WebResponse wr = myReq.GetResponse();
+            Stream receiveStream = wr.GetResponseStream();
+            StreamReader reader = new StreamReader(receiveStream, Encoding.UTF8);
+            Console.WriteLine(reader.ReadToEnd());
         }
     }
     

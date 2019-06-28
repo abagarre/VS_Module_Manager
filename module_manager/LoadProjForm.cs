@@ -5,13 +5,13 @@ using System.Windows.Forms;
 
 namespace module_manager
 {
-    public partial class Form5 : Form
+    public partial class LoadProjForm : Form
     {
         internal string path = "";
         List<string> repoList = new List<string>();
         Functions functions;
 
-        public Form5()
+        public LoadProjForm()
         {
             InitializeComponent();
             functions = new Functions();
@@ -19,7 +19,7 @@ namespace module_manager
 
         private void Form5_Load(object sender, EventArgs e)
         {
-            repoList = Form1.repoList.ToList();
+            repoList = MainForm.repoList.ToList();
             repoList.Sort();
             foreach(string rep in repoList)
             {

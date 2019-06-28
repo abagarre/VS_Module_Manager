@@ -1,6 +1,6 @@
 ﻿namespace module_manager
 {
-    partial class Form5
+    partial class LoadProjForm
     {
         /// <summary>
         /// Required designer variable.

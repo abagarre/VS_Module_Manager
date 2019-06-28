@@ -1,6 +1,6 @@
 ﻿namespace module_manager
 {
-    partial class Form4
+    partial class DelForm
     {
         /// <summary>
         /// Required designer variable.

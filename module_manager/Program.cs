@@ -21,22 +21,22 @@ namespace module_manager
                 switch (args[0])
                 {
                     case "add":
-                        Application.Run(new Form2(args.Skip(1).ToArray()));
+                        Application.Run(new AddSubForm(args.Skip(1).ToArray()));
                         break;
                     case "list":
                         //Application.Run(new Form4(args.Skip(1).ToArray()));
                         break;
                     case "del":
-                        Application.Run(new Form4(args.Skip(1).ToArray()));
+                        Application.Run(new DelForm(args.Skip(1).ToArray()));
                         break;
                     default:
-                        Application.Run(new Form1());
+                        Application.Run(new MainForm());
                         break;
                 }
             }
             else
             {
-                Application.Run(new Form1());
+                Application.Run(new MainForm());
             }
         }
     }

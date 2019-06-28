@@ -6,12 +6,12 @@ using System.Windows.Forms;
 
 namespace module_manager
 {
-    public partial class Form4 : Form
+    public partial class DelForm : Form
     {
         string modName;
         string path;
 
-        public Form4(string[] args)
+        public DelForm(string[] args)
         {
             InitializeComponent();
             path = args[0];

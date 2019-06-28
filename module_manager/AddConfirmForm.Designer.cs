@@ -1,6 +1,6 @@
 ﻿namespace module_manager
 {
-    partial class Form3
+    partial class AddConfirmForm
     {
         /// <summary>
         /// Required designer variable.
@@ -28,7 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form3));
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(AddConfirmForm));
             this.metroLabel1 = new MetroFramework.Controls.MetroLabel();
             this.treeView1 = new System.Windows.Forms.TreeView();
             this.metroButton1 = new MetroFramework.Controls.MetroButton();

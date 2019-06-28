@@ -1,6 +1,6 @@
 ﻿namespace module_manager
 {
-    partial class Form2
+    partial class AddSubForm
     {
         /// <summary>
         /// Required designer variable.

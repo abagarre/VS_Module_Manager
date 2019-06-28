@@ -7,14 +7,14 @@ using System.Windows.Forms;
 
 namespace module_manager
 {
-    public partial class Form2 : Form
+    public partial class AddSubForm : Form
     {
 
         private string repo;
         public static string path;
         Functions functions;
 
-        public Form2(string[] args)
+        public AddSubForm(string[] args)
         {
             repo = args[0];
             InitializeComponent();
@@ -39,8 +39,8 @@ namespace module_manager
         private void ThreadLoop()
         {
             List<string> projModules = new List<string>();
-            List<string> repoList = Form1.repoList.ToList();
-            List<List<string>> projList = Form1.projList.ToList();
+            List<string> repoList = MainForm.repoList.ToList();
+            List<List<string>> projList = MainForm.projList.ToList();
             repo = repo.Substring(repo.LastIndexOf("\\") + 1, repo.Length - repo.LastIndexOf("\\") - 1);
             
             int i = 0;
@@ -124,7 +124,7 @@ namespace module_manager
                     }
                 }
 
-                var frm = new Form3(installList);
+                var frm = new AddConfirmForm(installList);
                 frm.Location = this.Location;
                 frm.StartPosition = FormStartPosition.Manual;
                 frm.FormClosed += CloseForm;
@@ -149,7 +149,7 @@ namespace module_manager
             List<string> repoList = new List<string>();
             try
             {
-                repoList = Form1.repoList.ToList();
+                repoList = MainForm.repoList.ToList();
             }
             catch (Exception ex)
             {
@@ -160,7 +160,7 @@ namespace module_manager
             List<List<string>> projList = new List<List<string>>();
             try
             {
-                projList = Form1.projList.ToList();
+                projList = MainForm.projList.ToList();
             }
             catch (Exception ex)
             {

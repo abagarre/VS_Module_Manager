@@ -6,6 +6,7 @@ using System.Net;
 using System.Windows.Forms;
 using Newtonsoft.Json;
 using System.Text;
+using System.Security.Cryptography;
 
 public class Functions
 {
@@ -199,6 +200,45 @@ public class Functions
         }
 
         return checkedList;
+    }
+
+    public string GetMarkdown(string projName, string branch)
+    {
+        string md = "";
+        try
+        {
+            using (var wc = new System.Net.WebClient())
+                md = wc.DownloadString(@"http://192.168.55.218:8082/raw/" + projName + @".git/" + branch + @"/README.md");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Failed downloading README.md : " + ex.Message);
+        }
+        if (md.Contains("branch") && branch != "master")
+        {
+            return GetMarkdown(projName, "master");
+        }
+        byte[] bytes = Encoding.Default.GetBytes(md);
+        md = Encoding.UTF8.GetString(bytes);
+        return md;
+    }
+
+    public string GetRepoListBitBucket()
+    {
+        byte[] plaintext = Encoding.UTF8.GetBytes("");
+
+        byte[] entropy = new byte[20]; //TODO: Change to global password
+        using (RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider())
+        {
+            rng.GetBytes(entropy);
+        }
+
+        byte[] ciphertext = ProtectedData.Protect(plaintext, entropy, DataProtectionScope.CurrentUser);
+
+        File.WriteAllBytes(@"./.creditEnt", entropy);
+        File.WriteAllBytes(@"./.creditCip", ciphertext);
+        
+        return "OK";
     }
 
 }
