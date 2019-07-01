@@ -7,12 +7,14 @@ using System.Windows.Forms;
 using Newtonsoft.Json;
 using System.Text;
 using System.Security.Cryptography;
+using module_manager;
 
 public class Functions
 {
     
     public static bool affiche = false;
     public static List<string> descList = new List<string>();
+    Config config = new Config();
 
     public List<string> SearchGitmodulesFile(string path)
     {
@@ -25,7 +27,7 @@ public class Functions
                 {
                     int counter = 0;
                     string line;
-                    StreamReader file = new System.IO.StreamReader(f);
+                    StreamReader file = new StreamReader(f);
                     while ((line = file.ReadLine()) != null)
                     {
                         if (line.Contains("url"))
@@ -38,7 +40,7 @@ public class Functions
                 }
             }
         }
-        catch (System.Exception excpt)
+        catch (Exception excpt)
         {
             Console.WriteLine(excpt.Message);
         }
@@ -49,62 +51,115 @@ public class Functions
     public List<string> DispRepoList()
     {
         List<string> repoList = new List<string>();
-        string json;
-        using (var client = new WebClient())
+        if (config.GetCurrentType() == "gitblit")
         {
-            json = client.DownloadString("http://192.168.55.218:8082/rpc/?req=LIST_REPOSITORIES");
+            string json;
+            using (var client = new WebClient())
+            {
+                json = client.DownloadString(config.GetServerUrl() + "rpc/?req=LIST_REPOSITORIES");
+            }
+
+            byte[] bytes = Encoding.Default.GetBytes(json);
+            json = Encoding.UTF8.GetString(bytes);
+
+            JObject list = JObject.Parse(json);
+            var properties = list.Properties();
+            foreach (var prop in properties)
+            {
+                JObject infos = JObject.FromObject(list[prop.Name]);
+                if (!((string)infos["name"]).Contains("~"))
+                {
+                    repoList.Add(infos["name"].ToString());
+                    try
+                    {
+                        string desc = infos["description"].ToString();
+                        descList.Add(desc);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                    }
+                }
+
+            }
         }
+        return repoList;
+    }
+
+    public List<string> DispModList()
+    {
+        List<string> repoList = new List<string>();
+        if (config.GetCurrentType() == "gitblit")
+        {
+            string json;
+            using (var client = new WebClient())
+            {
+                json = client.DownloadString(config.GetServerUrl() + "rpc/?req=LIST_REPOSITORIES");
+            }
+
+            byte[] bytes = Encoding.Default.GetBytes(json);
+            json = Encoding.UTF8.GetString(bytes);
+
+            JObject list = JObject.Parse(json);
+            var properties = list.Properties();
+            foreach (var prop in properties)
+            {
+                JObject infos = JObject.FromObject(list[prop.Name]);
+                if (!((string)infos["name"]).Contains("~") && ((string)infos["name"]).Contains("MODULES"))
+                {
+                    repoList.Add(infos["name"].ToString());
+                    try
+                    {
+                        string desc = infos["description"].ToString();
+                        descList.Add(desc);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                    }
+                }
+
+            }
+        }
+        return repoList;
+    }
+
+    public string DispServerList()
+    {
+        List<string> servList = new List<string>();
+        string json;
+        json = File.ReadAllText(@"C:\Users\STBE\source\repos\module_manager\module_manager\bin\Debug\servers.json");
 
         byte[] bytes = Encoding.Default.GetBytes(json);
         json = Encoding.UTF8.GetString(bytes);
 
-        JObject list = JObject.Parse(json);
-        var properties = list.Properties();
-        foreach (var prop in properties)
-        {
-            JObject infos = JObject.FromObject(list[prop.Name]);
-            if (!((string)infos["name"]).Contains("~"))
-            {
-                repoList.Add(infos["name"].ToString());
-                try
-                {
-                    string desc = infos["description"].ToString();
-                    descList.Add(desc);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex.Message);
-                }
-            }
-                
-        }
-
-        //repoList.Sort();
-        return repoList;
+        
+        return json;
     }
 
     public List<string> GetModuleDep(string moduleText, string branch)
     {
         List<string> dep = new List<string>();
-
-        string url = "http://192.168.55.218:8082/raw/" + moduleText + "/" + branch + "/.dependencies";
-        var client = new WebClient();
-        using (var stream = client.OpenRead(url))
-        using (var reader = new StreamReader(stream))
+        if(config.GetCurrentType() == "gitblit")
         {
-            string ligne;
-            while ((ligne = reader.ReadLine()) != null)
+            string url = config.GetServerUrl() + "raw/" + moduleText + "/" + branch + "/.dependencies";
+            var client = new WebClient();
+            using (var stream = client.OpenRead(url))
+            using (var reader = new StreamReader(stream))
             {
-                if (ligne.Contains("branch") && branch != "master")
+                string ligne;
+                while ((ligne = reader.ReadLine()) != null)
                 {
-                    dep.AddRange(GetModuleDep(moduleText, "master"));
-                    break;
+                    if (ligne.Contains("branch") && branch != "master")
+                    {
+                        dep.AddRange(GetModuleDep(moduleText, "master"));
+                        break;
+                    }
+                    if (!ligne.Contains("Error"))
+                    {
+                        dep.Add(ligne);
+                    }
                 }
-                if (!ligne.Contains("Error"))
-                {
-                    dep.Add(ligne);
-                }
-
             }
         }
 
@@ -139,47 +194,74 @@ public class Functions
     public List<string> GetModList(string branch, string rep)
     {
         List<string> modList = new List<string>();
-
-        string url = "http://192.168.55.218:8082/raw/" + rep + "/" + branch + "/.gitmodules";
-        var client = new WebClient();
-        using (var stream = client.OpenRead(url))
-        using (var reader = new StreamReader(stream))
+        if(config.GetCurrentType() == "gitblit")
         {
-            string ligne;
-            string ligne1 = "", ligne2 = "", ligne3 = "";
-            int compteur = 1;
-            while ((ligne = reader.ReadLine()) != null)
+            string url = config.GetServerUrl() + "raw/" + rep + "/" + branch + "/.gitmodules";
+            Console.WriteLine(url);
+            var client = new WebClient();
+            using (var stream = client.OpenRead(url))
+            using (var reader = new StreamReader(stream))
             {
-                if (ligne.Contains("branch") && branch != "master")
+                string ligne;
+                string ligne1 = "", ligne2 = "", ligne3 = "";
+                int compteur = 1;
+                while ((ligne = reader.ReadLine()) != null)
                 {
-                    if (affiche)
+                    if (ligne.Contains("branch") && branch != "master")
                     {
-                        affiche = !ShowDialog("Ne plus afficher", "Le projet " + rep + " ne contient pas de branche _DEV_ ! \n\nRecherche sur la branche master\n ");
+                        if (affiche)
+                        {
+                            affiche = !ShowDialog("Ne plus afficher", "Le projet " + rep + " ne contient pas de branche _DEV_ ! \n\nRecherche sur la branche master\n ");
+                        }
+                        modList.AddRange(GetModList("master", rep));
+                        break;
                     }
-                    modList.AddRange(GetModList("master", rep));
-                    break;
-                }
-                switch (compteur)
-                {
-                    case 1:
-                        ligne1 = ligne;
-                        break;
-                    case 2:
-                        ligne2 = ligne;
-                        break;
-                    case 3:
-                        ligne3 = ligne;
-                        compteur = 1;
-                        break;
-                }
-                if (ligne.Contains("url"))
-                {
-                    modList.Add(ligne.Replace("url = ", ""));
+                    switch (compteur)
+                    {
+                        case 1:
+                            ligne1 = ligne;
+                            break;
+                        case 2:
+                            ligne2 = ligne;
+                            break;
+                        case 3:
+                            ligne3 = ligne;
+                            compteur = 1;
+                            break;
+                    }
+                    if (ligne.Contains("url"))
+                    {
+                        modList.Add(ligne.Replace("url = ", ""));
+                    }
                 }
             }
         }
-
         return modList;
+    }
+
+    public string GetProjFullName(string path)
+    {
+        string line = "";
+        string prev = "";
+        string fullName = "";
+        StreamReader file = new StreamReader(path + @"\.git\config");
+        while ((line = file.ReadLine()) != null)
+        {
+            if (line.Contains("remote"))
+            {
+                prev = line;
+            }
+            if(prev.Contains("remote") && line.Contains("url"))
+            {
+                fullName = line.Replace("url = ","");
+                break;
+            }
+        }
+        file.Close();
+        fullName = fullName.Substring(fullName.IndexOf(@"/r/") + 3, fullName.Length - fullName.IndexOf(@"/r/") - 3);
+        Console.WriteLine(fullName);
+        return fullName;
+
     }
 
     public List<string> GetCheckedNodes(TreeNodeCollection treeNode)
@@ -205,21 +287,24 @@ public class Functions
     public string GetMarkdown(string projName, string branch)
     {
         string md = "";
-        try
+        if (config.GetCurrentType() == "gitblit")
         {
-            using (var wc = new System.Net.WebClient())
-                md = wc.DownloadString(@"http://192.168.55.218:8082/raw/" + projName + @".git/" + branch + @"/README.md");
+            try
+            {
+                using (var wc = new System.Net.WebClient())
+                    md = wc.DownloadString(config.GetServerUrl() + @"raw/" + projName + @".git/" + branch + @"/README.md");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Failed downloading README.md : " + ex.Message);
+            }
+            if (md.Contains("branch") && branch != "master")
+            {
+                return GetMarkdown(projName, "master");
+            }
+            byte[] bytes = Encoding.Default.GetBytes(md);
+            md = Encoding.UTF8.GetString(bytes);
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine("Failed downloading README.md : " + ex.Message);
-        }
-        if (md.Contains("branch") && branch != "master")
-        {
-            return GetMarkdown(projName, "master");
-        }
-        byte[] bytes = Encoding.Default.GetBytes(md);
-        md = Encoding.UTF8.GetString(bytes);
         return md;
     }
 

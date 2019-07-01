@@ -9,37 +9,42 @@ namespace module_manager
     public partial class AddConfirmForm : Form
     {
 
-        private List<string> modules;
+        List<string> modules;
         Functions functions;
+        Config config;
 
         public AddConfirmForm(List<string> args)
         {
             InitializeComponent();
             modules = args;
             functions = new Functions();
+            config = new Config();
         }
 
         private void Form3_Load(object sender, EventArgs e)
         {
             foreach (string mod in modules)
             {
+                Console.WriteLine(mod);
                 TreeNode treeNode = new TreeNode(mod);
                 treeNode.Checked = true;
-                
                 treeView1.Nodes.Add(treeNode);
-
-                List<string> dep = functions.GetModuleDep(mod, "_DEV_");
-
-                foreach (string dependency in dep)
+                try
                 {
-                    if (!modules.Contains(dependency))
+                    List<string> dep = functions.GetModuleDep(mod, "_DEV_");
+                    foreach (string dependency in dep)
                     {
-                        TreeNode childNode = new TreeNode(dependency);
-                        childNode.Checked = true;
-                        treeNode.Nodes.Add(childNode);
+                        if (!modules.Contains(dependency))
+                        {
+                            TreeNode childNode = new TreeNode(dependency);
+                            childNode.Checked = true;
+                            treeNode.Nodes.Add(childNode);
+                        }
                     }
+                } catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
                 }
-
                 treeNode.ExpandAll();
             }
         }
@@ -73,7 +78,8 @@ namespace module_manager
                 process.StartInfo.RedirectStandardOutput = true;
                 process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
                 process.StartInfo.WorkingDirectory = AddSubForm.path;
-                process.StartInfo.Arguments = @"http://192.168.55.218:8082/r/" + node + " " + node;
+                if (config.GetCurrentType() == "gitblit")
+                    process.StartInfo.Arguments = config.GetServerUrl() + @"r/" + node + " " + node;
                 process.Start();
                 while (!process.StandardOutput.EndOfStream)
                 {

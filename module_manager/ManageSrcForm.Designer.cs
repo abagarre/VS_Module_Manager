@@ -29,7 +29,9 @@
         private void InitializeComponent()
         {
             this.metroLabel1 = new MetroFramework.Controls.MetroLabel();
-            this.listView1 = new System.Windows.Forms.ListView();
+            this.metroLabel2 = new MetroFramework.Controls.MetroLabel();
+            this.metroButton1 = new MetroFramework.Controls.MetroButton();
+            this.flowLayoutPanel1 = new System.Windows.Forms.FlowLayoutPanel();
             this.SuspendLayout();
             // 
             // metroLabel1
@@ -43,13 +45,34 @@
             this.metroLabel1.Text = "Gérer les sources";
             this.metroLabel1.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
-            // listView1
+            // metroLabel2
             // 
-            this.listView1.Location = new System.Drawing.Point(13, 60);
-            this.listView1.Name = "listView1";
-            this.listView1.Size = new System.Drawing.Size(775, 378);
-            this.listView1.TabIndex = 1;
-            this.listView1.UseCompatibleStateImageBehavior = false;
+            this.metroLabel2.FontSize = MetroFramework.MetroLabelSize.Tall;
+            this.metroLabel2.Location = new System.Drawing.Point(12, 70);
+            this.metroLabel2.Name = "metroLabel2";
+            this.metroLabel2.Size = new System.Drawing.Size(161, 23);
+            this.metroLabel2.TabIndex = 2;
+            this.metroLabel2.Text = "Serveurs connectés";
+            this.metroLabel2.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            // 
+            // metroButton1
+            // 
+            this.metroButton1.Location = new System.Drawing.Point(189, 72);
+            this.metroButton1.Name = "metroButton1";
+            this.metroButton1.Size = new System.Drawing.Size(116, 23);
+            this.metroButton1.TabIndex = 3;
+            this.metroButton1.Text = "Ajouter une source";
+            this.metroButton1.UseSelectable = true;
+            // 
+            // flowLayoutPanel1
+            // 
+            this.flowLayoutPanel1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.flowLayoutPanel1.Location = new System.Drawing.Point(13, 113);
+            this.flowLayoutPanel1.Name = "flowLayoutPanel1";
+            this.flowLayoutPanel1.Size = new System.Drawing.Size(775, 325);
+            this.flowLayoutPanel1.TabIndex = 4;
             // 
             // ManageSrcForm
             // 
@@ -57,7 +80,9 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.Window;
             this.ClientSize = new System.Drawing.Size(800, 450);
-            this.Controls.Add(this.listView1);
+            this.Controls.Add(this.flowLayoutPanel1);
+            this.Controls.Add(this.metroButton1);
+            this.Controls.Add(this.metroLabel2);
             this.Controls.Add(this.metroLabel1);
             this.Name = "ManageSrcForm";
             this.Text = "Form6";
@@ -69,6 +94,8 @@
         #endregion
 
         private MetroFramework.Controls.MetroLabel metroLabel1;
-        private System.Windows.Forms.ListView listView1;
+        private MetroFramework.Controls.MetroLabel metroLabel2;
+        private MetroFramework.Controls.MetroButton metroButton1;
+        private System.Windows.Forms.FlowLayoutPanel flowLayoutPanel1;
     }
 }

@@ -19,12 +19,14 @@ namespace module_manager
         public static List<List<string>> projList;
         private List<string> smartList;
         Functions functions;
+        Config config;
         bool bg3IsWorking = false;
 
         public MainForm()
         {
             InitializeComponent();
             functions = new Functions();
+            config = new Config();
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -599,6 +601,7 @@ namespace module_manager
             {
                 Console.WriteLine("Markdow ToHTML error : " + ex.Message);
             }
+            // TODO: Adapt the md file to source
             html = html.Replace("img src=\"", "img src=\"http://192.168.55.218:8082/raw/" + project + ".git/master/");
             html = html.Replace(@"%5C", @"/");
             e.Result = html;
@@ -629,7 +632,12 @@ namespace module_manager
 
         private void GérerLesSourcesToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Console.WriteLine(functions.GetRepoListBitBucket());
+            //Console.WriteLine(functions.GetRepoListBitBucket());
+            var frm = new ManageSrcForm();
+            frm.Location = this.Location;
+            frm.StartPosition = FormStartPosition.Manual;
+            frm.Show();
+
         }
 
         private void ComptesEtConnexionsToolStripMenuItem_Click(object sender, EventArgs e)
@@ -640,7 +648,7 @@ namespace module_manager
             string result = Encoding.UTF8.GetString(returntext);
 
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
-            string url = "https://api.bitbucket.org/2.0/repositories/bglx/projet_002/src/master/.gitmodules";
+            string url = "https://api.bitbucket.org/2.0/repositories/bglx/";
             WebRequest myReq = WebRequest.Create(url);
             myReq.Method = "GET";
             string credentials = "bglx:" + result;

@@ -18,8 +18,6 @@ namespace module_manager
         {
             repo = args[0];
             InitializeComponent();
-            //Thread getModList = new Thread(new ThreadStart(ThreadLoop));
-            //getModList.Start();
         }
 
         private void Form2_Load(object sender, EventArgs e)
@@ -36,61 +34,6 @@ namespace module_manager
 
         }
 
-        private void ThreadLoop()
-        {
-            List<string> projModules = new List<string>();
-            List<string> repoList = MainForm.repoList.ToList();
-            List<List<string>> projList = MainForm.projList.ToList();
-            repo = repo.Substring(repo.LastIndexOf("\\") + 1, repo.Length - repo.LastIndexOf("\\") - 1);
-            
-            int i = 0;
-            foreach (string rep in repoList)
-            {
-                if (rep.Contains(repo))
-                {
-                    projModules = projList.ElementAt(i);
-                    break;
-                }
-                i++;
-            }
-
-            repoList.Sort();
-            i = 0;
-            foreach (string mod in repoList)
-            {
-                int toAdd = 1;
-                
-                foreach (string module in projModules)
-                {
-                    if (module.Contains(mod.Replace(".git", "")))
-                    {
-                        checkedListBox1.Invoke(new Action(() => checkedListBox1.Items.Add(mod.Replace(".git", "") + " (✓)", true)));
-                        checkedListBox1.Invoke(new Action(() => checkedListBox1.SetItemCheckState(i,CheckState.Indeterminate)));
-                        toAdd = 0;
-                        break;
-                    }
-                }
-                if(toAdd == 1)
-                {
-                    checkedListBox1.Invoke(new Action(() => checkedListBox1.Items.Add(mod.Replace(".git", ""))));
-                }
-                i++;
-                ReportProgress(i * 100 / repoList.Count());
-                Thread.Sleep(500);
-            }
-
-            ReportProgress(0);
-
-        }
-
-        private void ReportProgress(int value)
-        {
-            statusStrip1.Invoke(new Action(() => toolStripProgressBar1.Value = value));
-            
-            if (value == 0)
-                statusStrip1.Invoke(new Action(() => toolStripStatusLabel1.Text = "Prêt"));
-        }
-
         private void CheckedListBox1_SelectedIndexChanged(object sender, System.EventArgs e)
         {
             List<string> allItems = checkedListBox1.Items.OfType<string>().ToList();
@@ -102,12 +45,10 @@ namespace module_manager
             List<string> allItems = checkedListBox1.Items.OfType<string>().ToList();
             string curItem = e.CurrentValue.ToString();
             int index = e.Index;
-            
             if (checkedListBox1.GetItemCheckState(index) == CheckState.Indeterminate)
             {
                 e.NewValue = e.CurrentValue;
             }
-            
         }
 
         private void MetroButton1_Click(object sender, EventArgs e)
@@ -119,8 +60,8 @@ namespace module_manager
                 {
                     if (!item.ToString().Contains("(✓)"))
                     {
+                        Console.WriteLine(item.ToString());
                         installList.Add(item.ToString());
-                        // sb.AppendLine(item.ToString());
                     }
                 }
 
@@ -147,6 +88,7 @@ namespace module_manager
 
             List<string> projModules = new List<string>();
             List<string> repoList = new List<string>();
+
             try
             {
                 repoList = MainForm.repoList.ToList();
@@ -157,54 +99,30 @@ namespace module_manager
                 Console.WriteLine(ex.Message);
             }
 
-            List<List<string>> projList = new List<List<string>>();
+            int i = 0;
+
             try
             {
-                projList = MainForm.projList.ToList();
+                Console.WriteLine("GetFunc GetFullName");
+                projModules = functions.GetModList("_DEV_", functions.GetProjFullName(repo).Replace(".git", ""));
             }
             catch (Exception ex)
             {
-                int j = 0;
-                foreach (string rep in repoList)
-                {
-                    try
-                    {
-                        List<string> proj = functions.GetModList("_DEV_", rep);
-                        projList.Add(proj);
-                    }
-                    catch (Exception exe)
-                    {
-                        projList.Add(new List<string>());
-                        Console.WriteLine(exe.Message);
-                    }
-                    worker.ReportProgress(j * 100 / repoList.Count());
-                    j++;
-                }
                 Console.WriteLine(ex.Message);
             }
-                
                
             repo = repo.Substring(repo.LastIndexOf("\\") + 1, repo.Length - repo.LastIndexOf("\\") - 1);
-
-            int i = 0;
-            foreach (string rep in repoList)
-            {
-                if (rep.Contains(repo))
-                {
-                    projModules = projList.ElementAt(i);
-                    break;
-                }
-                i++;
-            }
 
             repoList.Sort();
             i = 0;
             foreach (string mod in repoList)
             {
+                Console.WriteLine(mod);
                 int toAdd = 1;
-
+                
                 foreach (string module in projModules)
                 {
+                    Console.WriteLine(module + " is submodule");
                     if (module.Contains(mod.Replace(".git", "")))
                     {
                         checkedListBox1.Invoke(new Action(() => checkedListBox1.Items.Add(mod.Replace(".git", "") + " (✓)", true)));
@@ -213,6 +131,7 @@ namespace module_manager
                         break;
                     }
                 }
+                
                 if (toAdd == 1)
                 {
                     checkedListBox1.Invoke(new Action(() => checkedListBox1.Items.Add(mod.Replace(".git", ""))));
