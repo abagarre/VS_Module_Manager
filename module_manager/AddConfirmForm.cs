@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.IO;
+using System.Linq;
 using System.Windows.Forms;
 
 namespace module_manager
@@ -9,7 +11,7 @@ namespace module_manager
     public partial class AddConfirmForm : Form
     {
 
-        List<string> modules;
+        List<string> modules;   // Liste des modules à ajouter
         Functions functions;
         Config config;
 
@@ -23,32 +25,67 @@ namespace module_manager
 
         private void Form3_Load(object sender, EventArgs e)
         {
+            metroButton2.Enabled = false;
+            toolStripStatusLabel1.Text = "Chargement...";
+            backgroundWorker2.RunWorkerAsync();
+        }
+
+        /**
+         * Récupère la liste des #include des fichiers .c et .h des modules séléctionnés
+         */
+        private void BackgroundWorker2_DoWork(object sender, DoWorkEventArgs e)
+        {
+            BackgroundWorker worker = sender as BackgroundWorker;
+
+            int i = 1;
             foreach (string mod in modules)
             {
-                Console.WriteLine(mod);
                 TreeNode treeNode = new TreeNode(mod);
                 treeNode.Checked = true;
-                treeView1.Nodes.Add(treeNode);
+                treeView1.Invoke(new Action(() => treeView1.Nodes.Add(treeNode))); // Ajoute le module comme noeud du TreeView
                 try
                 {
-                    List<string> dep = functions.GetModuleDep(mod, "_DEV_");
+                    List<string> dep = functions.GetModuleDep(mod, "_DEV_"); // Liste des #include du module
+                    List<string> allFiles = Directory.GetFiles(AddSubForm.path, "*.*", SearchOption.AllDirectories).ToList(); // Liste de tous les fichiers (locaux)
                     foreach (string dependency in dep)
                     {
-                        if (!modules.Contains(dependency))
+                        var match = allFiles.FirstOrDefault(stringToCheck => stringToCheck.Contains(dependency));
+
+                        if (match == null && !modules.Contains(dependency))
                         {
-                            TreeNode childNode = new TreeNode(dependency);
-                            childNode.Checked = true;
-                            treeNode.Nodes.Add(childNode);
+                            // Si le fichier #include n'est pas présent localement et s'il n'est pas dans la liste des modules à installer
+                            TreeNode childNode = new TreeNode(dependency); // Créé un sous-noeud
+                            if(!dependency.Contains(@"//"))
+                                childNode.Checked = true; // Si le #include est en commentaire dans le code, le désélectionne
+                            treeView1.Invoke(new Action(() => treeNode.Nodes.Add(childNode)));
                         }
                     }
-                } catch (Exception ex)
+                }
+                catch (Exception ex)
                 {
                     Console.WriteLine(ex.Message);
                 }
-                treeNode.ExpandAll();
+                treeView1.Invoke(new Action(() => treeNode.ExpandAll()));
+                worker.ReportProgress(i * 100 / modules.Count);
+                i++;
             }
         }
 
+        private void BackgroundWorker2_ProgressChanged(object sender, ProgressChangedEventArgs e)
+        {
+            toolStripProgressBar1.Value = e.ProgressPercentage;
+        }
+
+        private void BackgroundWorker2_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            metroButton2.Enabled = true;
+            toolStripStatusLabel1.Text = "Prêt";
+            toolStripProgressBar1.Value = 0;
+        }
+
+        /**
+         * Ajoute les modules au projet (lance le BackgroundWorker)
+         */
         private void MetroButton2_Click(object sender, EventArgs e)
         {
             treeView1.Enabled = false;
@@ -63,49 +100,78 @@ namespace module_manager
             this.Close();
         }
 
+        /**
+         * Ajoute les éléments sélectionnés
+         */
         private void BackgroundWorker1_DoWork(object sender, DoWorkEventArgs e)
         {
             BackgroundWorker worker = sender as BackgroundWorker;
 
             List<string> checkedNodes = functions.GetCheckedNodes(treeView1.Nodes);
             int counter = (100/checkedNodes.Count)/4;
+            string mainMod = "";
             foreach (string node in checkedNodes)
             {
-                Process process = new Process();
-                process.StartInfo.FileName = @"C:\Users\STBE\Downloads\PortableGit\home\TestMaster\clone.bat";
-                process.StartInfo.UseShellExecute = false;
-                process.StartInfo.CreateNoWindow = true;
-                process.StartInfo.RedirectStandardOutput = true;
-                process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
-                process.StartInfo.WorkingDirectory = AddSubForm.path;
-                if (config.GetCurrentType() == "gitblit")
-                    process.StartInfo.Arguments = config.GetServerUrl() + @"r/" + node + " " + node;
-                process.Start();
-                while (!process.StandardOutput.EndOfStream)
+                if (node.Contains("_MODULES_/"))
+                    mainMod = node.Replace("_MODULES_/",""); // Nom du module en cours
+                if(AddSubForm.moduleList.FirstOrDefault(stringToCheck => stringToCheck.Contains(node.Replace(".h",""))) != null)
                 {
-                    string line = process.StandardOutput.ReadLine();
-                    if (line == "\"status 25\"")
+                    // Si un module avec le nom du noeud sélectionné existe sur le serveur, le télécharge
+                    try
                     {
-                        worker.ReportProgress(counter);
-                        counter += (100 / checkedNodes.Count) / 4;
+                        Process process = new Process();
+                        process.StartInfo.FileName = @"C:\Users\STBE\Downloads\PortableGit\home\TestMaster\clone.bat";
+                        process.StartInfo.UseShellExecute = false;
+                        process.StartInfo.CreateNoWindow = true;
+                        process.StartInfo.RedirectStandardOutput = true;
+                        process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+                        process.StartInfo.WorkingDirectory = AddSubForm.path;
+                        string modName = node.Replace("_MODULES_/", "").Replace(".h", "");
+                        if (config.GetCurrentType() == "gitblit")
+                            process.StartInfo.Arguments = config.GetServerUrl() + @"r/" + "_MODULES_/" + modName + " " + "_MODULES_/" + modName;
+                        process.Start();
+                        while (!process.StandardOutput.EndOfStream)
+                        {
+                            string line = process.StandardOutput.ReadLine();
+                            if (line == "\"status 25\"")
+                            {
+                                worker.ReportProgress(counter);
+                                counter += (100 / checkedNodes.Count) / 4;
+                            }
+                            else if (line == "\"status 50\"")
+                            {
+                                worker.ReportProgress(counter);
+                                counter += (100 / checkedNodes.Count) / 4;
+                            }
+                            else if (line == "\"status 75\"")
+                            {
+                                worker.ReportProgress(counter);
+                                counter += (100 / checkedNodes.Count) / 4;
+                            }
+                            else if (line == "\"status 100\"")
+                            {
+                                worker.ReportProgress(counter);
+                                counter += (100 / checkedNodes.Count) / 4;
+                            }
+                            if (backgroundWorker1.CancellationPending)
+                            {
+                                e.Cancel = true;
+                                return;
+                            }
+                        }
+                        process.WaitForExit();
                     }
-                    else if (line == "\"status 50\"")
+                    catch (Exception ex)
                     {
-                        worker.ReportProgress(counter);
-                        counter += (100 / checkedNodes.Count) / 4;
+                        Console.WriteLine(ex.Message);
                     }
-                    else if (line == "\"status 75\"")
-                    {
-                        worker.ReportProgress(counter);
-                        counter += (100 / checkedNodes.Count) / 4;
-                    }
-                    else if (line == "\"status 100\"")
-                    {
-                        worker.ReportProgress(counter);
-                        counter += (100 / checkedNodes.Count) / 4;
-                    }
+                } else
+                {
+                    MessageBox.Show("Le module [ " + mainMod + " ] fait appel au fichier [ " + node + " ] absent du projet local et des modules distant","Fichier manquant", MessageBoxButtons.OK,MessageBoxIcon.Warning);
+                    worker.ReportProgress(counter);
+                    counter += (100 / checkedNodes.Count);
+                    worker.ReportProgress(counter);
                 }
-                process.WaitForExit();
                 if (backgroundWorker1.CancellationPending)
                 {
                     e.Cancel = true;
@@ -128,5 +194,7 @@ namespace module_manager
         {
             backgroundWorker1.CancelAsync();
         }
+
+        
     }
 }

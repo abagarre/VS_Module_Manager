@@ -54,11 +54,9 @@
             this.backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
             this.metroLabel5 = new MetroFramework.Controls.MetroLabel();
             this.backgroundWorker2 = new System.ComponentModel.BackgroundWorker();
-            this.metroButton2 = new MetroFramework.Controls.MetroButton();
             this.folderBrowserDialog1 = new System.Windows.Forms.FolderBrowserDialog();
             this.metroTabControl2 = new MetroFramework.Controls.MetroTabControl();
             this.metroTabPage3 = new MetroFramework.Controls.MetroTabPage();
-            this.metroLabel7 = new MetroFramework.Controls.MetroLabel();
             this.metroTabPage4 = new MetroFramework.Controls.MetroTabPage();
             this.treeView2 = new System.Windows.Forms.TreeView();
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
@@ -114,7 +112,6 @@
             this.metroTabPage1.VerticalScrollbarBarColor = true;
             this.metroTabPage1.VerticalScrollbarHighlightOnWheel = false;
             this.metroTabPage1.VerticalScrollbarSize = 10;
-            this.metroTabPage1.Click += new System.EventHandler(this.MetroTabPage1_Click);
             // 
             // webBrowser1
             // 
@@ -198,8 +195,6 @@
             this.metroTextBox1.Visible = false;
             this.metroTextBox1.WaterMarkColor = System.Drawing.Color.FromArgb(((int)(((byte)(109)))), ((int)(((byte)(109)))), ((int)(((byte)(109)))));
             this.metroTextBox1.WaterMarkFont = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Pixel);
-            this.metroTextBox1.TextChanged += new System.EventHandler(this.MetroTextBox1_TextChanged);
-            this.metroTextBox1.Click += new System.EventHandler(this.MetroTextBox1_Click);
             // 
             // metroLabel4
             // 
@@ -257,7 +252,7 @@
             this.treeView1.ItemHeight = 30;
             this.treeView1.Location = new System.Drawing.Point(3, 3);
             this.treeView1.Name = "treeView1";
-            this.treeView1.Size = new System.Drawing.Size(259, 288);
+            this.treeView1.Size = new System.Drawing.Size(259, 334);
             this.treeView1.TabIndex = 1;
             this.treeView1.AfterSelect += new System.Windows.Forms.TreeViewEventHandler(this.TreeView1_AfterSelect);
             // 
@@ -295,7 +290,6 @@
             this.statusStrip1.Size = new System.Drawing.Size(800, 24);
             this.statusStrip1.TabIndex = 5;
             this.statusStrip1.Text = "statusStrip1";
-            this.statusStrip1.ItemClicked += new System.Windows.Forms.ToolStripItemClickedEventHandler(this.StatusStrip1_ItemClicked);
             // 
             // toolStripStatusLabel1
             // 
@@ -383,18 +377,6 @@
             this.backgroundWorker2.ProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.BackgroundWorker2_ProgressChanged);
             this.backgroundWorker2.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.BackgroundWorker2_RunWorkerCompleted);
             // 
-            // metroButton2
-            // 
-            this.metroButton2.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.metroButton2.AutoSize = true;
-            this.metroButton2.Location = new System.Drawing.Point(59, 297);
-            this.metroButton2.Name = "metroButton2";
-            this.metroButton2.Size = new System.Drawing.Size(143, 23);
-            this.metroButton2.TabIndex = 7;
-            this.metroButton2.Text = "Parcourir";
-            this.metroButton2.UseSelectable = true;
-            this.metroButton2.Click += new System.EventHandler(this.MetroButton2_Click);
-            // 
             // metroTabControl2
             // 
             this.metroTabControl2.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
@@ -412,8 +394,6 @@
             // 
             // metroTabPage3
             // 
-            this.metroTabPage3.Controls.Add(this.metroLabel7);
-            this.metroTabPage3.Controls.Add(this.metroButton2);
             this.metroTabPage3.Controls.Add(this.treeView1);
             this.metroTabPage3.HorizontalScrollbarBarColor = true;
             this.metroTabPage3.HorizontalScrollbarHighlightOnWheel = false;
@@ -426,19 +406,6 @@
             this.metroTabPage3.VerticalScrollbarBarColor = true;
             this.metroTabPage3.VerticalScrollbarHighlightOnWheel = false;
             this.metroTabPage3.VerticalScrollbarSize = 10;
-            // 
-            // metroLabel7
-            // 
-            this.metroLabel7.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.metroLabel7.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.metroLabel7.FontSize = MetroFramework.MetroLabelSize.Small;
-            this.metroLabel7.Location = new System.Drawing.Point(59, 324);
-            this.metroLabel7.Name = "metroLabel7";
-            this.metroLabel7.Size = new System.Drawing.Size(143, 16);
-            this.metroLabel7.TabIndex = 8;
-            this.metroLabel7.Text = "Charger un projet distant";
-            this.metroLabel7.TextAlign = System.Drawing.ContentAlignment.TopCenter;
-            this.metroLabel7.Click += new System.EventHandler(this.MetroLabel7_Click);
             // 
             // metroTabPage4
             // 
@@ -454,7 +421,6 @@
             this.metroTabPage4.VerticalScrollbarBarColor = true;
             this.metroTabPage4.VerticalScrollbarHighlightOnWheel = false;
             this.metroTabPage4.VerticalScrollbarSize = 10;
-            this.metroTabPage4.Click += new System.EventHandler(this.MetroTabPage4_Click);
             // 
             // treeView2
             // 
@@ -573,7 +539,6 @@
             this.statusStrip1.PerformLayout();
             this.metroTabControl2.ResumeLayout(false);
             this.metroTabPage3.ResumeLayout(false);
-            this.metroTabPage3.PerformLayout();
             this.metroTabPage4.ResumeLayout(false);
             this.menuStrip1.ResumeLayout(false);
             this.menuStrip1.PerformLayout();
@@ -604,7 +569,6 @@
         private System.ComponentModel.BackgroundWorker backgroundWorker2;
         private System.Windows.Forms.ToolStripSplitButton toolStripSplitButton2;
         private System.Windows.Forms.ToolStripSplitButton toolStripSplitButton3;
-        private MetroFramework.Controls.MetroButton metroButton2;
         private System.Windows.Forms.FolderBrowserDialog folderBrowserDialog1;
         private System.Windows.Forms.DataGridViewTextBoxColumn Nom;
         private System.Windows.Forms.DataGridViewTextBoxColumn Version;
@@ -613,7 +577,6 @@
         private MetroFramework.Controls.MetroTabPage metroTabPage3;
         private MetroFramework.Controls.MetroTabPage metroTabPage4;
         private System.Windows.Forms.TreeView treeView2;
-        private MetroFramework.Controls.MetroLabel metroLabel7;
         private System.Windows.Forms.MenuStrip menuStrip1;
         private System.Windows.Forms.ToolStripMenuItem fichierToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem chargerUnProjetToolStripMenuItem;

@@ -10,6 +10,9 @@ namespace module_manager
 {
     public class Config
     {
+        /**
+         * Retourne le type de serveur en cours (gitblit, bitbucket...)
+         */
         public string GetCurrentType()
         {
             string json = File.ReadAllText(@"C:\Users\STBE\source\repos\module_manager\module_manager\bin\Debug\config.json");
@@ -19,6 +22,9 @@ namespace module_manager
             return (string)serv["type"];
         }
 
+        /**
+         * Retourne le nom de la source en cours
+         */
         public string GetCurrentSource()
         {
             string json = File.ReadAllText(@"C:\Users\STBE\source\repos\module_manager\module_manager\bin\Debug\config.json");
@@ -28,6 +34,9 @@ namespace module_manager
             return (string)serv["source"];
         }
 
+        /**
+         * Retourne l'URL du serveur en cours
+         */
         public string GetServerUrl()
         {
             if (GetCurrentType() == "gitblit")
@@ -47,6 +56,9 @@ namespace module_manager
             return "null";
         }
 
+        /**
+         * Modifie le fichier config.json avec les valeurs du serveur choisi
+         */
         internal static void ChangeServer(string name)
         {
             Console.WriteLine("change to " + name);
@@ -64,7 +76,6 @@ namespace module_manager
                     conf["type"] = obj["type"];
                     conf["url"] = obj["url"];
                 }
-                    
             }
             File.WriteAllText(@"C:\Users\STBE\source\repos\module_manager\module_manager\bin\Debug\config.json", conf.ToString());
         }

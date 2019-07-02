@@ -65,7 +65,6 @@
             this.metroLabel1.TabIndex = 3;
             this.metroLabel1.Text = "Ajouter un module";
             this.metroLabel1.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.metroLabel1.Click += new System.EventHandler(this.MetroLabel1_Click);
             // 
             // statusStrip1
             // 

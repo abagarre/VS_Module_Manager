@@ -27,7 +27,6 @@ namespace module_manager
             JObject serv = JObject.Parse(json);
             foreach (JObject obj in serv["servers"])
             {
-                Console.WriteLine(obj["url"]);
                 FlowLayoutPanel panel = new FlowLayoutPanel();
                 panel.FlowDirection = FlowDirection.TopDown;
                 panel.BackColor = SystemColors.MenuBar;

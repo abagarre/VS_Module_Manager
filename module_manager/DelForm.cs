@@ -8,8 +8,8 @@ namespace module_manager
 {
     public partial class DelForm : Form
     {
-        string modName;
-        string path;
+        string modName; // Nom du module à supprimer
+        string path;    // Chemin du projet
 
         public DelForm(string[] args)
         {
@@ -27,8 +27,9 @@ namespace module_manager
             metroLabel1.Text = "Voulez vous supprimer le module " + modName + " du projet " + path.Substring(path.Remove(path.Length - 2).LastIndexOf(@"\") + 1, path.Length - path.Remove(path.Length - 2).LastIndexOf(@"\") - 2) + " ?";
             
             var files = Directory.GetFiles(path + modName, ".git");
-            if (files.Length == 0) // Si le dossier n'est pas un submodule git
+            if (files.Length == 0) 
             {
+                // Si le dossier n'est pas un submodule git
                 MessageBox.Show("Le répertoire sélectionné n'est pas un module", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 this.Close();
             }
@@ -40,6 +41,9 @@ namespace module_manager
             this.Close();
         }
 
+        /**
+         * Confirme la suppression
+         */
         private void Button1_Click(object sender, EventArgs e)
         {
             backgroundWorker1.RunWorkerAsync(argument: modName);
@@ -88,6 +92,9 @@ namespace module_manager
             toolStripProgressBar1.Value = e.ProgressPercentage;
         }
 
+        /**
+         * Affiche les erreurs et warning du process
+         */
         private void BackgroundWorker1_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
             if (e.Result.ToString().Length != 0)

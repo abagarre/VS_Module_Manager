@@ -4,10 +4,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Windows.Forms;
-using Newtonsoft.Json;
 using System.Text;
 using System.Security.Cryptography;
 using module_manager;
+using HtmlAgilityPack;
 
 public class Functions
 {
@@ -16,6 +16,9 @@ public class Functions
     public static List<string> descList = new List<string>();
     Config config = new Config();
 
+    /**
+     * Retourne la liste des modules présents dans le fichier .gitmodules d'un projet local
+     */
     public List<string> SearchGitmodulesFile(string path)
     {
         List<string> repo = new List<string>();
@@ -48,6 +51,9 @@ public class Functions
         return repo;
     }
 
+    /**
+     * Retourne la liste des dépôts du serveur et rempli la liste de description
+     */
     public List<string> DispRepoList()
     {
         List<string> repoList = new List<string>();
@@ -80,12 +86,14 @@ public class Functions
                         Console.WriteLine(ex.Message);
                     }
                 }
-
             }
         }
         return repoList;
     }
 
+    /**
+     * Retourne la liste des modules du serveur (<=> contient MODULES dans le nom du dépôt)
+     */
     public List<string> DispModList()
     {
         List<string> repoList = new List<string>();
@@ -108,6 +116,7 @@ public class Functions
                 if (!((string)infos["name"]).Contains("~") && ((string)infos["name"]).Contains("MODULES"))
                 {
                     repoList.Add(infos["name"].ToString());
+                    /*
                     try
                     {
                         string desc = infos["description"].ToString();
@@ -117,6 +126,7 @@ public class Functions
                     {
                         Console.WriteLine(ex.Message);
                     }
+                    */
                 }
 
             }
@@ -124,6 +134,9 @@ public class Functions
         return repoList;
     }
 
+    /**
+     * Retoure la string du fichier des serveurs enregistrés
+     */
     public string DispServerList()
     {
         List<string> servList = new List<string>();
@@ -132,33 +145,40 @@ public class Functions
 
         byte[] bytes = Encoding.Default.GetBytes(json);
         json = Encoding.UTF8.GetString(bytes);
-
         
         return json;
     }
 
+    /**
+     * Liste les fichiers distants du dépôt d'un module et récupère la liste des #include
+     */
     public List<string> GetModuleDep(string moduleText, string branch)
     {
         List<string> dep = new List<string>();
         if(config.GetCurrentType() == "gitblit")
         {
-            string url = config.GetServerUrl() + "raw/" + moduleText + "/" + branch + "/.dependencies";
-            var client = new WebClient();
-            using (var stream = client.OpenRead(url))
-            using (var reader = new StreamReader(stream))
+            string url = config.GetServerUrl() + "raw/" + moduleText + "/" + branch;
+
+            string html;
+            using (var client = new WebClient())
             {
-                string ligne;
-                while ((ligne = reader.ReadLine()) != null)
+                html = client.DownloadString(url);
+            }
+            HtmlAgilityPack.HtmlDocument document = new HtmlAgilityPack.HtmlDocument();
+            document.LoadHtml(html);
+            if (html.Contains("branch") && branch != "master")
+            {
+                dep.AddRange(GetModuleDep(moduleText, "master"));
+                return dep;
+            }
+            HtmlNodeCollection collection = document.DocumentNode.SelectNodes("//a");
+            foreach (HtmlNode link in collection)
+            {
+                string target = link.Attributes["href"].Value;
+                if(target.Contains(".c") || target.Contains(".h"))
                 {
-                    if (ligne.Contains("branch") && branch != "master")
-                    {
-                        dep.AddRange(GetModuleDep(moduleText, "master"));
-                        break;
-                    }
-                    if (!ligne.Contains("Error"))
-                    {
-                        dep.Add(ligne);
-                    }
+                    string serverUrl = config.GetServerUrl().TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+                    dep.AddRange(GetIncludes(serverUrl + target));
                 }
             }
         }
@@ -166,6 +186,33 @@ public class Functions
         return dep;
     }
 
+    /**
+     * Retourne la liste des #include d'un fichier distant
+     */
+    public List<string> GetIncludes(string url)
+    {
+        List<string> dep = new List<string>();
+        var client = new WebClient();
+        using (var stream = client.OpenRead(url))
+        using (var reader = new StreamReader(stream))
+        {
+            string ligne;
+            while ((ligne = reader.ReadLine()) != null)
+            {
+                if (!ligne.Contains("Error") && ligne.Contains("#include \""))
+                {
+                    string module = ligne.Replace("\"", "").Replace("#include ", "").Replace(" ", "");
+                    if(!url.Contains(module.Replace(".h","")))
+                        dep.Add(module);
+                }
+            }
+        }
+        return dep;
+    }
+
+    /**
+     * Ouvre une fenêtre lorsqu'un dépôt n'a pas de branche _DEV_
+     */
     public static bool ShowDialog(string text, string caption)
     {
         Form prompt = new Form();
@@ -191,13 +238,15 @@ public class Functions
         return chk.Checked;
     }
 
+    /**
+     * Retourne la liste des modules présents dans le fichier .gitmodules d'un projet distant
+     */
     public List<string> GetModList(string branch, string rep)
     {
         List<string> modList = new List<string>();
         if(config.GetCurrentType() == "gitblit")
         {
             string url = config.GetServerUrl() + "raw/" + rep + "/" + branch + "/.gitmodules";
-            Console.WriteLine(url);
             var client = new WebClient();
             using (var stream = client.OpenRead(url))
             using (var reader = new StreamReader(stream))
@@ -239,6 +288,9 @@ public class Functions
         return modList;
     }
 
+    /**
+     * Retourne le nom du projet avec le dossier qui le contient
+     */
     public string GetProjFullName(string path)
     {
         string line = "";
@@ -259,11 +311,13 @@ public class Functions
         }
         file.Close();
         fullName = fullName.Substring(fullName.IndexOf(@"/r/") + 3, fullName.Length - fullName.IndexOf(@"/r/") - 3);
-        Console.WriteLine(fullName);
         return fullName;
 
     }
 
+    /**
+     * Retourne la liste des neouds cochés dans un TreeView
+     */
     public List<string> GetCheckedNodes(TreeNodeCollection treeNode)
     {
         List<string> checkedList = new List<string>();
@@ -284,6 +338,9 @@ public class Functions
         return checkedList;
     }
 
+    /**
+     * Retourne le contenu d'un fichier README dans une chaîne de caractères
+     */
     public string GetMarkdown(string projName, string branch)
     {
         string md = "";
@@ -291,7 +348,7 @@ public class Functions
         {
             try
             {
-                using (var wc = new System.Net.WebClient())
+                using (var wc = new WebClient())
                     md = wc.DownloadString(config.GetServerUrl() + @"raw/" + projName + @".git/" + branch + @"/README.md");
             }
             catch (Exception ex)
@@ -308,11 +365,14 @@ public class Functions
         return md;
     }
 
-    public string GetRepoListBitBucket()
+    /**
+     * 
+     */
+    public string SavePassword()
     {
         byte[] plaintext = Encoding.UTF8.GetBytes("");
 
-        byte[] entropy = new byte[20]; //TODO: Change to global password
+        byte[] entropy = new byte[20]; //TODO: Change to global password (winform with textbox)
         using (RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider())
         {
             rng.GetBytes(entropy);

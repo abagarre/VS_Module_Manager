@@ -40,6 +40,7 @@
             this.annulerToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripStatusLabel2 = new System.Windows.Forms.ToolStripStatusLabel();
             this.backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
+            this.backgroundWorker2 = new System.ComponentModel.BackgroundWorker();
             this.statusStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -132,7 +133,7 @@
             // annulerToolStripMenuItem
             // 
             this.annulerToolStripMenuItem.Name = "annulerToolStripMenuItem";
-            this.annulerToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.annulerToolStripMenuItem.Size = new System.Drawing.Size(116, 22);
             this.annulerToolStripMenuItem.Text = "Annuler";
             // 
             // toolStripStatusLabel2
@@ -151,7 +152,15 @@
             this.backgroundWorker1.ProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.BackgroundWorker1_ProgressChanged);
             this.backgroundWorker1.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.BackgroundWorker1_RunWorkerCompleted);
             // 
-            // Form3
+            // backgroundWorker2
+            // 
+            this.backgroundWorker2.WorkerReportsProgress = true;
+            this.backgroundWorker2.WorkerSupportsCancellation = true;
+            this.backgroundWorker2.DoWork += new System.ComponentModel.DoWorkEventHandler(this.BackgroundWorker2_DoWork);
+            this.backgroundWorker2.ProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.BackgroundWorker2_ProgressChanged);
+            this.backgroundWorker2.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.BackgroundWorker2_RunWorkerCompleted);
+            // 
+            // AddConfirmForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
@@ -162,7 +171,7 @@
             this.Controls.Add(this.metroButton1);
             this.Controls.Add(this.treeView1);
             this.Controls.Add(this.metroLabel1);
-            this.Name = "Form3";
+            this.Name = "AddConfirmForm";
             this.Text = "Form3";
             this.Load += new System.EventHandler(this.Form3_Load);
             this.statusStrip1.ResumeLayout(false);
@@ -185,5 +194,6 @@
         private System.Windows.Forms.ToolStripMenuItem annulerToolStripMenuItem;
         private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabel2;
         private System.ComponentModel.BackgroundWorker backgroundWorker1;
+        private System.ComponentModel.BackgroundWorker backgroundWorker2;
     }
 }

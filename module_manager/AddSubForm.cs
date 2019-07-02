@@ -10,8 +10,9 @@ namespace module_manager
     public partial class AddSubForm : Form
     {
 
-        private string repo;
-        public static string path;
+        private string repo;        // Chemin du répertoire du projet sélectionné
+        public static string path;  // Chemin du répertoire du projet sélectionné
+        public static List<string> moduleList = new List<string>(); // Liste de tous les modules du serveur
         Functions functions;
 
         public AddSubForm(string[] args)
@@ -26,20 +27,19 @@ namespace module_manager
             path = repo;
             toolStripStatusLabel1.Text = "Chargement...";
             functions = new Functions();
+            moduleList = functions.DispModList();
             backgroundWorker1.RunWorkerAsync();
-        }
-
-        private void MetroLabel1_Click(object sender, EventArgs e)
-        {
-
         }
 
         private void CheckedListBox1_SelectedIndexChanged(object sender, System.EventArgs e)
         {
-            List<string> allItems = checkedListBox1.Items.OfType<string>().ToList();
-            string curItem = checkedListBox1.SelectedItem.ToString();
+            //List<string> allItems = checkedListBox1.Items.OfType<string>().ToList();
+            //string curItem = checkedListBox1.SelectedItem.ToString();
         }
 
+        /**
+         * Empêche le clic sur un module déjà installé
+         */
         private void CheckedListBox1_ItemCheck(object sender, ItemCheckEventArgs e)
         {
             List<string> allItems = checkedListBox1.Items.OfType<string>().ToList();
@@ -51,16 +51,20 @@ namespace module_manager
             }
         }
 
+        /**
+         * Charge le Form de confirmation de téléchargement des modules avec la liste des modules sélectionnés
+         */
         private void MetroButton1_Click(object sender, EventArgs e)
         {
             if(checkedListBox1.CheckedItems.Count != 0)
             {
+                // Si des modules ont été sélectionnés
                 List<string> installList = new List<string>();
                 foreach (object item in checkedListBox1.CheckedItems)
                 {
                     if (!item.ToString().Contains("(✓)"))
                     {
-                        Console.WriteLine(item.ToString());
+                        // Si le module n'est pas déjà installé dans le projet
                         installList.Add(item.ToString());
                     }
                 }
@@ -74,7 +78,6 @@ namespace module_manager
             {
                 MessageBox.Show("Veuillez sélectionner un module", "Aucun module séléctionné", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
-            
         }
 
         private void CloseForm(object sender, FormClosedEventArgs e)
@@ -86,45 +89,45 @@ namespace module_manager
         {
             BackgroundWorker worker = sender as BackgroundWorker;
 
-            List<string> projModules = new List<string>();
-            List<string> repoList = new List<string>();
+            List<string> projModules = new List<string>();  // Liste des modules du projet
+            List<string> repoList = new List<string>();     // Liste des dépôts distants
 
             try
             {
+                // Si possible, récupère la liste des dépôts distant déjà chargée dans le MainForm
                 repoList = MainForm.repoList.ToList();
             }
             catch (Exception ex)
             {
+                // Sinon la recharge (cas où l'on ajoute un module depuis SmartGit)
                 repoList = functions.DispRepoList();
                 Console.WriteLine(ex.Message);
             }
 
             int i = 0;
-
             try
             {
-                Console.WriteLine("GetFunc GetFullName");
+                // Récupère la liste des modules du projet (lecture sur projet distant)
                 projModules = functions.GetModList("_DEV_", functions.GetProjFullName(repo).Replace(".git", ""));
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
             }
-               
+            
             repo = repo.Substring(repo.LastIndexOf("\\") + 1, repo.Length - repo.LastIndexOf("\\") - 1);
 
             repoList.Sort();
             i = 0;
             foreach (string mod in repoList)
             {
-                Console.WriteLine(mod);
                 int toAdd = 1;
                 
                 foreach (string module in projModules)
                 {
-                    Console.WriteLine(module + " is submodule");
                     if (module.Contains(mod.Replace(".git", "")))
                     {
+                        // Si le module est déjà ajouté au projet, ajoute un indicateur et grise la case
                         checkedListBox1.Invoke(new Action(() => checkedListBox1.Items.Add(mod.Replace(".git", "") + " (✓)", true)));
                         checkedListBox1.Invoke(new Action(() => checkedListBox1.SetItemCheckState(i, CheckState.Indeterminate)));
                         toAdd = 0;
