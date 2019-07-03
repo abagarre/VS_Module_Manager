@@ -23,7 +23,8 @@ namespace module_manager
             repoList.Sort();
             foreach(string rep in repoList)
             {
-                dataGridView1.Rows.Add(rep);
+                if(!rep.Contains("MODULES"))
+                    dataGridView1.Rows.Add(rep);
             }
         }
 
@@ -33,7 +34,10 @@ namespace module_manager
             {
                 path = textBox1.Text;
                 path = path.Replace(".git", "");
+                Console.WriteLine(path);
+                //================================== PATH DELIMITER =======================//
                 path = path.Substring(path.IndexOf(@"_"), path.Length - path.IndexOf(@"_"));
+                //=========================================================================//
                 this.Close();
             }
         }
@@ -51,7 +55,6 @@ namespace module_manager
                 path = path.Replace(".git", "");
                 this.Close();
             }
-            
         }
     }
 }

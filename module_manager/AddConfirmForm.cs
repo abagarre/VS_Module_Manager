@@ -45,7 +45,7 @@ namespace module_manager
                 treeView1.Invoke(new Action(() => treeView1.Nodes.Add(treeNode))); // Ajoute le module comme noeud du TreeView
                 try
                 {
-                    List<string> dep = functions.GetModuleDep(mod, "_DEV_"); // Liste des #include du module
+                    List<string> dep = functions.GetModuleDep(mod, config.GetBranchDev()); // Liste des #include du module
                     List<string> allFiles = Directory.GetFiles(AddSubForm.path, "*.*", SearchOption.AllDirectories).ToList(); // Liste de tous les fichiers (locaux)
                     foreach (string dependency in dep)
                     {
@@ -112,23 +112,29 @@ namespace module_manager
             string mainMod = "";
             foreach (string node in checkedNodes)
             {
+                //================ MODULES FOLDER NAME =====================//
                 if (node.Contains("_MODULES_/"))
                     mainMod = node.Replace("_MODULES_/",""); // Nom du module en cours
+                //==========================================================//
                 if(AddSubForm.moduleList.FirstOrDefault(stringToCheck => stringToCheck.Contains(node.Replace(".h",""))) != null)
                 {
                     // Si un module avec le nom du noeud sélectionné existe sur le serveur, le télécharge
                     try
                     {
                         Process process = new Process();
-                        process.StartInfo.FileName = @"C:\Users\STBE\Downloads\PortableGit\home\TestMaster\clone.bat";
+                        //================================== CLONE PATH ============================================//
+                        process.StartInfo.FileName = config.GetAppData() + @"clone.bat";
+                        //==========================================================================================//
                         process.StartInfo.UseShellExecute = false;
                         process.StartInfo.CreateNoWindow = true;
                         process.StartInfo.RedirectStandardOutput = true;
                         process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
                         process.StartInfo.WorkingDirectory = AddSubForm.path;
+                        //============================================== MODULES FOLDER NAME ==================================================//
                         string modName = node.Replace("_MODULES_/", "").Replace(".h", "");
                         if (config.GetCurrentType() == "gitblit")
                             process.StartInfo.Arguments = config.GetServerUrl() + @"r/" + "_MODULES_/" + modName + " " + "_MODULES_/" + modName;
+                        //=====================================================================================================================//
                         process.Start();
                         while (!process.StandardOutput.EndOfStream)
                         {
@@ -169,7 +175,7 @@ namespace module_manager
                 {
                     MessageBox.Show("Le module [ " + mainMod + " ] fait appel au fichier [ " + node + " ] absent du projet local et des modules distant","Fichier manquant", MessageBoxButtons.OK,MessageBoxIcon.Warning);
                     worker.ReportProgress(counter);
-                    counter += (100 / checkedNodes.Count);
+                    counter += (100 / checkedNodes.Count) * (3 / 4);
                     worker.ReportProgress(counter);
                 }
                 if (backgroundWorker1.CancellationPending)
@@ -195,6 +201,13 @@ namespace module_manager
             backgroundWorker1.CancelAsync();
         }
 
-        
+        private void TreeView1_AfterCheck(object sender, TreeViewEventArgs e)
+        {
+            foreach (TreeNode childNode in e.Node.Nodes)
+            {
+                if(!childNode.Text.Contains(@"//"))
+                    childNode.Checked = e.Node.Checked;
+            }
+        }
     }
 }

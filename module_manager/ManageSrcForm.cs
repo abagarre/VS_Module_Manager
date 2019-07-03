@@ -15,15 +15,17 @@ namespace module_manager
     {
 
         Functions functions;
+        Config config;
         public ManageSrcForm()
         {
             InitializeComponent();
             functions = new Functions();
+            config = new Config();
         }
 
         private void Form6_Load(object sender, EventArgs e)
         {
-            string json = functions.DispServerList();
+            string json = config.DispServerList();
             JObject serv = JObject.Parse(json);
             foreach (JObject obj in serv["servers"])
             {
@@ -32,7 +34,7 @@ namespace module_manager
                 panel.BackColor = SystemColors.MenuBar;
                 PictureBox picture = new PictureBox()
                 {
-                    ImageLocation = @".\" + (string)obj["type"] + ".png",
+                    ImageLocation = config.GetAppData() + (string)obj["type"] + ".png",
                     Anchor = AnchorStyles.None
                 };
                 panel.Controls.Add(picture);
@@ -47,7 +49,7 @@ namespace module_manager
                     Name = (string)obj["name"],
                     Anchor = AnchorStyles.None,
                     Width = picture.Width
-            };
+                };
                 buttonDetails.Click += GetDetailsServer;
                 panel.Controls.Add(buttonDetails);
                 MetroFramework.Controls.MetroButton buttonSwitch = new MetroFramework.Controls.MetroButton()
@@ -65,7 +67,7 @@ namespace module_manager
 
         private void SwitchServer(object sender, EventArgs e)
         {
-            Config.ChangeServer((sender as Button).Name);
+            config.ChangeServer((sender as Button).Name);
             foreach(Control control in flowLayoutPanel1.Controls)
             {
                 if(control is FlowLayoutPanel)
@@ -79,7 +81,7 @@ namespace module_manager
 
         private void GetDetailsServer(object sender, EventArgs e)
         {
-            
+            Console.WriteLine("details");
         }
     }
 }

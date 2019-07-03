@@ -10,12 +10,51 @@ namespace module_manager
 {
     public class Config
     {
+        public string GetServersPath()
+        {
+            string path = GetAppData() + @"servers.json";
+            return path;
+        }
+
+        public string GetConfigPath()
+        {
+            string path = GetAppData() + @"config.json";
+            return path;
+        }
+
+        public string GetAppData()
+        {
+            string path = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + @"\ModuleManager\";
+            Directory.CreateDirectory(path);
+            return path;
+        }
+
+        public string GetSmartGitRepo()
+        {
+            string path = @"C:\Users\STBE\Downloads\SmartGit\.settings\repositories.xml";
+            return path;
+        }
+
+        /**
+         * Retoure la string du fichier des serveurs enregistrés
+         */
+        public string DispServerList()
+        {
+            string json;
+            json = File.ReadAllText(GetServersPath());
+
+            byte[] bytes = Encoding.Default.GetBytes(json);
+            json = Encoding.UTF8.GetString(bytes);
+
+            return json;
+        }
+
         /**
          * Retourne le type de serveur en cours (gitblit, bitbucket...)
          */
         public string GetCurrentType()
         {
-            string json = File.ReadAllText(@"C:\Users\STBE\source\repos\module_manager\module_manager\bin\Debug\config.json");
+            string json = File.ReadAllText(GetConfigPath());
             byte[] bytes = Encoding.Default.GetBytes(json);
             json = Encoding.UTF8.GetString(bytes);
             JObject serv = JObject.Parse(json);
@@ -27,7 +66,7 @@ namespace module_manager
          */
         public string GetCurrentSource()
         {
-            string json = File.ReadAllText(@"C:\Users\STBE\source\repos\module_manager\module_manager\bin\Debug\config.json");
+            string json = File.ReadAllText(GetConfigPath());
             byte[] bytes = Encoding.Default.GetBytes(json);
             json = Encoding.UTF8.GetString(bytes);
             JObject serv = JObject.Parse(json);
@@ -39,19 +78,16 @@ namespace module_manager
          */
         public string GetServerUrl()
         {
-            if (GetCurrentType() == "gitblit")
+            List<string> servList = new List<string>();
+            string json;
+            json = File.ReadAllText(GetServersPath());
+            byte[] bytes = Encoding.Default.GetBytes(json);
+            json = Encoding.UTF8.GetString(bytes);
+            JObject serv = JObject.Parse(json);
+            foreach (JObject obj in serv["servers"])
             {
-                List<string> servList = new List<string>();
-                string json;
-                json = File.ReadAllText(@"C:\Users\STBE\source\repos\module_manager\module_manager\bin\Debug\servers.json");
-                byte[] bytes = Encoding.Default.GetBytes(json);
-                json = Encoding.UTF8.GetString(bytes);
-                JObject serv = JObject.Parse(json);
-                foreach (JObject obj in serv["servers"])
-                {
-                    if ((string)obj["name"] == GetCurrentSource())
-                        return (string)obj["url"];
-                }
+                if ((string)obj["name"] == GetCurrentSource())
+                    return (string)obj["url"];
             }
             return "null";
         }
@@ -59,15 +95,15 @@ namespace module_manager
         /**
          * Modifie le fichier config.json avec les valeurs du serveur choisi
          */
-        internal static void ChangeServer(string name)
+        public void ChangeServer(string name)
         {
             Console.WriteLine("change to " + name);
             string json;
-            json = File.ReadAllText(@"C:\Users\STBE\source\repos\module_manager\module_manager\bin\Debug\config.json");
+            json = File.ReadAllText(GetConfigPath());
             JObject conf = JObject.Parse(json);
             conf["source"] = name;
 
-            string servs = File.ReadAllText(@"C:\Users\STBE\source\repos\module_manager\module_manager\bin\Debug\servers.json");
+            string servs = File.ReadAllText(GetServersPath());
             JObject servlist = JObject.Parse(servs);
             foreach (JObject obj in servlist["servers"])
             {
@@ -77,7 +113,12 @@ namespace module_manager
                     conf["url"] = obj["url"];
                 }
             }
-            File.WriteAllText(@"C:\Users\STBE\source\repos\module_manager\module_manager\bin\Debug\config.json", conf.ToString());
+            File.WriteAllText(GetConfigPath(), conf.ToString());
+        }
+
+        public string GetBranchDev()
+        {
+            return "_DEV_";
         }
     }
 }

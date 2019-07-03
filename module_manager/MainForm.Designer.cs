@@ -69,6 +69,7 @@
             this.gérerLesSourcesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.comptesEtConnexionsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.backgroundWorker3 = new System.ComponentModel.BackgroundWorker();
+            this.paramètresToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.metroTabControl1.SuspendLayout();
             this.metroTabPage1.SuspendLayout();
             this.metroTabPage2.SuspendLayout();
@@ -490,7 +491,8 @@
             // 
             this.préférencesToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.gérerLesSourcesToolStripMenuItem,
-            this.comptesEtConnexionsToolStripMenuItem});
+            this.comptesEtConnexionsToolStripMenuItem,
+            this.paramètresToolStripMenuItem});
             this.préférencesToolStripMenuItem.Name = "préférencesToolStripMenuItem";
             this.préférencesToolStripMenuItem.Size = new System.Drawing.Size(80, 20);
             this.préférencesToolStripMenuItem.Text = "Préférences";
@@ -513,6 +515,13 @@
             // 
             this.backgroundWorker3.DoWork += new System.ComponentModel.DoWorkEventHandler(this.BackgroundWorker3_DoWork);
             this.backgroundWorker3.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.BackgroundWorker3_RunWorkerCompleted);
+            // 
+            // paramètresToolStripMenuItem
+            // 
+            this.paramètresToolStripMenuItem.Name = "paramètresToolStripMenuItem";
+            this.paramètresToolStripMenuItem.Size = new System.Drawing.Size(198, 22);
+            this.paramètresToolStripMenuItem.Text = "Paramètres";
+            this.paramètresToolStripMenuItem.Click += new System.EventHandler(this.ParamètresToolStripMenuItem_Click);
             // 
             // MainForm
             // 
@@ -589,6 +598,7 @@
         private System.Windows.Forms.ToolStripMenuItem préférencesToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem gérerLesSourcesToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem comptesEtConnexionsToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem paramètresToolStripMenuItem;
     }
 }
 

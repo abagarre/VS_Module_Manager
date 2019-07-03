@@ -13,7 +13,9 @@ namespace module_manager
         private string repo;        // Chemin du répertoire du projet sélectionné
         public static string path;  // Chemin du répertoire du projet sélectionné
         public static List<string> moduleList = new List<string>(); // Liste de tous les modules du serveur
+        List<string> repoList = new List<string>();
         Functions functions;
+        Config config;
 
         public AddSubForm(string[] args)
         {
@@ -26,15 +28,19 @@ namespace module_manager
             toolStripStatusLabel2.Text = repo;
             path = repo;
             toolStripStatusLabel1.Text = "Chargement...";
+            config = new Config();
             functions = new Functions();
-            moduleList = functions.DispModList();
+            try
+            {
+                repoList = MainForm.repoList;
+            }
+            catch (Exception ex)
+            {
+                repoList = functions.DispRepoList();
+                Console.WriteLine(ex.Message);
+            }
+            moduleList = functions.DispModList(repoList);
             backgroundWorker1.RunWorkerAsync();
-        }
-
-        private void CheckedListBox1_SelectedIndexChanged(object sender, System.EventArgs e)
-        {
-            //List<string> allItems = checkedListBox1.Items.OfType<string>().ToList();
-            //string curItem = checkedListBox1.SelectedItem.ToString();
         }
 
         /**
@@ -90,25 +96,12 @@ namespace module_manager
             BackgroundWorker worker = sender as BackgroundWorker;
 
             List<string> projModules = new List<string>();  // Liste des modules du projet
-            List<string> repoList = new List<string>();     // Liste des dépôts distants
-
-            try
-            {
-                // Si possible, récupère la liste des dépôts distant déjà chargée dans le MainForm
-                repoList = MainForm.repoList.ToList();
-            }
-            catch (Exception ex)
-            {
-                // Sinon la recharge (cas où l'on ajoute un module depuis SmartGit)
-                repoList = functions.DispRepoList();
-                Console.WriteLine(ex.Message);
-            }
 
             int i = 0;
             try
             {
                 // Récupère la liste des modules du projet (lecture sur projet distant)
-                projModules = functions.GetModList("_DEV_", functions.GetProjFullName(repo).Replace(".git", ""));
+                projModules = functions.GetModList(config.GetBranchDev(), functions.GetProjFullName(repo).Replace(".git", ""));
             }
             catch (Exception ex)
             {
@@ -117,9 +110,10 @@ namespace module_manager
             
             repo = repo.Substring(repo.LastIndexOf("\\") + 1, repo.Length - repo.LastIndexOf("\\") - 1);
 
-            repoList.Sort();
+            List<string> modList = moduleList.ToList();
+            modList.Sort();
             i = 0;
-            foreach (string mod in repoList)
+            foreach (string mod in modList)
             {
                 int toAdd = 1;
                 
@@ -141,7 +135,7 @@ namespace module_manager
                 }
 
                 i++;
-                worker.ReportProgress(i * 100 / repoList.Count());
+                worker.ReportProgress(i * 100 / modList.Count());
             }
             worker.ReportProgress(0);
         }

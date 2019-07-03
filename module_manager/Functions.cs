@@ -16,6 +16,23 @@ public class Functions
     public static List<string> descList = new List<string>();
     Config config = new Config();
 
+    public string BitBucketQuery(string url)
+    {
+        //================================= CREDIT FILES PATH ==============================//
+        byte[] entropy = File.ReadAllBytes(config.GetAppData() + @".creditEnt"); //TODO: Change to global password
+        byte[] ciphertext = File.ReadAllBytes(config.GetAppData() + @".creditCip");
+        //==================================================================================//
+        ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+        WebRequest myReq = WebRequest.Create(url);
+        myReq.Method = "GET";
+        CredentialCache mycache = new CredentialCache();
+        myReq.Headers["Authorization"] = "Basic " + Convert.ToBase64String(Encoding.ASCII.GetBytes("bglx:" + Encoding.UTF8.GetString(ProtectedData.Unprotect(ciphertext, entropy, DataProtectionScope.CurrentUser))));
+        WebResponse wr = myReq.GetResponse();
+        Stream receiveStream = wr.GetResponseStream();
+        StreamReader reader = new StreamReader(receiveStream, Encoding.UTF8);
+        return reader.ReadToEnd();
+    }
+
     /**
      * Retourne la liste des modules présents dans le fichier .gitmodules d'un projet local
      */
@@ -51,6 +68,60 @@ public class Functions
         return repo;
     }
 
+    public List<string> BitBucketRepoList()
+    {
+        List<string> repoList = new List<string>();
+        string url = "https://api.bitbucket.org/2.0/repositories/bglx/";
+        string json = BitBucketQuery(url);
+        JObject obj = JObject.Parse(json);
+        JArray list = (JArray)obj["values"];
+        foreach(JObject ob in list)
+        {
+            repoList.Add((string)ob["name"]);
+            Console.WriteLine((string)ob["name"]);
+        }
+
+        return repoList;
+    }
+
+    public List<string> GitBlitRepoList()
+    {
+        List<string> repoList = new List<string>();
+
+        string json;
+        using (var client = new WebClient())
+        {
+            //======================================= GITBLIT RPC URL =======================//
+            json = client.DownloadString(config.GetServerUrl() + "rpc/?req=LIST_REPOSITORIES");
+            //===============================================================================//
+        }
+
+        byte[] bytes = Encoding.Default.GetBytes(json);
+        json = Encoding.UTF8.GetString(bytes);
+
+        JObject list = JObject.Parse(json);
+        var properties = list.Properties();
+        foreach (var prop in properties)
+        {
+            JObject infos = JObject.FromObject(list[prop.Name]);
+            if (!((string)infos["name"]).Contains("~"))
+            {
+                repoList.Add(infos["name"].ToString());
+                try
+                {
+                    string desc = infos["description"].ToString();
+                    descList.Add(desc);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+                }
+            }
+        }
+
+        return repoList;
+    }
+
     /**
      * Retourne la liste des dépôts du serveur et rempli la liste de description
      */
@@ -59,34 +130,11 @@ public class Functions
         List<string> repoList = new List<string>();
         if (config.GetCurrentType() == "gitblit")
         {
-            string json;
-            using (var client = new WebClient())
-            {
-                json = client.DownloadString(config.GetServerUrl() + "rpc/?req=LIST_REPOSITORIES");
-            }
-
-            byte[] bytes = Encoding.Default.GetBytes(json);
-            json = Encoding.UTF8.GetString(bytes);
-
-            JObject list = JObject.Parse(json);
-            var properties = list.Properties();
-            foreach (var prop in properties)
-            {
-                JObject infos = JObject.FromObject(list[prop.Name]);
-                if (!((string)infos["name"]).Contains("~"))
-                {
-                    repoList.Add(infos["name"].ToString());
-                    try
-                    {
-                        string desc = infos["description"].ToString();
-                        descList.Add(desc);
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine(ex.Message);
-                    }
-                }
-            }
+            return GitBlitRepoList();
+        }
+        else if(config.GetCurrentType() == "bitbucket")
+        {
+            return BitBucketRepoList();
         }
         return repoList;
     }
@@ -94,59 +142,17 @@ public class Functions
     /**
      * Retourne la liste des modules du serveur (<=> contient MODULES dans le nom du dépôt)
      */
-    public List<string> DispModList()
+    public List<string> DispModList(List<string> repoList)
     {
-        List<string> repoList = new List<string>();
-        if (config.GetCurrentType() == "gitblit")
+        List<string> modList = new List<string>();
+        foreach(string rep in repoList)
         {
-            string json;
-            using (var client = new WebClient())
-            {
-                json = client.DownloadString(config.GetServerUrl() + "rpc/?req=LIST_REPOSITORIES");
-            }
-
-            byte[] bytes = Encoding.Default.GetBytes(json);
-            json = Encoding.UTF8.GetString(bytes);
-
-            JObject list = JObject.Parse(json);
-            var properties = list.Properties();
-            foreach (var prop in properties)
-            {
-                JObject infos = JObject.FromObject(list[prop.Name]);
-                if (!((string)infos["name"]).Contains("~") && ((string)infos["name"]).Contains("MODULES"))
-                {
-                    repoList.Add(infos["name"].ToString());
-                    /*
-                    try
-                    {
-                        string desc = infos["description"].ToString();
-                        descList.Add(desc);
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine(ex.Message);
-                    }
-                    */
-                }
-
-            }
+            //=============== MODULES FOLDER NAME ==================//
+            if (rep.Contains("MODULES"))
+            //======================================================//
+                modList.Add(rep);
         }
-        return repoList;
-    }
-
-    /**
-     * Retoure la string du fichier des serveurs enregistrés
-     */
-    public string DispServerList()
-    {
-        List<string> servList = new List<string>();
-        string json;
-        json = File.ReadAllText(@"C:\Users\STBE\source\repos\module_manager\module_manager\bin\Debug\servers.json");
-
-        byte[] bytes = Encoding.Default.GetBytes(json);
-        json = Encoding.UTF8.GetString(bytes);
-        
-        return json;
+        return modList;
     }
 
     /**
@@ -157,7 +163,9 @@ public class Functions
         List<string> dep = new List<string>();
         if(config.GetCurrentType() == "gitblit")
         {
+            //=============================== GITBLIT RAW URL =====================//
             string url = config.GetServerUrl() + "raw/" + moduleText + "/" + branch;
+            //=====================================================================//
 
             string html;
             using (var client = new WebClient())
@@ -182,7 +190,21 @@ public class Functions
                 }
             }
         }
-
+        else if(config.GetCurrentType() == "bitbucket")
+        {
+            string url = "https://api.bitbucket.org/2.0/repositories/bglx/" + moduleText + "/src/" + branch + "/";
+            string json = BitBucketQuery(url);
+            JObject obj = JObject.Parse(json);
+            JArray list = (JArray)obj["values"];
+            foreach (JObject ob in list)
+            {
+                if(((string)ob["path"]).Contains(".c") || ((string)ob["path"]).Contains(".h"))
+                {
+                    dep.AddRange(GetIncludes("https://bitbucket.org/bglx/" + moduleText + "/raw/" + branch + "/" + (string)ob["path"]));
+                    Console.WriteLine("URL : https://bitbucket.org/bglx/" + moduleText + "/raw/" + branch + "/" + (string)ob["path"]);
+                }
+            }
+        }
         return dep;
     }
 
@@ -192,21 +214,43 @@ public class Functions
     public List<string> GetIncludes(string url)
     {
         List<string> dep = new List<string>();
-        var client = new WebClient();
-        using (var stream = client.OpenRead(url))
-        using (var reader = new StreamReader(stream))
+        if(config.GetServerUrl() == "gitblit")
         {
-            string ligne;
-            while ((ligne = reader.ReadLine()) != null)
+            var client = new WebClient();
+            using (var stream = client.OpenRead(url))
+            using (var reader = new StreamReader(stream))
             {
-                if (!ligne.Contains("Error") && ligne.Contains("#include \""))
+                string ligne;
+                while ((ligne = reader.ReadLine()) != null)
                 {
-                    string module = ligne.Replace("\"", "").Replace("#include ", "").Replace(" ", "");
-                    if(!url.Contains(module.Replace(".h","")))
-                        dep.Add(module);
+                    if (!ligne.Contains("Error") && ligne.Contains("#include \""))
+                    {
+                        string module = ligne.Replace("\"", "").Replace("#include ", "").Replace(" ", "");
+                        if (!url.Contains(module.Replace(".h", "")))
+                            dep.Add(module);
+                    }
                 }
             }
         }
+        else if (config.GetCurrentType() == "bitbucket")
+        {
+            string result = BitBucketQuery(url);
+            using (StringReader reader = new StringReader(result))
+            {
+                string ligne;
+                while ((ligne = reader.ReadLine()) != null)
+                {
+                    Console.WriteLine(ligne);
+                    if (!ligne.Contains("Error") && ligne.Contains("#include \""))
+                    {
+                        string module = ligne.Replace("\"", "").Replace("#include ", "").Replace(" ", "");
+                        if (!url.Contains(module.Replace(".h", "")))
+                            dep.Add(module);
+                    }
+                }
+            }
+        }
+        
         return dep;
     }
 
@@ -215,20 +259,22 @@ public class Functions
      */
     public static bool ShowDialog(string text, string caption)
     {
-        Form prompt = new Form();
-        prompt.AutoSize = true;
-        prompt.AutoSizeMode = AutoSizeMode.GrowOnly;
-        prompt.Padding = new Padding(20, 20, 20, 0);
-        prompt.Size = new System.Drawing.Size(300, 200);
-        FlowLayoutPanel panel = new FlowLayoutPanel();
-        panel.Dock = DockStyle.Fill;
-        CheckBox chk = new CheckBox();
-        chk.Text = text;
-        Label label = new Label();
-        label.Text = caption;
-        label.AutoSize = true;
+        Form prompt = new Form
+        {
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowOnly,
+            Padding = new Padding(20, 20, 20, 0),
+            Size = new System.Drawing.Size(300, 200)
+        };
+        CheckBox chk = new CheckBox { Text = text };
+        Label label = new Label
+        {
+            Text = caption,
+            AutoSize = true
+        };
         Button ok = new Button() { Text = "OK" };
         ok.Click += (sender, e) => { prompt.Close(); };
+        FlowLayoutPanel panel = new FlowLayoutPanel { Dock = DockStyle.Fill };
         panel.Controls.Add(label);
         panel.Controls.Add(chk);
         panel.SetFlowBreak(chk, true);
@@ -246,21 +292,69 @@ public class Functions
         List<string> modList = new List<string>();
         if(config.GetCurrentType() == "gitblit")
         {
+            //=============================== GITBLIT RAW URL ==============================//
             string url = config.GetServerUrl() + "raw/" + rep + "/" + branch + "/.gitmodules";
-            var client = new WebClient();
-            using (var stream = client.OpenRead(url))
-            using (var reader = new StreamReader(stream))
+            //==============================================================================//
+            try
+            {
+                var client = new WebClient();
+                using (var stream = client.OpenRead(url))
+                using (var reader = new StreamReader(stream))
+                {
+                    string ligne;
+                    string ligne1 = "", ligne2 = "", ligne3 = "";
+                    int compteur = 1;
+                    while ((ligne = reader.ReadLine()) != null)
+                    {
+                        if (ligne.Contains("branch!") && branch != "master")
+                        {
+                            if (affiche)
+                            {
+                                affiche = !ShowDialog("Ne plus afficher", "Le projet " + rep + " ne contient pas de branche " + config.GetBranchDev() + " ! \n\nRecherche sur la branche master\n ");
+                            }
+                            modList.AddRange(GetModList("master", rep));
+                            break;
+                        }
+                        switch (compteur)
+                        {
+                            case 1:
+                                ligne1 = ligne;
+                                break;
+                            case 2:
+                                ligne2 = ligne;
+                                break;
+                            case 3:
+                                ligne3 = ligne;
+                                compteur = 1;
+                                break;
+                        }
+                        if (ligne.Contains("url = "))
+                        {
+                            modList.Add(ligne.Replace("url = ", ""));
+                        }
+                    }
+                }
+            } catch(Exception ex)
+            {
+                Console.WriteLine("Pas de .gitmodues : " + ex.Message);
+            }
+            
+        }
+        else if (config.GetCurrentType() == "bitbucket")
+        {
+            string result = BitBucketQuery("https://bitbucket.org/bglx/" + rep + "/raw/" + branch + "/.gitmodules");
+            using (StringReader reader = new StringReader(result))
             {
                 string ligne;
                 string ligne1 = "", ligne2 = "", ligne3 = "";
                 int compteur = 1;
                 while ((ligne = reader.ReadLine()) != null)
                 {
-                    if (ligne.Contains("branch") && branch != "master")
+                    if (ligne.Contains("dashboard") && branch != "master")
                     {
                         if (affiche)
                         {
-                            affiche = !ShowDialog("Ne plus afficher", "Le projet " + rep + " ne contient pas de branche _DEV_ ! \n\nRecherche sur la branche master\n ");
+                            affiche = !ShowDialog("Ne plus afficher", "Le projet " + rep + " ne contient pas de branche " + config.GetBranchDev() + " ! \n\nRecherche sur la branche master\n ");
                         }
                         modList.AddRange(GetModList("master", rep));
                         break;
@@ -278,7 +372,7 @@ public class Functions
                             compteur = 1;
                             break;
                     }
-                    if (ligne.Contains("url"))
+                    if (ligne.Contains("url = "))
                     {
                         modList.Add(ligne.Replace("url = ", ""));
                     }
@@ -310,7 +404,19 @@ public class Functions
             }
         }
         file.Close();
-        fullName = fullName.Substring(fullName.IndexOf(@"/r/") + 3, fullName.Length - fullName.IndexOf(@"/r/") - 3);
+        if(config.GetCurrentType() == "gitblit")
+        {
+            //========================================= GITBLIT PATH =================================================//
+            fullName = fullName.Substring(fullName.IndexOf(@"/r/") + 3, fullName.Length - fullName.IndexOf(@"/r/") - 3);
+            //========================================================================================================//
+        }
+        else if(config.GetCurrentType() == "bitbucket")
+        {
+            //========================================= BITBUCKET USERNAME ===============================================//
+            fullName = fullName.Substring(fullName.IndexOf(@"bglx/") + 5, fullName.Length - fullName.IndexOf(@"bglx/") - 5);
+            //============================================================================================================//
+        }
+            
         return fullName;
 
     }
@@ -349,7 +455,9 @@ public class Functions
             try
             {
                 using (var wc = new WebClient())
+                    //========================================= GITBLIT SOURCE FILE =====================================//
                     md = wc.DownloadString(config.GetServerUrl() + @"raw/" + projName + @".git/" + branch + @"/README.md");
+                    //===================================================================================================//
             }
             catch (Exception ex)
             {
@@ -379,9 +487,10 @@ public class Functions
         }
 
         byte[] ciphertext = ProtectedData.Protect(plaintext, entropy, DataProtectionScope.CurrentUser);
-
-        File.WriteAllBytes(@"./.creditEnt", entropy);
-        File.WriteAllBytes(@"./.creditCip", ciphertext);
+        //=================== CREDIT FILE PATH ===========//
+        File.WriteAllBytes(config.GetAppData() + @".creditEnt", entropy);
+        File.WriteAllBytes(config.GetAppData() + @".creditCip", ciphertext);
+        //================================================//
         
         return "OK";
     }

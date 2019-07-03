@@ -10,6 +10,7 @@ namespace module_manager
     {
         string modName; // Nom du module à supprimer
         string path;    // Chemin du projet
+        Config config;
 
         public DelForm(string[] args)
         {
@@ -19,6 +20,7 @@ namespace module_manager
             modName = modName.Substring(modName.LastIndexOf("/r/") + 3, modName.Length - (modName.LastIndexOf("/r/") + 3));
             string mod = modName.Replace("/", @"\");
             path = path.Substring(0,path.IndexOf(mod));
+            config = new Config();
         }
 
         private void Form4_Load(object sender, EventArgs e)
@@ -54,7 +56,9 @@ namespace module_manager
             BackgroundWorker worker = sender as BackgroundWorker;
 
             Process process = new Process();
-            process.StartInfo.FileName = @"C:\Users\STBE\Downloads\PortableGit\home\TestMaster\del_sub.bat";
+            //====================================== DEL SUB PATH ========================================//
+            process.StartInfo.FileName = config.GetAppData() + @"del_sub.bat";
+            //============================================================================================//
             process.StartInfo.UseShellExecute = false;
             process.StartInfo.CreateNoWindow = true;
             process.StartInfo.RedirectStandardError = true;

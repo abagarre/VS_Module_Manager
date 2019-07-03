@@ -67,7 +67,9 @@ namespace module_manager
             try
             {
                 // Chargement des projets ouverts dans SmartGit
-                XDocument xml = XDocument.Load(@"C:\Users\STBE\Downloads\SmartGit\.settings\repositories.xml");
+                //============================ SMARTGIT REPOSITORIES XML FILE ===============================//
+                XDocument xml = XDocument.Load(config.GetSmartGitRepo());
+                //===========================================================================================//
 
                 IEnumerable<XElement> ob = xml.Root.Elements();
                 IEnumerable<XElement> coll = ob.ElementAt(0).Elements();
@@ -116,14 +118,16 @@ namespace module_manager
             int i = 1;
             foreach(string rep in repoList)
             {
+                //=============== MODULES FOLDER NAME (GITBLIT) =================//
                 if (rep.Contains("MODULE"))
+                //===============================================================//
                     // Si le dépôt est un module, l'ajoute au TreeView des modules
                     treeView2.Invoke(new Action(() => treeView2.Nodes.Add(new TreeNode(rep.Replace(".git", "")))));
                
                 // Récupère la liste des modules de ce projet et l'ajoute à la liste projList
                 try
                 {
-                    List<string> proj = functions.GetModList("_DEV_", rep);
+                    List<string> proj = functions.GetModList(config.GetBranchDev(), rep);
                     projList.Add(proj);
                 }
                 catch (Exception ex)
@@ -225,20 +229,22 @@ namespace module_manager
                 int i = 0;
                 foreach(List<string> proj in projList)
                 {
-                    if (repoList.ElementAt(i).Contains(e.Node.Text))
+                    if (repoList.ElementAt(i).Contains(e.Node.Text.Replace(".git", "")))
                     {
+                        Console.WriteLine("repo elem at i : " + e.Node.Text);
                         // Récupère la liste des sous-modules présents dans le projet distant
                         foreach (string module in proj)
                         {
-                            if(localModules.Contains(module))
+                            Console.WriteLine(module);
+                            if(localModules.Contains(module.Replace(".git", "")))
                             {
                                 // Si le module est à la fois présent localement et sur le serveur (autorise la suppression locale)
-                                dataGridView1.Rows.Add(module.Substring(module.IndexOf(@"/r/") + 3, module.Length - module.IndexOf(@"/r/") - 3), "Distant / Local", "Supprimer");
+                                dataGridView1.Rows.Add(module.Substring(module.LastIndexOf(@"/") + 1, module.Length - module.LastIndexOf(@"/") - 1), "Distant / Local", "Supprimer");
                             }
                             else
                             {
                                 // Si il n'est présent que sur le serveur (autorise l'affichage des dépendances)
-                                dataGridView1.Rows.Add(module.Substring(module.IndexOf(@"/r/") + 3, module.Length - module.IndexOf(@"/r/") - 3), "Distant", "Dépendances");
+                                dataGridView1.Rows.Add(module.Substring(module.LastIndexOf(@"/") + 1, module.Length - module.LastIndexOf(@"/") - 1), "Distant", "Dépendances");
                             }
                             distantModules.Add(module);
                         }
@@ -252,7 +258,7 @@ namespace module_manager
                     if(!distantModules.Contains(module))
                     {
                         // Si le module n'est présent que localement (autorise la suppression locale)
-                        dataGridView1.Rows.Add(module.Substring(module.IndexOf(@"/r/") + 3, module.Length - module.IndexOf(@"/r/") - 3), "Local", "Supprimer");
+                        dataGridView1.Rows.Add(module.Substring(module.LastIndexOf(@"/") + 1, module.Length - module.LastIndexOf(@"/") - 1), "Local", "Supprimer");
                     }
                 }
             }
@@ -403,14 +409,16 @@ namespace module_manager
             BackgroundWorker worker = sender as BackgroundWorker;
 
             Process process = new Process();
-            process.StartInfo.FileName = @"C:\Users\STBE\Downloads\PortableGit\home\TestMaster\del_sub.bat";
+            //============================================ DEL SUB PATH ==================================//
+            process.StartInfo.FileName = config.GetAppData() + @"del_sub.bat";
+            //============================================================================================//
             process.StartInfo.UseShellExecute = false;
             process.StartInfo.CreateNoWindow = true;
             process.StartInfo.RedirectStandardError = true;
             process.StartInfo.RedirectStandardOutput = true;
             process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
             process.StartInfo.WorkingDirectory = @toolStripStatusLabel2.Text;
-            process.StartInfo.Arguments = (string) e.Argument;
+            process.StartInfo.Arguments = @"_MODULES_\" + (string) e.Argument;
             process.Start();
             e.Result = process.StandardError.ReadToEnd(); // Récupère les erreurs et warning du process
             while (!process.StandardOutput.EndOfStream)
@@ -582,7 +590,7 @@ namespace module_manager
         {
             bg3IsWorking = true;
             string project = (string) e.Argument;
-            string md = functions.GetMarkdown(project, "_DEV_"); // Récupère le markdown dans une string
+            string md = functions.GetMarkdown(project, config.GetBranchDev()); // Récupère le markdown dans une string
             string html = project; // Par défaut, affiche le nom du projet
             try
             {
@@ -596,7 +604,7 @@ namespace module_manager
             // TODO: Adapter le markdown à la source
             if(config.GetCurrentType() == "gitblit")
             {
-                html = html.Replace("img src=\"", "img src=\"http://192.168.55.218:8082/raw/" + project + ".git/master/");
+                html = html.Replace("img src=\"", "img src=\"" + config.GetServerUrl() + @"raw/" + project + ".git/master/");
                 html = html.Replace(@"%5C", @"/");
             }
             e.Result = html;
@@ -635,7 +643,6 @@ namespace module_manager
             frm.Location = this.Location;
             frm.StartPosition = FormStartPosition.Manual;
             frm.Show();
-
         }
 
         /**
@@ -643,23 +650,21 @@ namespace module_manager
          */
         private void ComptesEtConnexionsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            byte[] entropy = File.ReadAllBytes(@"./.creditEnt"); //TODO: Change to global password
-            byte[] ciphertext = File.ReadAllBytes(@"./.creditCip");
-            byte[] returntext = ProtectedData.Unprotect(ciphertext, entropy, DataProtectionScope.CurrentUser);
-            string result = Encoding.UTF8.GetString(returntext);
+            //string url = "https://api.bitbucket.org/2.0/repositories/bglx/pressure/src/master/";
+            string url = "https://bitbucket.org/bglx/pressure/raw/master/Pressure.c";
+            List<string> modl = functions.GetModuleDep("pressure","master");
+            foreach(string mod in modl)
+            {
+                Console.WriteLine(mod);
+            }
+        }
 
-            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
-            string url = "https://api.bitbucket.org/2.0/repositories/bglx/";
-            WebRequest myReq = WebRequest.Create(url);
-            myReq.Method = "GET";
-            string credentials = "bglx:" + result;
-            CredentialCache mycache = new CredentialCache();
-            myReq.Headers["Authorization"] = "Basic " + Convert.ToBase64String(Encoding.ASCII.GetBytes(credentials));
-            WebResponse wr = myReq.GetResponse();
-            Stream receiveStream = wr.GetResponseStream();
-            StreamReader reader = new StreamReader(receiveStream, Encoding.UTF8);
-            Console.WriteLine(reader.ReadToEnd());
+        private void ParamètresToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            var frm = new Settings();
+            frm.Location = this.Location;
+            frm.StartPosition = FormStartPosition.Manual;
+            frm.Show();
         }
     }
-    
 }
