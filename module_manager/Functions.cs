@@ -522,6 +522,20 @@ public class Functions
         return md;
     }
 
+    public string GetMarkdownLoc(string projPath)
+    {
+        string md = "";
+        try
+        {
+            md = File.ReadAllText(projPath + @"\README.md");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+        return md;
+    }
+
     /**
      * 
      */
@@ -542,6 +556,55 @@ public class Functions
         //================================================//
         
         return "OK";
+    }
+
+    public int GetIndex(TreeNode node)
+    {
+        /// source : David Fletcher
+
+        int returnValue = 0;
+
+        // Always make a way to exit the recursion.
+        if (node.Index == 0 && node.Parent == null)
+            return returnValue;
+
+        // Now, count every node.
+        returnValue = 1;
+
+        // If I have siblings higher in the index, then count them and their decendants.
+        if (node.Index > 0)
+        {
+            TreeNode previousSibling = node.PrevNode;
+            while (previousSibling != null)
+            {
+                returnValue += GetDecendantCount(previousSibling);
+                previousSibling = previousSibling.PrevNode;
+            }
+        }
+
+        if (node.Parent == null)
+            return returnValue;
+        else
+            return returnValue + GetIndex(node.Parent);
+    }
+
+    public int GetDecendantCount(TreeNode node)
+    {
+        int returnValue = 0;
+
+        // If the node is not the root node, then we want to count it.
+        if (node.Index != 0 || node.Parent != null)
+            returnValue = 1;
+
+        // Always make a way to exit a recursive function.
+        if (node.Nodes.Count == 0)
+            return returnValue;
+
+        foreach (TreeNode childNode in node.Nodes)
+        {
+            returnValue += GetDecendantCount(childNode);
+        }
+        return returnValue;
     }
 
 }

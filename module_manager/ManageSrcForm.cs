@@ -44,7 +44,7 @@ namespace module_manager
                 panel.AutoSize = true;
                 panel.AutoSizeMode = AutoSizeMode.GrowAndShrink;
                 panel.Padding = new Padding(10);
-                panel.Controls.Add(new MetroFramework.Controls.MetroLabel() { Text = (string) obj["name"], Width = picture.Width, TextAlign = ContentAlignment.MiddleCenter, BackColor = SystemColors.MenuBar } );
+                panel.Controls.Add(new MetroFramework.Controls.MetroLabel() { Text = (string) obj["name"], Width = picture.Width, TextAlign = ContentAlignment.MiddleCenter, UseCustomBackColor = true, BackColor = SystemColors.MenuBar } );
                 MetroFramework.Controls.MetroButton buttonDetails = new MetroFramework.Controls.MetroButton()
                 {
                     Text = "Détails",

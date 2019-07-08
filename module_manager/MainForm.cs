@@ -19,10 +19,12 @@ namespace module_manager
         public static List<string> repoList;        // Liste des dépots distants
         public static List<List<string>> projList;  // Liste des listes des sous-modules de chaque dépôt de repoList
         private List<string> smartList;             // Liste des projets ouverts dans SmartGit
-        private List<string> moduleList = new List<string>();
+        private List<string> moduleList;
+        private List<int> readmeState;
         Functions functions;
         Config config;
         bool bg3IsWorking = false;
+        int treeViewIndex;
 
         public MainForm()
         {
@@ -45,6 +47,7 @@ namespace module_manager
             projList = new List<List<string>>();
             smartList = new List<string>();
             moduleList = new List<string>();
+            readmeState = new List<int>();
             Functions.descList = new List<string>();
             toolStripStatusLabel2.Text = "";
             metroLabel6.Text = "";
@@ -65,8 +68,8 @@ namespace module_manager
             toolStripSplitButton2.Visible = false;
             backgroundWorker1.RunWorkerAsync();
             this.metroTextBox1.KeyPress += new KeyPressEventHandler(CheckEnterKeyPress);
-            metroTabPage1.Text = "Informations";
-            metroTabPage2.Text = "Dépendances";
+            comboBox1.SelectedValue = "Local";
+            webBrowser1.Navigate("about:blank");
             ContextMenuStrip contextMenuStrip;
             try
             {
@@ -125,6 +128,10 @@ namespace module_manager
                             j++;
                         }
                     }
+                }
+                for (int i = 0; i < treeView1.GetNodeCount(true); i++)
+                {
+                    readmeState.Add(1);
                 }
             }
             catch (Exception ex)
@@ -211,16 +218,23 @@ namespace module_manager
                 metroButton1.Enabled = false;
                 toolStripStatusLabel2.Text = e.Node.Parent.Name;
             }
+            int treeIndex = functions.GetIndex(treeView1.SelectedNode);
+            treeViewIndex = treeIndex;
+            comboBox1.SelectedItem = readmeState.ElementAt(treeIndex) == 1 ? "Distant" : "Local";
             int item = 0;
             foreach(string rep in repoList)
             {
-                if(rep.Contains(e.Node.Text))
+                if(rep.Substring(rep.LastIndexOf(@"/") + 1, rep.Length - rep.LastIndexOf(@"/") - 1) == e.Node.Text)
                 {
                     // Recherche dans la liste des dépôts celui qui a été selectionné
                     metroLabel6.Text = Functions.descList.ElementAt(item);  // Récupère la description dans la liste (même taille que repoList)
-                    if(!bg3IsWorking)
-                        // Si la tache n'est pas déjà en cours, charge le README dans le WebBrowser
-                        backgroundWorker3.RunWorkerAsync(argument: rep);
+                    try
+                    {
+                        if(!bg3IsWorking)
+                            // Si la tache n'est pas déjà en cours, charge le README dans le WebBrowser
+                            backgroundWorker3.RunWorkerAsync(argument: rep);
+                    } catch (Exception) { }
+
                     break;
                 }
                 item++;
@@ -254,14 +268,12 @@ namespace module_manager
                 int i = 0;
                 foreach(List<string> proj in projList)
                 {
-                    Console.WriteLine(repoList.ElementAt(i) + " ::: " + e.Node.Text);
                     if (repoList.ElementAt(i).IndexOf(e.Node.Text, StringComparison.OrdinalIgnoreCase) >= 0)
                     {
                         // Si le noeud séléctionné est présent dans repoList.ElementAt(i)
                         // Récupère la liste des sous-modules présents dans le projet distant
                         foreach (string module in proj)
                         {
-                            Console.WriteLine(module + " in proj " + repoList.ElementAt(i));
                             if(gitmodulesLocList.Contains(module))
                             {
                                 // Si le module est à la fois présent localement et sur le serveur (autorise la suppression locale)
@@ -632,8 +644,42 @@ namespace module_manager
         {
             bg3IsWorking = true;
             string project = (string) e.Argument;
-            string md = functions.GetMarkdown(project, config.GetBranchDev()); // Récupère le markdown dans une string
+            string md = "";
+            string path = "";
+            TreeNode treeNode = new TreeNode(); ;
             string html = project; // Par défaut, affiche le nom du projet
+            /*
+            int treeIndex = functions.GetIndex(treeView1.SelectedNode);
+            Console.WriteLine("index : " + treeIndex);
+            */
+            if (readmeState.ElementAt(treeViewIndex) == 1) 
+                md = functions.GetMarkdown(project, config.GetBranchDev()); // Récupère le markdown dans une string
+            else
+            {
+                treeView1.Invoke(new Action(() => treeNode = treeView1.SelectedNode.Parent));
+                if (treeNode == null)
+                {
+                    treeView1.Invoke(new Action(() => path = treeView1.SelectedNode.Name));
+                    md = functions.GetMarkdownLoc(path);
+                }
+                else
+                {
+                    treeView1.Invoke(new Action(() => path = treeView1.SelectedNode.Parent.Name));
+                    List<string> gitmodulesLocPathList = functions.GetGitmodulesLocPath(path);
+                    foreach (string submodule in gitmodulesLocPathList)
+                    {
+                        if(submodule.Contains(project.Substring(project.LastIndexOf("/") + 1, project.Length - project.LastIndexOf("/") - 1)))
+                        {
+                            md = functions.GetMarkdownLoc(path + @"\" + submodule.Replace(@"/", @"\"));
+                        }
+                            
+                    }
+                }
+                
+                
+            }
+                
+
             try
             {
                 // Converti le markdown en HTML
@@ -662,7 +708,7 @@ namespace module_manager
                 {
                     webBrowser1.Document.Write(string.Empty);
                 }
-                webBrowser1.DocumentText = (string)e.Result.ToString();
+                webBrowser1.DocumentText = e.Result.ToString();
             }
             catch (Exception ex)
             {
@@ -782,6 +828,23 @@ namespace module_manager
                     backgroundWorker2.RunWorkerAsync(argument: treeView1.SelectedNode.Tag.ToString() + ":::" + treeView1.SelectedNode.Parent.Name);
                 }
             }
+        }
+
+        private void ComboBox1_SelectedValueChanged(object sender, EventArgs e)
+        {
+            try
+            {
+                int index = functions.GetIndex(treeView1.SelectedNode);
+                if ((string)comboBox1.SelectedItem == "Local")
+                    readmeState[index] = 0;
+                else
+                    readmeState[index] = 1;
+            }
+            catch (Exception) { }
+
+            TreeNode treeNode = treeView1.SelectedNode;
+            treeView1.SelectedNode = null;
+            treeView1.SelectedNode = treeNode;
         }
     }
 }
