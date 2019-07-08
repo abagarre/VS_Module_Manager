@@ -78,18 +78,20 @@ namespace module_manager
          */
         public string GetServerUrl()
         {
-            List<string> servList = new List<string>();
-            string json;
-            json = File.ReadAllText(GetServersPath());
+            string json = File.ReadAllText(GetConfigPath());
             byte[] bytes = Encoding.Default.GetBytes(json);
             json = Encoding.UTF8.GetString(bytes);
             JObject serv = JObject.Parse(json);
-            foreach (JObject obj in serv["servers"])
-            {
-                if ((string)obj["name"] == GetCurrentSource())
-                    return (string)obj["url"];
-            }
-            return "null";
+            return (string)serv["url"];
+        }
+
+        public string GetUserName()
+        {
+            string json = File.ReadAllText(GetConfigPath());
+            byte[] bytes = Encoding.Default.GetBytes(json);
+            json = Encoding.UTF8.GetString(bytes);
+            JObject serv = JObject.Parse(json);
+            return (string)serv["username"];
         }
 
         /**
@@ -111,6 +113,7 @@ namespace module_manager
                 {
                     conf["type"] = obj["type"];
                     conf["url"] = obj["url"];
+                    conf["username"] = obj["username"];
                 }
             }
             File.WriteAllText(GetConfigPath(), conf.ToString());

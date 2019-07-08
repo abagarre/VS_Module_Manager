@@ -16,6 +16,7 @@ public class Functions
     public static List<string> descList = new List<string>();
     Config config = new Config();
 
+
     public string BitBucketQuery(string url)
     {
         //================================= CREDIT FILES PATH ==============================//
@@ -36,9 +37,9 @@ public class Functions
     /**
      * Retourne la liste des modules présents dans le fichier .gitmodules d'un projet local
      */
-    public List<string> SearchGitmodulesFile(string path)
+    public List<string> GetGitmodulesLoc(string path)
     {
-        List<string> repo = new List<string>();
+        List<string> submodules = new List<string>();
         try
         {
             foreach (string f in Directory.GetFiles(path))
@@ -52,7 +53,8 @@ public class Functions
                     {
                         if (line.Contains("url"))
                         {
-                            repo.Add(line.Replace("url = ", ""));
+                            string name = line.Replace(".git", "");
+                            submodules.Add(name.Substring(name.LastIndexOf("/") + 1, name.Length - name.LastIndexOf("/") - 1));
                         }
                         counter++;
                     }
@@ -65,7 +67,40 @@ public class Functions
             Console.WriteLine(excpt.Message);
         }
 
-        return repo;
+        return submodules;
+    }
+
+    public List<string> GetGitmodulesLocPath(string path)
+    {
+        List<string> submodules = new List<string>();
+        try
+        {
+            foreach (string f in Directory.GetFiles(path))
+            {
+                if (f.Contains(".gitmodules"))
+                {
+                    int counter = 0;
+                    string line;
+                    StreamReader file = new StreamReader(f);
+                    while ((line = file.ReadLine()) != null)
+                    {
+                        if (line.Contains("[submodule"))
+                        {
+                            string name = line.Replace("[submodule \"", "");
+                            submodules.Add(name.Remove(name.LastIndexOf("\"]")));
+                        }
+                        counter++;
+                    }
+                    file.Close();
+                }
+            }
+        }
+        catch (Exception excpt)
+        {
+            Console.WriteLine(excpt.Message);
+        }
+
+        return submodules;
     }
 
     public List<string> BitBucketRepoList()
@@ -77,8 +112,8 @@ public class Functions
         JArray list = (JArray)obj["values"];
         foreach(JObject ob in list)
         {
-            repoList.Add((string)ob["name"]);
-            Console.WriteLine((string)ob["name"]);
+            string name = ((string)ob["name"]).Replace(".git","");
+            repoList.Add(name.Substring(name.LastIndexOf("/") + 1, name.Length - name.LastIndexOf("/") - 1));
         }
 
         return repoList;
@@ -106,7 +141,8 @@ public class Functions
             JObject infos = JObject.FromObject(list[prop.Name]);
             if (!((string)infos["name"]).Contains("~"))
             {
-                repoList.Add(infos["name"].ToString());
+                string name = infos["name"].ToString().Replace(".git", "");
+                repoList.Add(name);
                 try
                 {
                     string desc = infos["description"].ToString();
@@ -118,14 +154,13 @@ public class Functions
                 }
             }
         }
-
         return repoList;
     }
 
     /**
      * Retourne la liste des dépôts du serveur et rempli la liste de description
      */
-    public List<string> DispRepoList()
+    public List<string> GetRepoList()
     {
         List<string> repoList = new List<string>();
         if (config.GetCurrentType() == "gitblit")
@@ -142,17 +177,20 @@ public class Functions
     /**
      * Retourne la liste des modules du serveur (<=> contient MODULES dans le nom du dépôt)
      */
-    public List<string> DispModList(List<string> repoList)
+    public List<string> GetModuleList(List<string> repoList)
     {
-        List<string> modList = new List<string>();
+        List<string> moduleList = new List<string>();
         foreach(string rep in repoList)
         {
             //=============== MODULES FOLDER NAME ==================//
+            /*******************************************************
+                WON'T WORK BECAUSE OF THE DEFINITION OF REPOLIST
+            ********************************************************/
             if (rep.Contains("MODULES"))
             //======================================================//
-                modList.Add(rep);
+                moduleList.Add(rep);
         }
-        return modList;
+        return moduleList;
     }
 
     /**
@@ -166,29 +204,32 @@ public class Functions
             //=============================== GITBLIT RAW URL =====================//
             string url = config.GetServerUrl() + "raw/" + moduleText + "/" + branch;
             //=====================================================================//
-
-            string html;
-            using (var client = new WebClient())
-            {
-                html = client.DownloadString(url);
-            }
-            HtmlAgilityPack.HtmlDocument document = new HtmlAgilityPack.HtmlDocument();
-            document.LoadHtml(html);
-            if (html.Contains("branch") && branch != "master")
-            {
-                dep.AddRange(GetModuleDep(moduleText, "master"));
-                return dep;
-            }
-            HtmlNodeCollection collection = document.DocumentNode.SelectNodes("//a");
-            foreach (HtmlNode link in collection)
-            {
-                string target = link.Attributes["href"].Value;
-                if(target.Contains(".c") || target.Contains(".h"))
+            try {
+                string html;
+                using (var client = new WebClient())
                 {
-                    string serverUrl = config.GetServerUrl().TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-                    dep.AddRange(GetIncludes(serverUrl + target));
+                    html = client.DownloadString(url);
                 }
-            }
+                HtmlAgilityPack.HtmlDocument document = new HtmlAgilityPack.HtmlDocument();
+                document.LoadHtml(html);
+                if (html.Contains("branch!") && branch != "master")
+                {
+                    dep.AddRange(GetModuleDep(moduleText, "master"));
+                    return dep;
+                }
+                HtmlNodeCollection collection = document.DocumentNode.SelectNodes("//a");
+                foreach (HtmlNode link in collection)
+                {
+                    string target = link.Attributes["href"].Value;
+                    if (target.Contains(".c") || target.Contains(".h"))
+                    {
+                        string serverUrl = config.GetServerUrl().TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+                        dep.AddRange(GetIncludes(serverUrl + target));
+                        Console.WriteLine(serverUrl + target);
+                    }
+                }
+            } catch (Exception) { }
+            
         }
         else if(config.GetCurrentType() == "bitbucket")
         {
@@ -201,7 +242,6 @@ public class Functions
                 if(((string)ob["path"]).Contains(".c") || ((string)ob["path"]).Contains(".h"))
                 {
                     dep.AddRange(GetIncludes("https://bitbucket.org/bglx/" + moduleText + "/raw/" + branch + "/" + (string)ob["path"]));
-                    Console.WriteLine("URL : https://bitbucket.org/bglx/" + moduleText + "/raw/" + branch + "/" + (string)ob["path"]);
                 }
             }
         }
@@ -214,7 +254,7 @@ public class Functions
     public List<string> GetIncludes(string url)
     {
         List<string> dep = new List<string>();
-        if(config.GetServerUrl() == "gitblit")
+        if(config.GetCurrentType() == "gitblit")
         {
             var client = new WebClient();
             using (var stream = client.OpenRead(url))
@@ -232,7 +272,7 @@ public class Functions
                 }
             }
         }
-        else if (config.GetCurrentType() == "bitbucket")
+        else if(config.GetCurrentType() == "bitbucket")
         {
             string result = BitBucketQuery(url);
             using (StringReader reader = new StringReader(result))
@@ -240,7 +280,6 @@ public class Functions
                 string ligne;
                 while ((ligne = reader.ReadLine()) != null)
                 {
-                    Console.WriteLine(ligne);
                     if (!ligne.Contains("Error") && ligne.Contains("#include \""))
                     {
                         string module = ligne.Replace("\"", "").Replace("#include ", "").Replace(" ", "");
@@ -287,7 +326,7 @@ public class Functions
     /**
      * Retourne la liste des modules présents dans le fichier .gitmodules d'un projet distant
      */
-    public List<string> GetModList(string branch, string rep)
+    public List<string> GetSubmodList(string branch, string rep)
     {
         List<string> modList = new List<string>();
         if(config.GetCurrentType() == "gitblit")
@@ -312,7 +351,7 @@ public class Functions
                             {
                                 affiche = !ShowDialog("Ne plus afficher", "Le projet " + rep + " ne contient pas de branche " + config.GetBranchDev() + " ! \n\nRecherche sur la branche master\n ");
                             }
-                            modList.AddRange(GetModList("master", rep));
+                            modList.AddRange(GetSubmodList("master", rep));
                             break;
                         }
                         switch (compteur)
@@ -330,19 +369,28 @@ public class Functions
                         }
                         if (ligne.Contains("url = "))
                         {
-                            modList.Add(ligne.Replace("url = ", ""));
+                            string name = ligne.Replace("url = ", "").Replace(".git", "");
+                            modList.Add(name.Substring(name.LastIndexOf("/") + 1, name.Length - name.LastIndexOf("/") - 1));
                         }
                     }
                 }
-            } catch(Exception ex)
-            {
-                Console.WriteLine("Pas de .gitmodues : " + ex.Message);
-            }
+            } catch(Exception) { }
             
         }
         else if (config.GetCurrentType() == "bitbucket")
         {
-            string result = BitBucketQuery("https://bitbucket.org/bglx/" + rep + "/raw/" + branch + "/.gitmodules");
+            string result;
+            try
+            {
+                result = BitBucketQuery("https://bitbucket.org/bglx/" + rep + "/raw/" + branch + "/.gitmodules");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                if(branch != "master")
+                    modList.AddRange(GetSubmodList("master", rep));
+                result = "null";
+            }
             using (StringReader reader = new StringReader(result))
             {
                 string ligne;
@@ -356,7 +404,7 @@ public class Functions
                         {
                             affiche = !ShowDialog("Ne plus afficher", "Le projet " + rep + " ne contient pas de branche " + config.GetBranchDev() + " ! \n\nRecherche sur la branche master\n ");
                         }
-                        modList.AddRange(GetModList("master", rep));
+                        modList.AddRange(GetSubmodList("master", rep));
                         break;
                     }
                     switch (compteur)
@@ -374,7 +422,8 @@ public class Functions
                     }
                     if (ligne.Contains("url = "))
                     {
-                        modList.Add(ligne.Replace("url = ", ""));
+                        string name = ligne.Replace("url = ", "").Replace(".git","");
+                        modList.Add(name.Substring(name.LastIndexOf("/") + 1, name.Length - name.LastIndexOf("/") - 1 ));
                     }
                 }
             }
@@ -407,13 +456,13 @@ public class Functions
         if(config.GetCurrentType() == "gitblit")
         {
             //========================================= GITBLIT PATH =================================================//
-            fullName = fullName.Substring(fullName.IndexOf(@"/r/") + 3, fullName.Length - fullName.IndexOf(@"/r/") - 3);
+            fullName = fullName.Substring(fullName.IndexOf(@"/_") + 1, fullName.Length - fullName.IndexOf(@"/_") - 1);
             //========================================================================================================//
         }
         else if(config.GetCurrentType() == "bitbucket")
         {
             //========================================= BITBUCKET USERNAME ===============================================//
-            fullName = fullName.Substring(fullName.IndexOf(@"bglx/") + 5, fullName.Length - fullName.IndexOf(@"bglx/") - 5);
+            fullName = fullName.Substring(fullName.IndexOf(config.GetUserName() + @"/") + 5, fullName.Length - fullName.IndexOf(@"bglx/") - 5);
             //============================================================================================================//
         }
             

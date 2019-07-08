@@ -65,11 +65,17 @@
             this.depuisUnDépôtLocalToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.depuisUnURLToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.quitterToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.outilsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.ouvrirToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.dossierLocalToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.uRLServeurToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.déplacerToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.supprimerToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.préférencesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.gérerLesSourcesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.comptesEtConnexionsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.backgroundWorker3 = new System.ComponentModel.BackgroundWorker();
             this.paramètresToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.backgroundWorker3 = new System.ComponentModel.BackgroundWorker();
             this.metroTabControl1.SuspendLayout();
             this.metroTabPage1.SuspendLayout();
             this.metroTabPage2.SuspendLayout();
@@ -336,8 +342,10 @@
             this.toolStripStatusLabel2.LinkColor = System.Drawing.SystemColors.GrayText;
             this.toolStripStatusLabel2.Margin = new System.Windows.Forms.Padding(10, 3, 0, 2);
             this.toolStripStatusLabel2.Name = "toolStripStatusLabel2";
-            this.toolStripStatusLabel2.Size = new System.Drawing.Size(80, 19);
+            this.toolStripStatusLabel2.Size = new System.Drawing.Size(403, 19);
+            this.toolStripStatusLabel2.Spring = true;
             this.toolStripStatusLabel2.Text = "                       ";
+            this.toolStripStatusLabel2.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             this.toolStripStatusLabel2.Click += new System.EventHandler(this.ToolStripStatusLabel2_Click);
             // 
             // toolStripSplitButton3
@@ -362,6 +370,8 @@
             // 
             // metroLabel5
             // 
+            this.metroLabel5.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.metroLabel5.FontSize = MetroFramework.MetroLabelSize.Tall;
             this.metroLabel5.FontWeight = MetroFramework.MetroLabelWeight.Regular;
             this.metroLabel5.Location = new System.Drawing.Point(402, 37);
@@ -441,6 +451,7 @@
             // 
             this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.fichierToolStripMenuItem,
+            this.outilsToolStripMenuItem,
             this.préférencesToolStripMenuItem});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
@@ -487,6 +498,52 @@
             this.quitterToolStripMenuItem.Text = "Quitter";
             this.quitterToolStripMenuItem.Click += new System.EventHandler(this.QuitterToolStripMenuItem_Click);
             // 
+            // outilsToolStripMenuItem
+            // 
+            this.outilsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.ouvrirToolStripMenuItem,
+            this.déplacerToolStripMenuItem,
+            this.supprimerToolStripMenuItem});
+            this.outilsToolStripMenuItem.Name = "outilsToolStripMenuItem";
+            this.outilsToolStripMenuItem.Size = new System.Drawing.Size(50, 20);
+            this.outilsToolStripMenuItem.Text = "Outils";
+            // 
+            // ouvrirToolStripMenuItem
+            // 
+            this.ouvrirToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.dossierLocalToolStripMenuItem,
+            this.uRLServeurToolStripMenuItem});
+            this.ouvrirToolStripMenuItem.Name = "ouvrirToolStripMenuItem";
+            this.ouvrirToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.ouvrirToolStripMenuItem.Text = "Ouvrir";
+            // 
+            // dossierLocalToolStripMenuItem
+            // 
+            this.dossierLocalToolStripMenuItem.Name = "dossierLocalToolStripMenuItem";
+            this.dossierLocalToolStripMenuItem.Size = new System.Drawing.Size(140, 22);
+            this.dossierLocalToolStripMenuItem.Text = "Dossier local";
+            this.dossierLocalToolStripMenuItem.Click += new System.EventHandler(this.DossierLocalToolStripMenuItem_Click);
+            // 
+            // uRLServeurToolStripMenuItem
+            // 
+            this.uRLServeurToolStripMenuItem.Name = "uRLServeurToolStripMenuItem";
+            this.uRLServeurToolStripMenuItem.Size = new System.Drawing.Size(140, 22);
+            this.uRLServeurToolStripMenuItem.Text = "URL serveur";
+            this.uRLServeurToolStripMenuItem.Click += new System.EventHandler(this.URLServeurToolStripMenuItem_Click);
+            // 
+            // déplacerToolStripMenuItem
+            // 
+            this.déplacerToolStripMenuItem.Name = "déplacerToolStripMenuItem";
+            this.déplacerToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.déplacerToolStripMenuItem.Text = "Déplacer";
+            // 
+            // supprimerToolStripMenuItem
+            // 
+            this.supprimerToolStripMenuItem.Name = "supprimerToolStripMenuItem";
+            this.supprimerToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.supprimerToolStripMenuItem.Text = "Supprimer";
+            this.supprimerToolStripMenuItem.Click += new System.EventHandler(this.SupprimerToolStripMenuItem_Click);
+            // 
             // préférencesToolStripMenuItem
             // 
             this.préférencesToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
@@ -511,17 +568,17 @@
             this.comptesEtConnexionsToolStripMenuItem.Text = "Comptes et connexions";
             this.comptesEtConnexionsToolStripMenuItem.Click += new System.EventHandler(this.ComptesEtConnexionsToolStripMenuItem_Click);
             // 
-            // backgroundWorker3
-            // 
-            this.backgroundWorker3.DoWork += new System.ComponentModel.DoWorkEventHandler(this.BackgroundWorker3_DoWork);
-            this.backgroundWorker3.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.BackgroundWorker3_RunWorkerCompleted);
-            // 
             // paramètresToolStripMenuItem
             // 
             this.paramètresToolStripMenuItem.Name = "paramètresToolStripMenuItem";
             this.paramètresToolStripMenuItem.Size = new System.Drawing.Size(198, 22);
             this.paramètresToolStripMenuItem.Text = "Paramètres";
             this.paramètresToolStripMenuItem.Click += new System.EventHandler(this.ParamètresToolStripMenuItem_Click);
+            // 
+            // backgroundWorker3
+            // 
+            this.backgroundWorker3.DoWork += new System.ComponentModel.DoWorkEventHandler(this.BackgroundWorker3_DoWork);
+            this.backgroundWorker3.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.BackgroundWorker3_RunWorkerCompleted);
             // 
             // MainForm
             // 
@@ -599,6 +656,12 @@
         private System.Windows.Forms.ToolStripMenuItem gérerLesSourcesToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem comptesEtConnexionsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem paramètresToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem outilsToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem ouvrirToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem déplacerToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem supprimerToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem dossierLocalToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem uRLServeurToolStripMenuItem;
     }
 }
 

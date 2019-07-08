@@ -32,6 +32,8 @@ namespace module_manager
                 FlowLayoutPanel panel = new FlowLayoutPanel();
                 panel.FlowDirection = FlowDirection.TopDown;
                 panel.BackColor = SystemColors.MenuBar;
+                if ((string) obj["name"] == config.GetCurrentSource())
+                    panel.BorderStyle = BorderStyle.FixedSingle;
                 PictureBox picture = new PictureBox()
                 {
                     ImageLocation = config.GetAppData() + (string)obj["type"] + ".png",
@@ -82,6 +84,11 @@ namespace module_manager
         private void GetDetailsServer(object sender, EventArgs e)
         {
             Console.WriteLine("details");
+        }
+
+        private void MetroButton2_Click(object sender, EventArgs e)
+        {
+            this.Close();
         }
     }
 }

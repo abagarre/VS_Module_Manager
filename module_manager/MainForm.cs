@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Diagnostics;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -18,6 +19,7 @@ namespace module_manager
         public static List<string> repoList;        // Liste des dépots distants
         public static List<List<string>> projList;  // Liste des listes des sous-modules de chaque dépôt de repoList
         private List<string> smartList;             // Liste des projets ouverts dans SmartGit
+        private List<string> moduleList = new List<string>();
         Functions functions;
         Config config;
         bool bg3IsWorking = false;
@@ -25,6 +27,7 @@ namespace module_manager
         public MainForm()
         {
             InitializeComponent();
+            menuStrip1.Renderer = new ToolStripProfessionalRenderer(new CustomProfessionalColors());
             functions = new Functions();
             config = new Config();
         }
@@ -41,6 +44,7 @@ namespace module_manager
             repoList = new List<string>();
             projList = new List<List<string>>();
             smartList = new List<string>();
+            moduleList = new List<string>();
             Functions.descList = new List<string>();
             toolStripStatusLabel2.Text = "";
             metroLabel6.Text = "";
@@ -63,7 +67,7 @@ namespace module_manager
             this.metroTextBox1.KeyPress += new KeyPressEventHandler(CheckEnterKeyPress);
             metroTabPage1.Text = "Informations";
             metroTabPage2.Text = "Dépendances";
-
+            ContextMenuStrip contextMenuStrip;
             try
             {
                 // Chargement des projets ouverts dans SmartGit
@@ -85,18 +89,40 @@ namespace module_manager
                                 };
                     foreach (var path in query)
                     {
-                        TreeNode treeNode = new TreeNode(path.path.Substring(path.path.LastIndexOf("\\") + 1, path.path.Length - path.path.LastIndexOf("\\") - 1));
-                        treeNode.Name = path.path;      // Précise le chemin du projet dans le paramètre Name du noeud
+                        string chemin = path.path.Replace(@"\\", @"\");
+                        TreeNode treeNode = new TreeNode(chemin.Substring(chemin.LastIndexOf("\\") + 1, chemin.Length - chemin.LastIndexOf("\\") - 1).Replace(".git", ""));
+                        treeNode.Name = chemin;      // Précise le chemin du projet dans le paramètre Name du noeud
+                        contextMenuStrip = new ContextMenuStrip();
+                        contextMenuStrip.Items.Add("Ouvrir (local)");
+                        contextMenuStrip.Items.Add("Ouvrir (URL)");
+                        contextMenuStrip.ItemClicked += ContextMenuStripClick;
+                        contextMenuStrip.Name = treeNode.Name;
+                        treeNode.ContextMenuStrip = contextMenuStrip;
                         treeView1.Nodes.Add(treeNode);  // Ajout du projet au TreeView
-                        smartList.Add(path.path);       // Ajout du projet à la liste des projets ouverts dans SmartGit
+                        smartList.Add(chemin);          // Ajout du projet à la liste des projets ouverts dans SmartGit
 
-                        List<string> subrepo = functions.SearchGitmodulesFile(path.path); // Liste contenant les sous-dépôts = modules
-                        foreach (string rep in subrepo) // Ajoute chaque module en tant que fils dans l'arborescence des projets
+                        int j = 0;
+                        List<string> gitmodulesLocList = functions.GetGitmodulesLoc(chemin); // Liste contenant les sous-dépôts = modules
+                        List<string> gitmodulesLocPathList = functions.GetGitmodulesLocPath(chemin);
+                        foreach (string submodule in gitmodulesLocList) // Ajoute chaque module en tant que fils dans l'arborescence des projets
                         {
-                            string name = rep.Substring(rep.LastIndexOf("/") + 1, rep.Length - rep.LastIndexOf("/") - 1); // rep est une URL
-                            TreeNode childNode = new TreeNode(name);
+                            TreeNode childNode = new TreeNode(submodule);
                             childNode.Name = "module";  // Précise que le neoud correspond à un module
+                            childNode.Tag = gitmodulesLocPathList.ElementAt(j).Replace("/",@"\");
+
+                            contextMenuStrip = new ContextMenuStrip();
+                            contextMenuStrip.Items.Add("Ouvrir (local)");
+                            contextMenuStrip.Items.Add("Ouvrir (URL)");
+                            contextMenuStrip.Items.Add("Supprimer");
+                            contextMenuStrip.ItemClicked += ContextMenuStripClick;
+                            contextMenuStrip.Text = childNode.Text;
+                            contextMenuStrip.Name = treeNode.Name + @"\" + childNode.Tag.ToString();
+                            contextMenuStrip.Tag = chemin;
+                            childNode.ContextMenuStrip = contextMenuStrip;
+
                             treeNode.Nodes.Add(childNode);
+
+                            j++;
                         }
                     }
                 }
@@ -114,7 +140,7 @@ namespace module_manager
         {
             BackgroundWorker worker = sender as BackgroundWorker;
 
-            repoList = functions.DispRepoList(); // Récupère la liste de tous les dépôts distants
+            repoList = functions.GetRepoList(); // Récupère la liste de tous les dépôts distants
             int i = 1;
             foreach(string rep in repoList)
             {
@@ -127,14 +153,13 @@ namespace module_manager
                 // Récupère la liste des modules de ce projet et l'ajoute à la liste projList
                 try
                 {
-                    List<string> proj = functions.GetModList(config.GetBranchDev(), rep);
+                    List<string> proj = functions.GetSubmodList(config.GetBranchDev(), rep);
                     projList.Add(proj);
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     // Si pas de modules, ajoute liste vide
                     projList.Add(new List<string>());
-                    Console.WriteLine("Pas de sous module : " + ex.Message);
                 }
                 worker.ReportProgress((i * 100) / repoList.Count);
                 i++;
@@ -195,7 +220,7 @@ namespace module_manager
                     metroLabel6.Text = Functions.descList.ElementAt(item);  // Récupère la description dans la liste (même taille que repoList)
                     if(!bg3IsWorking)
                         // Si la tache n'est pas déjà en cours, charge le README dans le WebBrowser
-                        backgroundWorker3.RunWorkerAsync(argument: rep.Replace(".git", ""));
+                        backgroundWorker3.RunWorkerAsync(argument: rep);
                     break;
                 }
                 item++;
@@ -211,7 +236,7 @@ namespace module_manager
                 {
                     foreach(string module in proj)
                     {
-                        if(module.Substring(module.LastIndexOf(@"/")+1, module.Length - module.LastIndexOf(@"/")-1).Replace(".git","") == e.Node.Text.Replace(".git",""))
+                        if(module == e.Node.Text)
                         {
                             // Si le module sélectionné apparait dans les dépendances d'un projet, affiche ce projet dans le DataGridView
                             dataGridView1.Rows.Add(repoList.ElementAt(i), "", "Détails");
@@ -223,28 +248,29 @@ namespace module_manager
             else
             {
                 // Si le noeud sélectionné est un projet
-                List<string> localModules = functions.SearchGitmodulesFile(@toolStripStatusLabel2.Text); // Récupère la liste des sous-modules locaux (lecture du fichier .gitmodules)
+                List<string> gitmodulesLocList = functions.GetGitmodulesLoc(@toolStripStatusLabel2.Text); // Récupère la liste des sous-modules locaux (lecture du fichier .gitmodules)
                 List<string> distantModules = new List<string>();
                 metroLabel4.Text = "Modules présents dans le projet";
                 int i = 0;
                 foreach(List<string> proj in projList)
                 {
-                    if (repoList.ElementAt(i).Contains(e.Node.Text.Replace(".git", "")))
+                    Console.WriteLine(repoList.ElementAt(i) + " ::: " + e.Node.Text);
+                    if (repoList.ElementAt(i).IndexOf(e.Node.Text, StringComparison.OrdinalIgnoreCase) >= 0)
                     {
-                        Console.WriteLine("repo elem at i : " + e.Node.Text);
+                        // Si le noeud séléctionné est présent dans repoList.ElementAt(i)
                         // Récupère la liste des sous-modules présents dans le projet distant
                         foreach (string module in proj)
                         {
-                            Console.WriteLine(module);
-                            if(localModules.Contains(module.Replace(".git", "")))
+                            Console.WriteLine(module + " in proj " + repoList.ElementAt(i));
+                            if(gitmodulesLocList.Contains(module))
                             {
                                 // Si le module est à la fois présent localement et sur le serveur (autorise la suppression locale)
-                                dataGridView1.Rows.Add(module.Substring(module.LastIndexOf(@"/") + 1, module.Length - module.LastIndexOf(@"/") - 1), "Distant / Local", "Supprimer");
+                                dataGridView1.Rows.Add(module, "Distant / Local", "Dépendances");
                             }
                             else
                             {
                                 // Si il n'est présent que sur le serveur (autorise l'affichage des dépendances)
-                                dataGridView1.Rows.Add(module.Substring(module.LastIndexOf(@"/") + 1, module.Length - module.LastIndexOf(@"/") - 1), "Distant", "Dépendances");
+                                dataGridView1.Rows.Add(module, "Distant", "Dépendances");
                             }
                             distantModules.Add(module);
                         }
@@ -253,12 +279,12 @@ namespace module_manager
                     i++;
                 }
 
-                foreach (string module in localModules)
+                foreach (string submodule in gitmodulesLocList)
                 {
-                    if(!distantModules.Contains(module))
+                    if(!distantModules.Contains(submodule))
                     {
                         // Si le module n'est présent que localement (autorise la suppression locale)
-                        dataGridView1.Rows.Add(module.Substring(module.LastIndexOf(@"/") + 1, module.Length - module.LastIndexOf(@"/") - 1), "Local", "Supprimer");
+                        dataGridView1.Rows.Add(submodule, "Local", "Dépendances");
                     }
                 }
             }
@@ -273,7 +299,7 @@ namespace module_manager
 
             if (senderGrid.Columns[e.ColumnIndex] is DataGridViewButtonColumn && e.RowIndex >= 0)
             {
-                if((string) senderGrid.Rows[e.RowIndex].Cells[e.ColumnIndex].Value == "Supprimer")
+                /* if((string) senderGrid.Rows[e.RowIndex].Cells[e.ColumnIndex].Value == "Supprimer")
                 {
                     // Supprimer un module
                     string modName = dataGridView1.Rows[e.RowIndex].Cells[0].Value.ToString();
@@ -287,7 +313,7 @@ namespace module_manager
                         backgroundWorker2.RunWorkerAsync(argument: modName);
                     }
                 }
-                else if ((string)senderGrid.Rows[e.RowIndex].Cells[e.ColumnIndex].Value == "Détails")
+                else */if ((string)senderGrid.Rows[e.RowIndex].Cells[e.ColumnIndex].Value == "Détails")
                 {
                     // Détails d'un projet (modules et description)
                     treeView1.SelectedNode = null;
@@ -299,8 +325,15 @@ namespace module_manager
                     {
                         if (rep.Contains(projName))
                         {
+                            try
+                            {
+                                metroLabel6.Text = Functions.descList.ElementAt(item);
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine(ex);
+                            }
                             
-                            metroLabel6.Text = Functions.descList.ElementAt(item);
                             if (!bg3IsWorking)
                                 backgroundWorker3.RunWorkerAsync(argument: rep.Replace(".git", ""));
                             break;
@@ -318,7 +351,12 @@ namespace module_manager
                             // Récupère la liste des modules distants
                             foreach (string module in proj)
                             {
-                                dataGridView1.Rows.Add(module.Substring(module.IndexOf(@"/r/") + 3, module.Length - module.IndexOf(@"/r/") - 3), "Distant", "Dépendances");
+                                string mod = "";
+                                if (module.LastIndexOf(@"/") + 1 == module.Length)
+                                    mod = module.Remove(module.Length - 1);
+                                else
+                                    mod = module;
+                                dataGridView1.Rows.Add(mod.Substring(mod.LastIndexOf(@"/") + 1, mod.Length - mod.LastIndexOf(@"/") - 1), "Distant", "Dépendances");
                             }
                             break;
                         }
@@ -406,8 +444,12 @@ namespace module_manager
          */
         private void BackgroundWorker2_DoWork(object sender, DoWorkEventArgs e)
         {
-            BackgroundWorker worker = sender as BackgroundWorker;
-
+            //BackgroundWorker worker = sender as BackgroundWorker;
+            string arg = e.Argument.ToString();
+            string modPath = arg.Substring(0, arg.IndexOf("___"));
+            string projPath = arg.Substring(arg.IndexOf("___") + 3, arg.Length - arg.IndexOf("___") - 3);
+            //Console.WriteLine(modPath + " " + projPath + " " + modPath.Substring(projPath.Length, modPath.Length - projPath.Length));
+            /*
             Process process = new Process();
             //============================================ DEL SUB PATH ==================================//
             process.StartInfo.FileName = config.GetAppData() + @"del_sub.bat";
@@ -418,7 +460,7 @@ namespace module_manager
             process.StartInfo.RedirectStandardOutput = true;
             process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
             process.StartInfo.WorkingDirectory = @toolStripStatusLabel2.Text;
-            process.StartInfo.Arguments = @"_MODULES_\" + (string) e.Argument;
+            process.StartInfo.Arguments = modPath + " " + projPath + " " + modPath.Substring(projPath.Length,modPath.Length - projPath.Length);
             process.Start();
             e.Result = process.StandardError.ReadToEnd(); // Récupère les erreurs et warning du process
             while (!process.StandardOutput.EndOfStream)
@@ -443,6 +485,7 @@ namespace module_manager
                     worker.ReportProgress(100);
                 }
             }
+            */
         }
 
         private void BackgroundWorker2_ProgressChanged(object sender, ProgressChangedEventArgs e)
@@ -550,11 +593,10 @@ namespace module_manager
                     treeView1.Nodes.Add(treeNode);
                     smartList.Add(path);
 
-                    List<string> subrepo = functions.SearchGitmodulesFile(path); // Liste contenant les subrepo = modules
-                    foreach (string rep in subrepo) // Pour chaque module, créé un bouton redirigeant vers la page du module
+                    List<string> gitmodulesLocList = functions.GetGitmodulesLoc(path); // Liste contenant les subrepo = modules
+                    foreach (string submodule in gitmodulesLocList) // Pour chaque module, créé un bouton redirigeant vers la page du module
                     {
-                        string name = rep.Substring(rep.LastIndexOf("/") + 1, rep.Length - rep.LastIndexOf("/") - 1);
-                        TreeNode childNode = new TreeNode(name);
+                        TreeNode childNode = new TreeNode(submodule);
                         childNode.Name = "module";
                         treeNode.Nodes.Add(childNode);
                     }
@@ -650,13 +692,19 @@ namespace module_manager
          */
         private void ComptesEtConnexionsToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            /*
             //string url = "https://api.bitbucket.org/2.0/repositories/bglx/pressure/src/master/";
-            string url = "https://bitbucket.org/bglx/pressure/raw/master/Pressure.c";
+            //string url = "https://bitbucket.org/bglx/pressure/raw/master/Pressure.c";
             List<string> modl = functions.GetModuleDep("pressure","master");
             foreach(string mod in modl)
             {
                 Console.WriteLine(mod);
             }
+            
+            string json = File.ReadAllText(@"C:\Users\STBE\Downloads\PortableGit\home\PORT_DISTRI_2019\.git\index");
+            byte[] bytes = Encoding.Default.GetBytes(json);
+            json = Encoding.UTF8.GetString(bytes);
+            Console.WriteLine(json)*/
         }
 
         private void ParamètresToolStripMenuItem_Click(object sender, EventArgs e)
@@ -666,5 +714,92 @@ namespace module_manager
             frm.StartPosition = FormStartPosition.Manual;
             frm.Show();
         }
+
+        private void DossierLocalToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if(treeView1.SelectedNode.Name == "module")
+            {
+                if (toolStripStatusLabel2.Text != "")
+                    Process.Start(@toolStripStatusLabel2.Text + @"\" + treeView1.SelectedNode.Tag.ToString());
+            }
+            else
+            {
+                if (toolStripStatusLabel2.Text != "")
+                    Process.Start(@toolStripStatusLabel2.Text);
+            }
+        }
+
+        private void URLServeurToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            string url = "";
+            Process.Start(url);
+        }
+
+        private void ContextMenuStripClick(object sender, ToolStripItemClickedEventArgs e)
+        {
+            switch(((ToolStripMenuItem)e.ClickedItem).ToString())
+            {
+                case "Ouvrir (local)":
+                    Process.Start(((ContextMenuStrip)sender).Name);
+                    break;
+                case "Supprimer":
+                    string modName = ((ContextMenuStrip)sender).Text;
+                    if (MessageBox.Show("Voulez vous supprimer le module " + modName + "?", "Supprimer un module", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+                    {
+                        toolStripProgressBar1.Visible = true;
+                        toolStripSplitButton2.Visible = true;
+                        toolStripProgressBar1.Value = 0;
+                        toolStripStatusLabel1.Text = "Suppression...";
+                        metroTabControl1.Enabled = false;
+                        string arg = ((ContextMenuStrip)sender).Name.Replace(@"\",@"\\") + "___" + ((ContextMenuStrip)sender).Tag.ToString().Replace(@"\", @"\\");
+                        Console.WriteLine(@arg);
+                        try
+                        {
+                            backgroundWorker2.RunWorkerAsync(argument: arg);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine(ex.Message);
+                        }
+                        
+                    }
+                    break;
+            }
+        }
+
+        private void SupprimerToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if(treeView1.SelectedNode.Name == "module")
+            {
+                string modName = treeView1.SelectedNode.Text;
+                if (MessageBox.Show("Voulez vous supprimer le module " + modName + " du projet " + treeView1.SelectedNode.Parent.Text + " ?", "Supprimer un module", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+                {
+                    toolStripProgressBar1.Visible = true;
+                    toolStripSplitButton2.Visible = true;
+                    toolStripProgressBar1.Value = 0;
+                    toolStripStatusLabel1.Text = "Suppression...";
+                    metroTabControl1.Enabled = false;
+                    backgroundWorker2.RunWorkerAsync(argument: treeView1.SelectedNode.Tag.ToString() + ":::" + treeView1.SelectedNode.Parent.Name);
+                }
+            }
+        }
     }
+}
+
+class CustomProfessionalColors : ProfessionalColorTable
+{
+    public override Color ToolStripGradientBegin
+    { get { return Color.BlueViolet; } }
+
+    public override Color ToolStripGradientMiddle
+    { get { return Color.CadetBlue; } }
+
+    public override Color ToolStripGradientEnd
+    { get { return Color.CornflowerBlue; } }
+
+    public override Color MenuStripGradientBegin
+    { get { return SystemColors.ControlLight; } }
+
+    public override Color MenuStripGradientEnd
+    { get { return Color.White; } }
 }

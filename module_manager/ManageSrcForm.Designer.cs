@@ -32,6 +32,7 @@
             this.metroLabel2 = new MetroFramework.Controls.MetroLabel();
             this.metroButton1 = new MetroFramework.Controls.MetroButton();
             this.flowLayoutPanel1 = new System.Windows.Forms.FlowLayoutPanel();
+            this.metroButton2 = new MetroFramework.Controls.MetroButton();
             this.SuspendLayout();
             // 
             // metroLabel1
@@ -71,8 +72,18 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.flowLayoutPanel1.Location = new System.Drawing.Point(13, 113);
             this.flowLayoutPanel1.Name = "flowLayoutPanel1";
-            this.flowLayoutPanel1.Size = new System.Drawing.Size(775, 325);
+            this.flowLayoutPanel1.Size = new System.Drawing.Size(775, 286);
             this.flowLayoutPanel1.TabIndex = 4;
+            // 
+            // metroButton2
+            // 
+            this.metroButton2.Location = new System.Drawing.Point(713, 415);
+            this.metroButton2.Name = "metroButton2";
+            this.metroButton2.Size = new System.Drawing.Size(75, 23);
+            this.metroButton2.TabIndex = 5;
+            this.metroButton2.Text = "Fermer";
+            this.metroButton2.UseSelectable = true;
+            this.metroButton2.Click += new System.EventHandler(this.MetroButton2_Click);
             // 
             // ManageSrcForm
             // 
@@ -80,6 +91,7 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.Window;
             this.ClientSize = new System.Drawing.Size(800, 450);
+            this.Controls.Add(this.metroButton2);
             this.Controls.Add(this.flowLayoutPanel1);
             this.Controls.Add(this.metroButton1);
             this.Controls.Add(this.metroLabel2);
@@ -97,5 +109,6 @@
         private MetroFramework.Controls.MetroLabel metroLabel2;
         private MetroFramework.Controls.MetroButton metroButton1;
         private System.Windows.Forms.FlowLayoutPanel flowLayoutPanel1;
+        private MetroFramework.Controls.MetroButton metroButton2;
     }
 }

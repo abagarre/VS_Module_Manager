@@ -36,10 +36,10 @@ namespace module_manager
             }
             catch (Exception ex)
             {
-                repoList = functions.DispRepoList();
+                repoList = functions.GetRepoList();
                 Console.WriteLine(ex.Message);
             }
-            moduleList = functions.DispModList(repoList);
+            moduleList = functions.GetModuleList(repoList);
             backgroundWorker1.RunWorkerAsync();
         }
 
@@ -101,7 +101,7 @@ namespace module_manager
             try
             {
                 // Récupère la liste des modules du projet (lecture sur projet distant)
-                projModules = functions.GetModList(config.GetBranchDev(), functions.GetProjFullName(repo).Replace(".git", ""));
+                projModules = functions.GetSubmodList(config.GetBranchDev(), functions.GetProjFullName(repo).Replace(".git", ""));
             }
             catch (Exception ex)
             {
@@ -115,14 +115,15 @@ namespace module_manager
             i = 0;
             foreach (string mod in modList)
             {
+                Console.WriteLine(mod);
                 int toAdd = 1;
                 
                 foreach (string module in projModules)
                 {
-                    if (module.Contains(mod.Replace(".git", "")))
+                    if (mod.Contains(module))
                     {
                         // Si le module est déjà ajouté au projet, ajoute un indicateur et grise la case
-                        checkedListBox1.Invoke(new Action(() => checkedListBox1.Items.Add(mod.Replace(".git", "") + " (✓)", true)));
+                        checkedListBox1.Invoke(new Action(() => checkedListBox1.Items.Add(mod + " (✓)", true)));
                         checkedListBox1.Invoke(new Action(() => checkedListBox1.SetItemCheckState(i, CheckState.Indeterminate)));
                         toAdd = 0;
                         break;
@@ -131,7 +132,7 @@ namespace module_manager
                 
                 if (toAdd == 1)
                 {
-                    checkedListBox1.Invoke(new Action(() => checkedListBox1.Items.Add(mod.Replace(".git", ""))));
+                    checkedListBox1.Invoke(new Action(() => checkedListBox1.Items.Add(mod)));
                 }
 
                 i++;
