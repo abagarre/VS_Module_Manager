@@ -470,6 +470,33 @@ public class Functions
 
     }
 
+    public string GetProjURL(string path, string name, string type)
+    {
+        string line = "";
+        string prev = "";
+        string url = "";
+        StreamReader file = new StreamReader(path + @"\.git\config");
+        while ((line = file.ReadLine()) != null)
+        {
+            if(type == "module")
+            {
+                if (line.Contains("submodule") && line.Contains(name))
+                    prev = line;
+                if (prev.Contains("submodule") && line.Contains("url"))
+                    return line.Replace("url = ", "");
+            }
+            else
+            {
+                if (line.Contains("remote"))
+                    prev = line;
+                if (prev.Contains("remote") && line.Contains("url"))
+                    return line.Replace("url = ", "");
+            }
+            
+        }
+        return url;
+    }
+
     /**
      * Retourne la liste des neouds cochés dans un TreeView
      */

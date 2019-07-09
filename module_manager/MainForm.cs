@@ -66,6 +66,7 @@ namespace module_manager
             toolStripProgressBar1.Value = 0;
             toolStripSplitButton1.Visible = true;
             toolStripSplitButton2.Visible = false;
+            toolStripStatusLabel3.Text = config.GetCurrentSource();
             backgroundWorker1.RunWorkerAsync();
             this.metroTextBox1.KeyPress += new KeyPressEventHandler(CheckEnterKeyPress);
             comboBox1.SelectedValue = "Local";
@@ -763,7 +764,7 @@ namespace module_manager
 
         private void DossierLocalToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if(treeView1.SelectedNode.Name == "module")
+            if(treeView1.SelectedNode != null && treeView1.SelectedNode.Name == "module")
             {
                 if (toolStripStatusLabel2.Text != "")
                     Process.Start(@toolStripStatusLabel2.Text + @"\" + treeView1.SelectedNode.Tag.ToString());
@@ -777,8 +778,23 @@ namespace module_manager
 
         private void URLServeurToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            string url = "";
-            Process.Start(url);
+            if (toolStripStatusLabel2.Text != "" && treeView1.SelectedNode != null)
+            {
+                if(treeView1.SelectedNode.Name == "module")
+                {
+                    string path = functions.GetProjURL(@toolStripStatusLabel2.Text, treeView1.SelectedNode.Text, "module").Replace(@"/r/", @"/summary/");
+                    Process.Start(path.Insert(path.LastIndexOf(@"/"),@"%2F").Replace(@"%2F/",@"%2F"));
+                }
+                else
+                {
+                    string path = functions.GetProjURL(@toolStripStatusLabel2.Text, treeView1.SelectedNode.Text, "projet").Replace(@"/r/", @"/summary/");
+                    Console.WriteLine(path.Insert(path.LastIndexOf(@"/"), @"%2F").Replace(@"%2F/", @"%2F"));
+                    Process.Start(path.Insert(path.LastIndexOf(@"/"), @"%2F").Replace(@"%2F/", @"%2F"));
+                }
+                
+            }
+                    
+            
         }
 
         private void ContextMenuStripClick(object sender, ToolStripItemClickedEventArgs e)

@@ -42,6 +42,7 @@ namespace module_manager
             {
                 TreeNode treeNode = new TreeNode(mod);
                 treeNode.Checked = true;
+                treeNode.Name = "module";
                 treeView1.Invoke(new Action(() => treeView1.Nodes.Add(treeNode))); // Ajoute le module comme noeud du TreeView
                 try
                 {
@@ -57,6 +58,7 @@ namespace module_manager
                             TreeNode childNode = new TreeNode(dependency); // Créé un sous-noeud
                             if(!dependency.Contains(@"//"))
                                 childNode.Checked = true; // Si le #include est en commentaire dans le code, le désélectionne
+                            childNode.Name = "subInclude";
                             treeView1.Invoke(new Action(() => treeNode.Nodes.Add(childNode)));
                         }
                     }
@@ -118,6 +120,10 @@ namespace module_manager
                 //==========================================================//
                 if(AddSubForm.moduleList.FirstOrDefault(stringToCheck => stringToCheck.Contains(node.Replace(".h",""))) != null)
                 {
+                    if (node.Contains(".h") && MessageBox.Show("Le module [ " + node.Replace(".h", "") + " ] fait partie des dépendances du module [ " + mainMod + " ], voulez-vous l'installer ?", "Ajouter un module", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.No)
+                    {
+                        continue;
+                    }
                     // Si un module avec le nom du noeud sélectionné existe sur le serveur, le télécharge
                     try
                     {
