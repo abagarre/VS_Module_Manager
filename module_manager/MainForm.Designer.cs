@@ -79,6 +79,7 @@
             this.comptesEtConnexionsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.paramètresToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.backgroundWorker3 = new System.ComponentModel.BackgroundWorker();
+            this.backgroundWorker4 = new System.ComponentModel.BackgroundWorker();
             this.metroTabControl1.SuspendLayout();
             this.metroTabPage1.SuspendLayout();
             this.metroTabPage2.SuspendLayout();
@@ -377,7 +378,7 @@
             this.toolStripStatusLabel2.LinkColor = System.Drawing.SystemColors.GrayText;
             this.toolStripStatusLabel2.Margin = new System.Windows.Forms.Padding(10, 3, 0, 2);
             this.toolStripStatusLabel2.Name = "toolStripStatusLabel2";
-            this.toolStripStatusLabel2.Size = new System.Drawing.Size(356, 19);
+            this.toolStripStatusLabel2.Size = new System.Drawing.Size(325, 19);
             this.toolStripStatusLabel2.Spring = true;
             this.toolStripStatusLabel2.Text = "                       ";
             this.toolStripStatusLabel2.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
@@ -551,6 +552,7 @@
             this.outilsToolStripMenuItem.Name = "outilsToolStripMenuItem";
             this.outilsToolStripMenuItem.Size = new System.Drawing.Size(50, 20);
             this.outilsToolStripMenuItem.Text = "Outils";
+            this.outilsToolStripMenuItem.Click += new System.EventHandler(this.OutilsToolStripMenuItem_Click);
             // 
             // ouvrirToolStripMenuItem
             // 
@@ -580,6 +582,7 @@
             this.déplacerToolStripMenuItem.Name = "déplacerToolStripMenuItem";
             this.déplacerToolStripMenuItem.Size = new System.Drawing.Size(129, 22);
             this.déplacerToolStripMenuItem.Text = "Déplacer";
+            this.déplacerToolStripMenuItem.Click += new System.EventHandler(this.DéplacerToolStripMenuItem_Click);
             // 
             // supprimerToolStripMenuItem
             // 
@@ -623,6 +626,14 @@
             // 
             this.backgroundWorker3.DoWork += new System.ComponentModel.DoWorkEventHandler(this.BackgroundWorker3_DoWork);
             this.backgroundWorker3.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.BackgroundWorker3_RunWorkerCompleted);
+            // 
+            // backgroundWorker4
+            // 
+            this.backgroundWorker4.WorkerReportsProgress = true;
+            this.backgroundWorker4.WorkerSupportsCancellation = true;
+            this.backgroundWorker4.DoWork += new System.ComponentModel.DoWorkEventHandler(this.BackgroundWorker4_DoWork);
+            this.backgroundWorker4.ProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.BackgroundWorker4_ProgressChanged);
+            this.backgroundWorker4.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.BackgroundWorker4_RunWorkerCompleted);
             // 
             // MainForm
             // 
@@ -710,6 +721,7 @@
         private System.Windows.Forms.ComboBox comboBox1;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabel3;
+        private System.ComponentModel.BackgroundWorker backgroundWorker4;
     }
 }
 

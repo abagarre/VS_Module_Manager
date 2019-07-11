@@ -84,10 +84,10 @@ public class Functions
                     StreamReader file = new StreamReader(f);
                     while ((line = file.ReadLine()) != null)
                     {
-                        if (line.Contains("[submodule"))
+                        if (line.Contains("path = "))
                         {
-                            string name = line.Replace("[submodule \"", "");
-                            submodules.Add(name.Remove(name.LastIndexOf("\"]")));
+                            string name = line.Replace("path = ", "").Trim();
+                            submodules.Add(name);
                         }
                         counter++;
                     }
@@ -225,7 +225,6 @@ public class Functions
                     {
                         string serverUrl = config.GetServerUrl().TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
                         dep.AddRange(GetIncludes(serverUrl + target));
-                        Console.WriteLine(serverUrl + target);
                     }
                 }
             } catch (Exception) { }
@@ -462,7 +461,7 @@ public class Functions
         else if(config.GetCurrentType() == "bitbucket")
         {
             //========================================= BITBUCKET USERNAME ===============================================//
-            fullName = fullName.Substring(fullName.IndexOf(config.GetUserName() + @"/") + 5, fullName.Length - fullName.IndexOf(@"bglx/") - 5);
+            fullName = fullName.Substring(fullName.IndexOf(config.GetUserName() + @"/") + 5, fullName.Length - fullName.IndexOf(config.GetUserName() + @"/") - 5);
             //============================================================================================================//
         }
             
@@ -472,10 +471,16 @@ public class Functions
 
     public string GetProjURL(string path, string name, string type)
     {
-        string line = "";
+        string line;
         string prev = "";
         string url = "";
-        StreamReader file = new StreamReader(path + @"\.git\config");
+        StreamReader file;
+        try
+        {
+            file = new StreamReader(path + @"\.git\config");
+        }
+        catch (Exception) { return ""; }
+        
         while ((line = file.ReadLine()) != null)
         {
             if(type == "module")

@@ -34,8 +34,7 @@ namespace module_manager
             {
                 path = textBox1.Text;
                 path = path.Replace(".git", "");
-                Console.WriteLine(path);
-                //================================== PATH DELIMITER =======================//
+                //============================== PATH DELIMITER ===========================//
                 path = path.Substring(path.IndexOf(@"_"), path.Length - path.IndexOf(@"_"));
                 //=========================================================================//
                 this.Close();

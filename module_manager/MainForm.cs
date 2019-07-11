@@ -30,6 +30,7 @@ namespace module_manager
         {
             InitializeComponent();
             menuStrip1.Renderer = new ToolStripProfessionalRenderer(new CustomProfessionalColors());
+            treeView1.NodeMouseClick += (sender, args) => treeView1.SelectedNode = args.Node;
             functions = new Functions();
             config = new Config();
         }
@@ -101,6 +102,7 @@ namespace module_manager
                         contextMenuStrip.Items.Add("Ouvrir (URL)");
                         contextMenuStrip.ItemClicked += ContextMenuStripClick;
                         contextMenuStrip.Name = treeNode.Name;
+                        contextMenuStrip.Tag = treeNode.Name;
                         treeNode.ContextMenuStrip = contextMenuStrip;
                         treeView1.Nodes.Add(treeNode);  // Ajout du projet au TreeView
                         smartList.Add(chemin);          // Ajout du projet à la liste des projets ouverts dans SmartGit
@@ -457,12 +459,11 @@ namespace module_manager
          */
         private void BackgroundWorker2_DoWork(object sender, DoWorkEventArgs e)
         {
-            //BackgroundWorker worker = sender as BackgroundWorker;
+            BackgroundWorker worker = sender as BackgroundWorker;
             string arg = e.Argument.ToString();
-            string modPath = arg.Substring(0, arg.IndexOf("___"));
-            string projPath = arg.Substring(arg.IndexOf("___") + 3, arg.Length - arg.IndexOf("___") - 3);
-            //Console.WriteLine(modPath + " " + projPath + " " + modPath.Substring(projPath.Length, modPath.Length - projPath.Length));
-            /*
+            string modPath = arg.Substring(0, arg.IndexOf(":::"));
+            string projPath = arg.Substring(arg.IndexOf(":::") + 3, arg.Length - arg.IndexOf(":::") - 3);
+            
             Process process = new Process();
             //============================================ DEL SUB PATH ==================================//
             process.StartInfo.FileName = config.GetAppData() + @"del_sub.bat";
@@ -472,8 +473,8 @@ namespace module_manager
             process.StartInfo.RedirectStandardError = true;
             process.StartInfo.RedirectStandardOutput = true;
             process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
-            process.StartInfo.WorkingDirectory = @toolStripStatusLabel2.Text;
-            process.StartInfo.Arguments = modPath + " " + projPath + " " + modPath.Substring(projPath.Length,modPath.Length - projPath.Length);
+            process.StartInfo.WorkingDirectory = projPath;
+            process.StartInfo.Arguments = modPath;
             process.Start();
             e.Result = process.StandardError.ReadToEnd(); // Récupère les erreurs et warning du process
             while (!process.StandardOutput.EndOfStream)
@@ -498,7 +499,7 @@ namespace module_manager
                     worker.ReportProgress(100);
                 }
             }
-            */
+            
         }
 
         private void BackgroundWorker2_ProgressChanged(object sender, ProgressChangedEventArgs e)
@@ -516,12 +517,16 @@ namespace module_manager
             toolStripSplitButton2.Visible = false;
             toolStripStatusLabel1.Text = "Prêt";
             metroTabControl1.Enabled = true;
+            metroTabControl2.Enabled = true;
+            TreeNode node = treeView1.SelectedNode;
+            treeView1.SelectedNode = null;
+            node.Remove();
+            
             if(e.Result.ToString().Length != 0)
             {
                 // Affiche erreurs et warning dans une MessageBox
                 MessageBox.Show(e.Result.ToString(), "Message", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            }
-                
+            }   
         }
 
         private void ToolStripSplitButton2_ButtonClick(object sender, EventArgs e)
@@ -605,6 +610,7 @@ namespace module_manager
                     treeNode.Name = path;
                     treeView1.Nodes.Add(treeNode);
                     smartList.Add(path);
+                    readmeState.Add(0);
 
                     List<string> gitmodulesLocList = functions.GetGitmodulesLoc(path); // Liste contenant les subrepo = modules
                     foreach (string submodule in gitmodulesLocList) // Pour chaque module, créé un bouton redirigeant vers la page du module
@@ -612,6 +618,7 @@ namespace module_manager
                         TreeNode childNode = new TreeNode(submodule);
                         childNode.Name = "module";
                         treeNode.Nodes.Add(childNode);
+                        readmeState.Add(0);
                     }
                 }
             }
@@ -672,14 +679,10 @@ namespace module_manager
                         if(submodule.Contains(project.Substring(project.LastIndexOf("/") + 1, project.Length - project.LastIndexOf("/") - 1)))
                         {
                             md = functions.GetMarkdownLoc(path + @"\" + submodule.Replace(@"/", @"\"));
-                        }
-                            
+                        } 
                     }
                 }
-                
-                
             }
-                
 
             try
             {
@@ -764,16 +767,19 @@ namespace module_manager
 
         private void DossierLocalToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if(treeView1.SelectedNode != null && treeView1.SelectedNode.Name == "module")
+            try
             {
-                if (toolStripStatusLabel2.Text != "")
-                    Process.Start(@toolStripStatusLabel2.Text + @"\" + treeView1.SelectedNode.Tag.ToString());
+                if (treeView1.SelectedNode != null && treeView1.SelectedNode.Name == "module")
+                {
+                    Process.Start(treeView1.SelectedNode.Parent.Name + @"\" + treeView1.SelectedNode.Tag.ToString());
+                }
+                else if(treeView1.SelectedNode != null)
+                {
+                    Process.Start(treeView1.SelectedNode.Name);
+                }
             }
-            else
-            {
-                if (toolStripStatusLabel2.Text != "")
-                    Process.Start(@toolStripStatusLabel2.Text);
-            }
+            catch (Exception) { }
+            
         }
 
         private void URLServeurToolStripMenuItem_Click(object sender, EventArgs e)
@@ -788,13 +794,9 @@ namespace module_manager
                 else
                 {
                     string path = functions.GetProjURL(@toolStripStatusLabel2.Text, treeView1.SelectedNode.Text, "projet").Replace(@"/r/", @"/summary/");
-                    Console.WriteLine(path.Insert(path.LastIndexOf(@"/"), @"%2F").Replace(@"%2F/", @"%2F"));
                     Process.Start(path.Insert(path.LastIndexOf(@"/"), @"%2F").Replace(@"%2F/", @"%2F"));
                 }
-                
             }
-                    
-            
         }
 
         private void ContextMenuStripClick(object sender, ToolStripItemClickedEventArgs e)
@@ -802,29 +804,13 @@ namespace module_manager
             switch(((ToolStripMenuItem)e.ClickedItem).ToString())
             {
                 case "Ouvrir (local)":
-                    Process.Start(((ContextMenuStrip)sender).Name);
+                    DossierLocalToolStripMenuItem_Click(sender, e);
+                    break;
+                case "Ouvrir (URL)":
+                    URLServeurToolStripMenuItem_Click(sender, e);
                     break;
                 case "Supprimer":
-                    string modName = ((ContextMenuStrip)sender).Text;
-                    if (MessageBox.Show("Voulez vous supprimer le module " + modName + "?", "Supprimer un module", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
-                    {
-                        toolStripProgressBar1.Visible = true;
-                        toolStripSplitButton2.Visible = true;
-                        toolStripProgressBar1.Value = 0;
-                        toolStripStatusLabel1.Text = "Suppression...";
-                        metroTabControl1.Enabled = false;
-                        string arg = ((ContextMenuStrip)sender).Name.Replace(@"\",@"\\") + "___" + ((ContextMenuStrip)sender).Tag.ToString().Replace(@"\", @"\\");
-                        Console.WriteLine(@arg);
-                        try
-                        {
-                            backgroundWorker2.RunWorkerAsync(argument: arg);
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine(ex.Message);
-                        }
-                        
-                    }
+                    SupprimerToolStripMenuItem_Click(sender, e);
                     break;
             }
         }
@@ -841,6 +827,7 @@ namespace module_manager
                     toolStripProgressBar1.Value = 0;
                     toolStripStatusLabel1.Text = "Suppression...";
                     metroTabControl1.Enabled = false;
+                    metroTabControl2.Enabled = false;
                     backgroundWorker2.RunWorkerAsync(argument: treeView1.SelectedNode.Tag.ToString() + ":::" + treeView1.SelectedNode.Parent.Name);
                 }
             }
@@ -861,6 +848,69 @@ namespace module_manager
             TreeNode treeNode = treeView1.SelectedNode;
             treeView1.SelectedNode = null;
             treeView1.SelectedNode = treeNode;
+        }
+
+        private void OutilsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            
+            if(treeView1.SelectedNode == null || treeView1.SelectedNode.Name != "module")
+            {
+                supprimerToolStripMenuItem.Enabled = false;
+                déplacerToolStripMenuItem.Enabled = false;
+            }
+            else
+            {
+                supprimerToolStripMenuItem.Enabled = true;
+                déplacerToolStripMenuItem.Enabled = true;
+            }
+        }
+
+        private void DéplacerToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (treeView1.SelectedNode == null)
+            {
+                return;
+            }
+            var dialog = new FolderBrowserDialog();
+            dialog.SelectedPath = treeView1.SelectedNode.Parent.Name;
+            dialog.ShowDialog();
+            string path = dialog.SelectedPath + @"\" + treeView1.SelectedNode.Text;
+            backgroundWorker4.RunWorkerAsync(argument: path);
+        }
+
+        private void BackgroundWorker4_DoWork(object sender, DoWorkEventArgs e)
+        {
+            BackgroundWorker worker = sender as BackgroundWorker;
+            string modName = "";
+            string projPath = "";
+            treeView1.Invoke(new Action(() => modName = treeView1.SelectedNode.Tag.ToString()));
+            treeView1.Invoke(new Action(() => projPath = treeView1.SelectedNode.Parent.Name));
+
+            Console.WriteLine("\"" + modName + "\" \"" + e.Argument.ToString() + "\"");
+            
+            Process process = new Process();
+            process.StartInfo.FileName = config.GetAppData() + "mv.bat";
+            process.StartInfo.UseShellExecute = false;
+            //process.StartInfo.CreateNoWindow = true;
+            process.StartInfo.RedirectStandardError = true;
+            process.StartInfo.RedirectStandardOutput = true;
+            //process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+            process.StartInfo.WorkingDirectory = projPath;
+            process.StartInfo.Arguments ="\"" + modName + "\" \"" + e.Argument.ToString() + "\"";
+            process.Start();
+            e.Result = process.StandardError.ReadToEnd(); // Récupère les erreurs et warning du process
+            
+        }
+
+        private void BackgroundWorker4_ProgressChanged(object sender, ProgressChangedEventArgs e)
+        {
+
+        }
+
+        private void BackgroundWorker4_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            Console.WriteLine(e.Result.ToString());
+            LoadForm();
         }
     }
 }

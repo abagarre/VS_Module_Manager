@@ -110,20 +110,32 @@ namespace module_manager
             BackgroundWorker worker = sender as BackgroundWorker;
 
             List<string> checkedNodes = functions.GetCheckedNodes(treeView1.Nodes);
+            List<string> addedNodes = new List<string>();
             int counter = (100/checkedNodes.Count)/4;
             string mainMod = "";
             foreach (string node in checkedNodes)
             {
+                if(addedNodes.Contains(node.Replace(".h", "").Replace("_MODULES_/", "")))
+                {
+                    worker.ReportProgress(counter);
+                    counter += (100 / checkedNodes.Count);
+                    continue;
+                }
                 //================ MODULES FOLDER NAME =====================//
                 if (node.Contains("_MODULES_/"))
                     mainMod = node.Replace("_MODULES_/",""); // Nom du module en cours
                 //==========================================================//
                 if(AddSubForm.moduleList.FirstOrDefault(stringToCheck => stringToCheck.Contains(node.Replace(".h",""))) != null)
                 {
+                    addedNodes.Add(node.Replace(".h","").Replace("_MODULES_/",""));
+
                     if (node.Contains(".h") && MessageBox.Show("Le module [ " + node.Replace(".h", "") + " ] fait partie des dépendances du module [ " + mainMod + " ], voulez-vous l'installer ?", "Ajouter un module", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.No)
                     {
+                        worker.ReportProgress(counter);
+                        counter += (100 / checkedNodes.Count);
                         continue;
                     }
+                    
                     // Si un module avec le nom du noeud sélectionné existe sur le serveur, le télécharge
                     try
                     {
@@ -181,7 +193,7 @@ namespace module_manager
                 {
                     MessageBox.Show("Le module [ " + mainMod + " ] fait appel au fichier [ " + node + " ] absent du projet local et des modules distant","Fichier manquant", MessageBoxButtons.OK,MessageBoxIcon.Warning);
                     worker.ReportProgress(counter);
-                    counter += (100 / checkedNodes.Count) * (3 / 4);
+                    counter += (100 / checkedNodes.Count);
                     worker.ReportProgress(counter);
                 }
                 if (backgroundWorker1.CancellationPending)

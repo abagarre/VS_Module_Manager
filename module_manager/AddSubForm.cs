@@ -115,7 +115,6 @@ namespace module_manager
             i = 0;
             foreach (string mod in modList)
             {
-                Console.WriteLine(mod);
                 int toAdd = 1;
                 
                 foreach (string module in projModules)
