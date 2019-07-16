@@ -26,6 +26,8 @@ namespace module_manager
         private void Form3_Load(object sender, EventArgs e)
         {
             metroButton2.Enabled = false;
+            treeView1.DrawMode = TreeViewDrawMode.OwnerDrawText;
+            treeView1.DrawNode += new DrawTreeNodeEventHandler(TreeView1_DrawNode);
             toolStripStatusLabel1.Text = "Chargement...";
             backgroundWorker2.RunWorkerAsync();
         }
@@ -56,8 +58,8 @@ namespace module_manager
                         {
                             // Si le fichier #include n'est pas présent localement et s'il n'est pas dans la liste des modules à installer
                             TreeNode childNode = new TreeNode(dependency); // Créé un sous-noeud
-                            if(!dependency.Contains(@"//"))
-                                childNode.Checked = true; // Si le #include est en commentaire dans le code, le désélectionne
+                            //if(!dependency.Contains(@"//"))
+                                //childNode.Checked = true; // Si le #include est en commentaire dans le code, le désélectionne
                             childNode.Name = "subInclude";
                             treeView1.Invoke(new Action(() => treeNode.Nodes.Add(childNode)));
                         }
@@ -226,6 +228,12 @@ namespace module_manager
                 if(!childNode.Text.Contains(@"//"))
                     childNode.Checked = e.Node.Checked;
             }
+        }
+
+        private void TreeView1_DrawNode(object sender, DrawTreeNodeEventArgs e)
+        {
+            if (e.Node.Level == 1) e.Node.HideCheckBox();
+            e.DrawDefault = true;
         }
     }
 }

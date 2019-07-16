@@ -90,5 +90,13 @@ namespace module_manager
         {
             this.Close();
         }
+
+        private void MetroButton1_Click(object sender, EventArgs e)
+        {
+            var frm = new AddSource();
+            frm.Location = this.Location;
+            frm.StartPosition = FormStartPosition.Manual;
+            frm.Show();
+        }
     }
 }

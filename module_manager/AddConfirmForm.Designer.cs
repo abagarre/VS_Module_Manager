@@ -69,6 +69,7 @@
             this.treeView1.Size = new System.Drawing.Size(409, 171);
             this.treeView1.TabIndex = 1;
             this.treeView1.AfterCheck += new System.Windows.Forms.TreeViewEventHandler(this.TreeView1_AfterCheck);
+            this.treeView1.DrawNode += new System.Windows.Forms.DrawTreeNodeEventHandler(this.TreeView1_DrawNode);
             // 
             // metroButton1
             // 

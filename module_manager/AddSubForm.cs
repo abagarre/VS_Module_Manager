@@ -23,7 +23,7 @@ namespace module_manager
             InitializeComponent();
         }
 
-        private void Form2_Load(object sender, EventArgs e)
+        private async void Form2_Load(object sender, EventArgs e)
         {
             toolStripStatusLabel2.Text = repo;
             path = repo;
@@ -36,7 +36,7 @@ namespace module_manager
             }
             catch (Exception ex)
             {
-                repoList = functions.GetRepoList();
+                repoList = await functions.GetRepoList();
                 Console.WriteLine(ex.Message);
             }
             moduleList = functions.GetModuleList(repoList);

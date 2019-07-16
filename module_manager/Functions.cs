@@ -8,6 +8,11 @@ using System.Text;
 using System.Security.Cryptography;
 using module_manager;
 using HtmlAgilityPack;
+using System.Xml.Linq;
+using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Threading.Tasks;
 
 public class Functions
 {
@@ -15,23 +20,50 @@ public class Functions
     public static bool affiche = false;
     public static List<string> descList = new List<string>();
     Config config = new Config();
+    string entropy = "";
 
 
     public string BitBucketQuery(string url)
     {
-        //================================= CREDIT FILES PATH ==============================//
-        byte[] entropy = File.ReadAllBytes(config.GetAppData() + @".creditEnt"); //TODO: Change to global password
-        byte[] ciphertext = File.ReadAllBytes(config.GetAppData() + @".creditCip");
-        //==================================================================================//
-        ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
-        WebRequest myReq = WebRequest.Create(url);
-        myReq.Method = "GET";
-        CredentialCache mycache = new CredentialCache();
-        myReq.Headers["Authorization"] = "Basic " + Convert.ToBase64String(Encoding.ASCII.GetBytes("bglx:" + Encoding.UTF8.GetString(ProtectedData.Unprotect(ciphertext, entropy, DataProtectionScope.CurrentUser))));
-        WebResponse wr = myReq.GetResponse();
-        Stream receiveStream = wr.GetResponseStream();
-        StreamReader reader = new StreamReader(receiveStream, Encoding.UTF8);
-        return reader.ReadToEnd();
+        if(entropy == "")
+        {
+            using (Password formOptions = new Password())
+            {
+                formOptions.ShowDialog();
+                try
+                {
+                    
+                    if (formOptions.pass.Length != 0)
+                    {
+                        entropy = formOptions.pass;
+                    }
+
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+                }
+            }
+        }
+
+        try
+        {
+            byte[] ciphertext = File.ReadAllBytes(config.GetAppData() + @".cred" + config.GetCurrentSource());
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+            WebRequest myReq = WebRequest.Create(url);
+            myReq.Method = "GET";
+            CredentialCache mycache = new CredentialCache();
+            myReq.Headers["Authorization"] = "Basic " + Convert.ToBase64String(Encoding.ASCII.GetBytes(config.GetUserName() + ":" + Encoding.UTF8.GetString(ProtectedData.Unprotect(ciphertext, Encoding.Default.GetBytes(entropy), DataProtectionScope.CurrentUser))));
+            WebResponse wr = myReq.GetResponse();
+            Stream receiveStream = wr.GetResponseStream();
+            StreamReader reader = new StreamReader(receiveStream, Encoding.UTF8);
+            return reader.ReadToEnd();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+        return "";
     }
 
     /**
@@ -157,10 +189,54 @@ public class Functions
         return repoList;
     }
 
+    public async Task<List<string>> DevOpsRepoList()
+    {
+        List<string> repoList = new List<string>();
+        string json;
+        try
+        {
+            var personalaccesstoken = "rxhc6qa4gxiv44ut7fzm244cgk556mydon3p2q3a2eo4gddqmzwq";
+
+            using (HttpClient client = new HttpClient())
+            {
+                client.DefaultRequestHeaders.Accept.Add(
+                    new MediaTypeWithQualityHeaderValue("application/json"));
+
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
+                    Convert.ToBase64String(
+                        ASCIIEncoding.ASCII.GetBytes(
+                            string.Format("{0}:{1}", "", personalaccesstoken))));
+
+                using (HttpResponseMessage response = await client.GetAsync(
+                    "https://dev.azure.com/thebagalex/KIMOdules/_apis/git/repositories?api-version=5.0"))
+                {
+                    response.EnsureSuccessStatusCode();
+                    string responseBody = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine(responseBody);
+                    json = responseBody;
+                }
+            }
+
+            JObject obj = JObject.Parse(json);
+            JArray list = (JArray)obj["value"];
+            foreach(JObject jObject in list)
+            {
+                repoList.Add(jObject["name"].ToString());
+                Console.WriteLine(jObject["name"].ToString());
+            }
+
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.ToString());
+        }
+        return repoList;
+    }
+
     /**
      * Retourne la liste des dépôts du serveur et rempli la liste de description
      */
-    public List<string> GetRepoList()
+    public async Task<List<string>> GetRepoList()
     {
         List<string> repoList = new List<string>();
         if (config.GetCurrentType() == "gitblit")
@@ -170,6 +246,10 @@ public class Functions
         else if(config.GetCurrentType() == "bitbucket")
         {
             return BitBucketRepoList();
+        }
+        else if(config.GetCurrentType() == "devops")
+        {
+            return await DevOpsRepoList();
         }
         return repoList;
     }
@@ -571,23 +651,61 @@ public class Functions
     /**
      * 
      */
-    public string SavePassword()
+    public bool SavePassword(string token, string name)
     {
-        byte[] plaintext = Encoding.UTF8.GetBytes("");
-
-        byte[] entropy = new byte[20]; //TODO: Change to global password (winform with textbox)
-        using (RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider())
+        byte[] plaintext = Encoding.Default.GetBytes(token);
+        byte[] entropy;
+        byte[] ciphertext;
+        if(config.GetPass() == "true")
         {
-            rng.GetBytes(entropy);
-        }
+            using (Password formOptions = new Password())
+            {
+                formOptions.ShowDialog();
+                try
+                {
+                    string result = formOptions.pass;
+                    if (result.Length != 0)
+                    {
+                        entropy = Encoding.Default.GetBytes(result);
+                        ciphertext = ProtectedData.Protect(plaintext, entropy, DataProtectionScope.CurrentUser);
+                        //=================== CREDIT FILE PATH ===========//
+                        File.WriteAllBytes(config.GetAppData() + ".cred" + name, ciphertext);
+                        return true;
+                    }
 
-        byte[] ciphertext = ProtectedData.Protect(plaintext, entropy, DataProtectionScope.CurrentUser);
-        //=================== CREDIT FILE PATH ===========//
-        File.WriteAllBytes(config.GetAppData() + @".creditEnt", entropy);
-        File.WriteAllBytes(config.GetAppData() + @".creditCip", ciphertext);
-        //================================================//
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+                }
+            }
+        } else
+        {
+            using (NewPassword formOptions = new NewPassword())
+            {
+                formOptions.ShowDialog();
+                try
+                {
+                    string result = formOptions.pass;
+                    if (result.Length != 0)
+                    {
+                        entropy = Encoding.Default.GetBytes(result);
+                        ciphertext = ProtectedData.Protect(plaintext, entropy, DataProtectionScope.CurrentUser);
+                        //=================== CREDIT FILE PATH ===========//
+                        File.WriteAllBytes(config.GetAppData() + ".cred" + config.GetCurrentSource(), ciphertext);
+                        config.SetPass("true");
+                        return true;
+                    }
+
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+                }
+            }
+        }
         
-        return "OK";
+        return false;
     }
 
     public int GetIndex(TreeNode node)
@@ -637,6 +755,79 @@ public class Functions
             returnValue += GetDecendantCount(childNode);
         }
         return returnValue;
+    }
+
+    public List<string> GetSmartGitList()
+    {
+        List<string> smartList = new List<string>();
+
+        XDocument xml = XDocument.Load(config.GetSmartGitRepo());
+
+        IEnumerable<XElement> ob = xml.Root.Elements();
+        IEnumerable<XElement> coll = ob.ElementAt(0).Elements();
+
+        for (int i = 0; i < coll.Count(); i++)
+        {
+            XElement obj = coll.ElementAt(i);
+            var query = from c in obj.Descendants("prop")
+                        where c.Attribute("key").Value == "path"
+                        select new
+                        {
+                            path = c.Attribute("value").Value
+                        };
+            foreach (var path in query)
+            {
+                string chemin = path.path.Replace(@"\\", @"\");
+                smartList.Add(chemin);
+            }
+        }
+
+        return smartList;
+    }
+
+    public List<string> GetSourceTreetList()
+    {
+        List<string> sourceList = new List<string>();
+
+        XDocument xml = XDocument.Load(config.GetSourceTreeRepo());
+
+        foreach(XElement elem in xml.Root.Elements())
+        {
+            sourceList.Add(elem.Value.ToString());
+        }
+
+        return sourceList;
+    }
+
+    public async void GetProjects()
+    {
+        try
+        {
+            var personalaccesstoken = "rxhc6qa4gxiv44ut7fzm244cgk556mydon3p2q3a2eo4gddqmzwq";
+
+            using (HttpClient client = new HttpClient())
+            {
+                client.DefaultRequestHeaders.Accept.Add(
+                    new MediaTypeWithQualityHeaderValue("application/json"));
+
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
+                    Convert.ToBase64String(
+                        ASCIIEncoding.ASCII.GetBytes(
+                            string.Format("{0}:{1}", "", personalaccesstoken))));
+
+                using (HttpResponseMessage response = await client.GetAsync(
+                    "https://dev.azure.com/thebagalex/KIMOdules/_apis/git/repositories/KIMOdules/items?path=.gitmodules&includeContent=true&api-version=5.0"))
+                {
+                    response.EnsureSuccessStatusCode();
+                    string responseBody = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine(responseBody);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.ToString());
+        }
     }
 
 }

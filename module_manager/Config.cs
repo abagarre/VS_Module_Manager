@@ -35,6 +35,12 @@ namespace module_manager
             return path;
         }
 
+        public string GetSourceTreeRepo()
+        {
+            string path = @"C:\Users\STBE\AppData\Local\Atlassian\SourceTree\opentabs.xml";
+            return path;
+        }
+
         /**
          * Retoure la string du fichier des serveurs enregistrés
          */
@@ -94,6 +100,33 @@ namespace module_manager
             return (string)serv["username"];
         }
 
+        public string GetClient()
+        {
+            string json = File.ReadAllText(GetConfigPath());
+            byte[] bytes = Encoding.Default.GetBytes(json);
+            json = Encoding.UTF8.GetString(bytes);
+            JObject serv = JObject.Parse(json);
+            return (string)serv["client"];
+        }
+
+        public string GetPass()
+        {
+            string json = File.ReadAllText(GetConfigPath());
+            byte[] bytes = Encoding.Default.GetBytes(json);
+            json = Encoding.UTF8.GetString(bytes);
+            JObject serv = JObject.Parse(json);
+            return (string)serv["password"];
+        }
+
+        public void SetPass(string pass)
+        {
+            string json;
+            json = File.ReadAllText(GetConfigPath());
+            JObject conf = JObject.Parse(json);
+            conf["password"] = pass;
+            File.WriteAllText(GetConfigPath(), conf.ToString());
+        }
+
         /**
          * Modifie le fichier config.json avec les valeurs du serveur choisi
          */
@@ -119,9 +152,47 @@ namespace module_manager
             File.WriteAllText(GetConfigPath(), conf.ToString());
         }
 
+        public void AddServer(string type, string name, string url, string username, string access)
+        {
+            string json;
+            json = File.ReadAllText(GetServersPath());
+            JObject conf = JObject.Parse(json);
+            JArray list = (JArray)conf["servers"];
+            var itemToAdd = new JObject();
+            itemToAdd["type"] = type;
+            itemToAdd["name"] = name;
+            itemToAdd["url"] = url;
+            itemToAdd["username"] = username;
+            itemToAdd["access"] = access;
+            list.Add(itemToAdd);
+            File.WriteAllText(GetServersPath(), conf.ToString());
+        }
+
         public string GetBranchDev()
         {
             return "_DEV_";
+        }
+
+        public string GetToken()
+        {
+            using (Password formOptions = new Password())
+            {
+                formOptions.ShowDialog();
+                try
+                {
+                    string result = formOptions.pass;
+                    if (result.Length != 0)
+                    {
+                        return result;
+                    }
+
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+                }
+            }
+            return "";
         }
     }
 }

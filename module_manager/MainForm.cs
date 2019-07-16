@@ -18,7 +18,7 @@ namespace module_manager
     {
         public static List<string> repoList;        // Liste des dépots distants
         public static List<List<string>> projList;  // Liste des listes des sous-modules de chaque dépôt de repoList
-        private List<string> smartList;             // Liste des projets ouverts dans SmartGit
+        private List<string> clientList;             // Liste des projets ouverts dans SmartGit
         private List<string> moduleList;
         private List<int> readmeState;
         Functions functions;
@@ -46,7 +46,7 @@ namespace module_manager
             // Remise à zéro de toute les listes, Labels, TreeViews, DataGridViews
             repoList = new List<string>();
             projList = new List<List<string>>();
-            smartList = new List<string>();
+            clientList = new List<string>();
             moduleList = new List<string>();
             readmeState = new List<int>();
             Functions.descList = new List<string>();
@@ -75,27 +75,22 @@ namespace module_manager
             ContextMenuStrip contextMenuStrip;
             try
             {
-                // Chargement des projets ouverts dans SmartGit
-                //============================ SMARTGIT REPOSITORIES XML FILE ===============================//
-                XDocument xml = XDocument.Load(config.GetSmartGitRepo());
-                //===========================================================================================//
-
-                IEnumerable<XElement> ob = xml.Root.Elements();
-                IEnumerable<XElement> coll = ob.ElementAt(0).Elements();
-
-                for (int i = 0; i < coll.Count(); i++)
+                if(config.GetClient() == "smartgit")
                 {
-                    XElement obj = coll.ElementAt(i);
-                    var query = from c in obj.Descendants("prop")
-                                where c.Attribute("key").Value == "path"
-                                select new
-                                {
-                                    path = c.Attribute("value").Value
-                                };
-                    foreach (var path in query)
+                    clientList = functions.GetSmartGitList();
+                }
+                else if(config.GetClient() == "sourcetree")
+                {
+                    clientList = functions.GetSourceTreetList();
+                }
+                foreach (string chemin in clientList)
+                {
+                    List<string> gitmodulesLocList = functions.GetGitmodulesLoc(chemin); // Liste contenant les sous-dépôts = modules
+                    List<string> gitmodulesLocPathList = functions.GetGitmodulesLocPath(chemin);
+                    TreeNode treeNode;
+                    if(gitmodulesLocList.Count() > 0)
                     {
-                        string chemin = path.path.Replace(@"\\", @"\");
-                        TreeNode treeNode = new TreeNode(chemin.Substring(chemin.LastIndexOf("\\") + 1, chemin.Length - chemin.LastIndexOf("\\") - 1).Replace(".git", ""));
+                        treeNode = new TreeNode(chemin.Substring(chemin.LastIndexOf("\\") + 1, chemin.Length - chemin.LastIndexOf("\\") - 1).Replace(".git", ""));
                         treeNode.Name = chemin;      // Précise le chemin du projet dans le paramètre Name du noeud
                         contextMenuStrip = new ContextMenuStrip();
                         contextMenuStrip.Items.Add("Ouvrir (local)");
@@ -105,20 +100,18 @@ namespace module_manager
                         contextMenuStrip.Tag = treeNode.Name;
                         treeNode.ContextMenuStrip = contextMenuStrip;
                         treeView1.Nodes.Add(treeNode);  // Ajout du projet au TreeView
-                        smartList.Add(chemin);          // Ajout du projet à la liste des projets ouverts dans SmartGit
 
                         int j = 0;
-                        List<string> gitmodulesLocList = functions.GetGitmodulesLoc(chemin); // Liste contenant les sous-dépôts = modules
-                        List<string> gitmodulesLocPathList = functions.GetGitmodulesLocPath(chemin);
                         foreach (string submodule in gitmodulesLocList) // Ajoute chaque module en tant que fils dans l'arborescence des projets
                         {
                             TreeNode childNode = new TreeNode(submodule);
                             childNode.Name = "module";  // Précise que le neoud correspond à un module
-                            childNode.Tag = gitmodulesLocPathList.ElementAt(j).Replace("/",@"\");
+                            childNode.Tag = gitmodulesLocPathList.ElementAt(j).Replace("/", @"\");
 
                             contextMenuStrip = new ContextMenuStrip();
                             contextMenuStrip.Items.Add("Ouvrir (local)");
                             contextMenuStrip.Items.Add("Ouvrir (URL)");
+                            contextMenuStrip.Items.Add("Déplacer");
                             contextMenuStrip.Items.Add("Supprimer");
                             contextMenuStrip.ItemClicked += ContextMenuStripClick;
                             contextMenuStrip.Text = childNode.Text;
@@ -131,7 +124,21 @@ namespace module_manager
                             j++;
                         }
                     }
+                    else
+                    {
+                        treeNode = new TreeNode(chemin.Substring(chemin.LastIndexOf("\\") + 1, chemin.Length - chemin.LastIndexOf("\\") - 1).Replace(".git", ""));
+                        treeNode.Tag = chemin;
+                        contextMenuStrip = new ContextMenuStrip();
+                        contextMenuStrip.Items.Add("Ouvrir (local)");
+                        contextMenuStrip.Items.Add("Ouvrir (URL)");
+                        contextMenuStrip.ItemClicked += ContextMenuStripClick;
+                        contextMenuStrip.Name = treeNode.Tag.ToString();
+                        contextMenuStrip.Tag = treeNode.Tag.ToString();
+                        treeNode.ContextMenuStrip = contextMenuStrip;
+                        treeView1.Nodes.Add(treeNode);  // Ajout du projet au TreeView
+                    }
                 }
+                
                 for (int i = 0; i < treeView1.GetNodeCount(true); i++)
                 {
                     readmeState.Add(1);
@@ -146,11 +153,11 @@ namespace module_manager
         /**
          * Récupère toutes les informations des projet locaux et des modules distants
          */
-        private void BackgroundWorker1_DoWork(object sender, DoWorkEventArgs e)
+        private async void BackgroundWorker1_DoWork(object sender, DoWorkEventArgs e)
         {
             BackgroundWorker worker = sender as BackgroundWorker;
 
-            repoList = functions.GetRepoList(); // Récupère la liste de tous les dépôts distants
+            repoList = await functions.GetRepoList(); // Récupère la liste de tous les dépôts distants
             int i = 1;
             foreach(string rep in repoList)
             {
@@ -230,10 +237,10 @@ namespace module_manager
                 if(rep.Substring(rep.LastIndexOf(@"/") + 1, rep.Length - rep.LastIndexOf(@"/") - 1) == e.Node.Text)
                 {
                     // Recherche dans la liste des dépôts celui qui a été selectionné
-                    metroLabel6.Text = Functions.descList.ElementAt(item);  // Récupère la description dans la liste (même taille que repoList)
                     try
                     {
-                        if(!bg3IsWorking)
+                        metroLabel6.Text = Functions.descList.ElementAt(item);  // Récupère la description dans la liste (même taille que repoList)
+                        if (!bg3IsWorking)
                             // Si la tache n'est pas déjà en cours, charge le README dans le WebBrowser
                             backgroundWorker3.RunWorkerAsync(argument: rep);
                     } catch (Exception) { }
@@ -247,7 +254,7 @@ namespace module_manager
             if (e.Node.Name == "module")
             {
                 // Si le noeud sélectionné est un module :
-                metroLabel4.Text = "Projets dépendants du module";
+                metroLabel4.Text = "Projets dépendant du module";
                 int i = 0;
                 foreach(List<string> proj in projList)
                 {
@@ -400,7 +407,7 @@ namespace module_manager
                     }
                     dataGridView1.Rows.Clear();
                     dataGridView1.Refresh();
-                    metroLabel4.Text = "Projets dépendants du module";
+                    metroLabel4.Text = "Projets dépendant du module";
                     int i = 0;
                     foreach (List<string> proj in projList)
                     {
@@ -573,7 +580,7 @@ namespace module_manager
             }
             dataGridView1.Rows.Clear();
             dataGridView1.Refresh();
-            metroLabel4.Text = "Projets dépendants du module";
+            metroLabel4.Text = "Projets dépendant du module";
             int i = 0;
             foreach (List<string> proj in projList)
             {
@@ -609,7 +616,7 @@ namespace module_manager
                     TreeNode treeNode = new TreeNode(path.Substring(path.LastIndexOf("\\") + 1, path.Length - path.LastIndexOf("\\") - 1));
                     treeNode.Name = path;
                     treeView1.Nodes.Add(treeNode);
-                    smartList.Add(path);
+                    clientList.Add(path);
                     readmeState.Add(0);
 
                     List<string> gitmodulesLocList = functions.GetGitmodulesLoc(path); // Liste contenant les subrepo = modules
@@ -636,7 +643,11 @@ namespace module_manager
                 {
                     string result = formOptions.path;
                     if (result.Length != 0)
+                    {
                         treeView1.Nodes.Add(new TreeNode(result));
+                        readmeState.Add(1);
+                    }
+                        
                 }
                 catch (Exception ex)
                 {
@@ -740,7 +751,7 @@ namespace module_manager
         /**
          * En cours de développement
          */
-        private void ComptesEtConnexionsToolStripMenuItem_Click(object sender, EventArgs e)
+        private void ComptesEtConnexionsToolStripMenuItem_ClickAsync(object sender, EventArgs e)
         {
             /*
             //string url = "https://api.bitbucket.org/2.0/repositories/bglx/pressure/src/master/";
@@ -755,6 +766,29 @@ namespace module_manager
             byte[] bytes = Encoding.Default.GetBytes(json);
             json = Encoding.UTF8.GetString(bytes);
             Console.WriteLine(json)*/
+
+            //functions.GetProjects();
+            //List<string> list = await functions.DevOpsRepoList();
+
+            using (Password formOptions = new Password())
+            {
+                formOptions.ShowDialog();
+                try
+                {
+                    string entropy = formOptions.pass;
+                    if (entropy.Length != 0)
+                    {
+                        byte[] ciphertext = File.ReadAllBytes(config.GetAppData() + @".credBucketChanllenge");
+                        Console.WriteLine(Encoding.UTF8.GetString(ProtectedData.Unprotect(ciphertext, Encoding.Default.GetBytes(entropy), DataProtectionScope.CurrentUser)));
+                    }
+
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+                }
+            }
+            
         }
 
         private void ParamètresToolStripMenuItem_Click(object sender, EventArgs e)
@@ -809,6 +843,9 @@ namespace module_manager
                 case "Ouvrir (URL)":
                     URLServeurToolStripMenuItem_Click(sender, e);
                     break;
+                case "Déplacer":
+                    DéplacerToolStripMenuItem_Click(sender, e);
+                    break;
                 case "Supprimer":
                     SupprimerToolStripMenuItem_Click(sender, e);
                     break;
@@ -817,7 +854,7 @@ namespace module_manager
 
         private void SupprimerToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if(treeView1.SelectedNode.Name == "module")
+            if(treeView1.SelectedNode != null && treeView1.SelectedNode.Name == "module")
             {
                 string modName = treeView1.SelectedNode.Text;
                 if (MessageBox.Show("Voulez vous supprimer le module " + modName + " du projet " + treeView1.SelectedNode.Parent.Text + " ?", "Supprimer un module", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
@@ -873,9 +910,11 @@ namespace module_manager
             }
             var dialog = new FolderBrowserDialog();
             dialog.SelectedPath = treeView1.SelectedNode.Parent.Name;
-            dialog.ShowDialog();
-            string path = dialog.SelectedPath + @"\" + treeView1.SelectedNode.Text;
-            backgroundWorker4.RunWorkerAsync(argument: path);
+            if (dialog.ShowDialog() == DialogResult.OK)
+            {
+                string path = dialog.SelectedPath + @"\" + treeView1.SelectedNode.Text;
+                backgroundWorker4.RunWorkerAsync(argument: path);
+            }
         }
 
         private void BackgroundWorker4_DoWork(object sender, DoWorkEventArgs e)
@@ -891,10 +930,10 @@ namespace module_manager
             Process process = new Process();
             process.StartInfo.FileName = config.GetAppData() + "mv.bat";
             process.StartInfo.UseShellExecute = false;
-            //process.StartInfo.CreateNoWindow = true;
+            process.StartInfo.CreateNoWindow = true;
             process.StartInfo.RedirectStandardError = true;
             process.StartInfo.RedirectStandardOutput = true;
-            //process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+            process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
             process.StartInfo.WorkingDirectory = projPath;
             process.StartInfo.Arguments ="\"" + modName + "\" \"" + e.Argument.ToString() + "\"";
             process.Start();
@@ -912,6 +951,7 @@ namespace module_manager
             Console.WriteLine(e.Result.ToString());
             LoadForm();
         }
+
     }
 }
 
