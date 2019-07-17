@@ -18,13 +18,13 @@ public class Functions
 {
     
     public static bool affiche = false;
-    public static List<string> descList = new List<string>();
     Config config = new Config();
     string entropy = "";
 
 
     public string BitBucketQuery(string url)
     {
+        Console.WriteLine(url);
         if(entropy == "")
         {
             using (Password formOptions = new Password())
@@ -32,12 +32,8 @@ public class Functions
                 formOptions.ShowDialog();
                 try
                 {
-                    
                     if (formOptions.pass.Length != 0)
-                    {
                         entropy = formOptions.pass;
-                    }
-
                 }
                 catch (Exception ex)
                 {
@@ -45,7 +41,6 @@ public class Functions
                 }
             }
         }
-
         try
         {
             byte[] ciphertext = File.ReadAllBytes(config.GetAppData() + @".cred" + config.GetCurrentSource());
@@ -61,7 +56,55 @@ public class Functions
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex.Message);
+            Console.WriteLine("BitBuquet query error : " + ex.Message);
+        }
+        return "";
+    }
+
+    public async Task<string> DevOpsQuery(string url)
+    {
+        Console.WriteLine(url);
+        if (entropy == "")
+        {
+            using (Password formOptions = new Password())
+            {
+                formOptions.ShowDialog();
+                try
+                {
+                    if (formOptions.pass.Length != 0)
+                        entropy = formOptions.pass;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+                }
+            }
+        }
+        try
+        {
+            byte[] ciphertext = File.ReadAllBytes(config.GetAppData() + @".cred" + config.GetCurrentSource());
+            using (HttpClient client = new HttpClient())
+            {
+                client.DefaultRequestHeaders.Accept.Add(
+                    new MediaTypeWithQualityHeaderValue("application/json"));
+
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
+                    Convert.ToBase64String(
+                        ASCIIEncoding.ASCII.GetBytes(
+                            string.Format("{0}:{1}", "", Encoding.UTF8.GetString(ProtectedData.Unprotect(ciphertext, Encoding.Default.GetBytes(entropy), DataProtectionScope.CurrentUser))))));
+
+                using (HttpResponseMessage response = await client.GetAsync(url))
+                {
+                    response.EnsureSuccessStatusCode();
+                    string responseBody = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine(responseBody);
+                    return responseBody;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("DevOps query error : " + ex.Message);
         }
         return "";
     }
@@ -175,15 +218,6 @@ public class Functions
             {
                 string name = infos["name"].ToString().Replace(".git", "");
                 repoList.Add(name);
-                try
-                {
-                    string desc = infos["description"].ToString();
-                    descList.Add(desc);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex.Message);
-                }
             }
         }
         return repoList;
@@ -195,27 +229,8 @@ public class Functions
         string json;
         try
         {
-            var personalaccesstoken = "rxhc6qa4gxiv44ut7fzm244cgk556mydon3p2q3a2eo4gddqmzwq";
-
-            using (HttpClient client = new HttpClient())
-            {
-                client.DefaultRequestHeaders.Accept.Add(
-                    new MediaTypeWithQualityHeaderValue("application/json"));
-
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
-                    Convert.ToBase64String(
-                        ASCIIEncoding.ASCII.GetBytes(
-                            string.Format("{0}:{1}", "", personalaccesstoken))));
-
-                using (HttpResponseMessage response = await client.GetAsync(
-                    "https://dev.azure.com/thebagalex/KIMOdules/_apis/git/repositories?api-version=5.0"))
-                {
-                    response.EnsureSuccessStatusCode();
-                    string responseBody = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine(responseBody);
-                    json = responseBody;
-                }
-            }
+            json = await DevOpsQuery("https://dev.azure.com/thebagalex/KIMOdules/_apis/git/repositories?api-version=5.0");
+            Console.WriteLine(json);
 
             JObject obj = JObject.Parse(json);
             JArray list = (JArray)obj["value"];
@@ -234,7 +249,7 @@ public class Functions
     }
 
     /**
-     * Retourne la liste des dépôts du serveur et rempli la liste de description
+     * Retourne la liste des dépôts du serveur
      */
     public async Task<List<string>> GetRepoList()
     {
@@ -405,7 +420,7 @@ public class Functions
     /**
      * Retourne la liste des modules présents dans le fichier .gitmodules d'un projet distant
      */
-    public List<string> GetSubmodList(string branch, string rep)
+    public async Task<List<string>> GetSubmodList(string branch, string rep)
     {
         List<string> modList = new List<string>();
         if(config.GetCurrentType() == "gitblit")
@@ -430,8 +445,7 @@ public class Functions
                             {
                                 affiche = !ShowDialog("Ne plus afficher", "Le projet " + rep + " ne contient pas de branche " + config.GetBranchDev() + " ! \n\nRecherche sur la branche master\n ");
                             }
-                            modList.AddRange(GetSubmodList("master", rep));
-                            break;
+                            return await GetSubmodList("master", rep);
                         }
                         switch (compteur)
                         {
@@ -465,16 +479,16 @@ public class Functions
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                Console.WriteLine("GetSubmodError : " + ex.Message);
                 if(branch != "master")
-                    modList.AddRange(GetSubmodList("master", rep));
+                    return await GetSubmodList("master", rep);
                 result = "null";
             }
+            if (result.Length == 0 && branch != "master")
+                return await GetSubmodList("master", rep);
             using (StringReader reader = new StringReader(result))
             {
                 string ligne;
-                string ligne1 = "", ligne2 = "", ligne3 = "";
-                int compteur = 1;
                 while ((ligne = reader.ReadLine()) != null)
                 {
                     if (ligne.Contains("dashboard") && branch != "master")
@@ -483,26 +497,45 @@ public class Functions
                         {
                             affiche = !ShowDialog("Ne plus afficher", "Le projet " + rep + " ne contient pas de branche " + config.GetBranchDev() + " ! \n\nRecherche sur la branche master\n ");
                         }
-                        modList.AddRange(GetSubmodList("master", rep));
-                        break;
-                    }
-                    switch (compteur)
-                    {
-                        case 1:
-                            ligne1 = ligne;
-                            break;
-                        case 2:
-                            ligne2 = ligne;
-                            break;
-                        case 3:
-                            ligne3 = ligne;
-                            compteur = 1;
-                            break;
+                        return await GetSubmodList("master", rep);
                     }
                     if (ligne.Contains("url = "))
                     {
-                        string name = ligne.Replace("url = ", "").Replace(".git","");
+                        string name = ligne.Replace("url = ", "").Replace(".git","").Trim();
                         modList.Add(name.Substring(name.LastIndexOf("/") + 1, name.Length - name.LastIndexOf("/") - 1 ));
+                    }
+                }
+            }
+        }
+        else if (config.GetCurrentType() == "devops")
+        {
+            string result;
+            try
+            {
+                result = await DevOpsQuery("https://dev.azure.com/" + config.GetUserName() + "/KIMOdules/_apis/git/repositories/" + rep + "/items?path=.gitmodules&includeContent=true&api-version=5.0");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("GetSubmodError : " + ex.Message);
+                if (branch != "master")
+                    return await GetSubmodList("master", rep);
+                result = "null";
+            }
+            if (result.Length == 0 && branch != "master")
+                return await GetSubmodList("master", rep);
+
+            JObject obj = JObject.Parse(result);
+            result = (string)obj["content"];
+            Console.WriteLine(result);
+            using (StringReader reader = new StringReader(result))
+            {
+                string ligne;
+                while ((ligne = reader.ReadLine()) != null)
+                {
+                    if (ligne.Contains("url = "))
+                    {
+                        string name = ligne.Replace("url = ", "").Replace(".git", "").Trim();
+                        modList.Add(name.Substring(name.LastIndexOf("/") + 1, name.Length - name.LastIndexOf("/") - 1));
                     }
                 }
             }
@@ -631,11 +664,24 @@ public class Functions
             byte[] bytes = Encoding.Default.GetBytes(md);
             md = Encoding.UTF8.GetString(bytes);
         }
+        else if(config.GetCurrentType() == "bitbucket")
+        {
+            string url = "https://bitbucket.org/" + config.GetUserName() + "/" + projName + "/raw/" + branch + "/README.md";
+            if(BitBucketQuery(url).Length == 0 && branch != "master")
+            {
+                Console.WriteLine(GetMarkdown(projName, "master"));
+                return GetMarkdown(projName, "master");
+            } else
+            {
+                return BitBucketQuery(url);
+            }
+        }
         return md;
     }
 
     public string GetMarkdownLoc(string projPath)
     {
+        Console.WriteLine(projPath);
         string md = "";
         try
         {
@@ -643,7 +689,7 @@ public class Functions
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex.Message);
+            Console.WriteLine("Local Markdown Exception (path : " + projPath + ") : " + ex.Message);
         }
         return md;
     }
@@ -668,7 +714,6 @@ public class Functions
                     {
                         entropy = Encoding.Default.GetBytes(result);
                         ciphertext = ProtectedData.Protect(plaintext, entropy, DataProtectionScope.CurrentUser);
-                        //=================== CREDIT FILE PATH ===========//
                         File.WriteAllBytes(config.GetAppData() + ".cred" + name, ciphertext);
                         return true;
                     }

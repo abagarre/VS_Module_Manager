@@ -39,7 +39,7 @@ namespace module_manager
                 repoList = await functions.GetRepoList();
                 Console.WriteLine(ex.Message);
             }
-            moduleList = functions.GetModuleList(repoList);
+            moduleList = repoList;
             backgroundWorker1.RunWorkerAsync();
         }
 
@@ -91,7 +91,7 @@ namespace module_manager
             this.Close();
         }
 
-        private void BackgroundWorker1_DoWork(object sender, DoWorkEventArgs e)
+        private async void BackgroundWorker1_DoWork(object sender, DoWorkEventArgs e)
         {
             BackgroundWorker worker = sender as BackgroundWorker;
 
@@ -101,7 +101,7 @@ namespace module_manager
             try
             {
                 // Récupère la liste des modules du projet (lecture sur projet distant)
-                projModules = functions.GetSubmodList(config.GetBranchDev(), functions.GetProjFullName(repo).Replace(".git", ""));
+                projModules = await functions.GetSubmodList(config.GetBranchDev(), functions.GetProjFullName(repo).Replace(".git", ""));
             }
             catch (Exception ex)
             {
@@ -135,9 +135,9 @@ namespace module_manager
                 }
 
                 i++;
-                worker.ReportProgress(i * 100 / modList.Count());
+                //worker.ReportProgress(i * 100 / modList.Count());
             }
-            worker.ReportProgress(0);
+            //worker.ReportProgress(0);
         }
 
         private void BackgroundWorker1_ProgressChanged(object sender, ProgressChangedEventArgs e)

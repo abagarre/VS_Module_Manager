@@ -27,7 +27,17 @@ namespace module_manager
 
         }
 
-        private void TextBox4_TextChanged(object sender, EventArgs e)
+        private void MetroButton2_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void MetroButton1_Click(object sender, EventArgs e)
+        {
+            openFileDialog1.ShowDialog();
+        }
+
+        private void OpenFileDialog1_FileOk(object sender, CancelEventArgs e)
         {
 
         }

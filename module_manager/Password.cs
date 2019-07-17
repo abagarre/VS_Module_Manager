@@ -32,7 +32,16 @@ namespace module_manager
 
         private void Password_Load(object sender, EventArgs e)
         {
+            this.textBox1.KeyPress += new KeyPressEventHandler(CheckEnterKeyPress);
+        }
 
+        private void CheckEnterKeyPress(object sender, KeyPressEventArgs e)
+        {
+            if (e.KeyChar == (char)Keys.Return)
+
+            {
+                MetroButton1_Click(sender, e);
+            }
         }
     }
 }
