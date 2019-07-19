@@ -23,21 +23,28 @@ namespace module_manager
             InitializeComponent();
         }
 
-        private async void Form2_Load(object sender, EventArgs e)
+        private void Form2_Load(object sender, EventArgs e)
         {
             toolStripStatusLabel2.Text = repo;
             path = repo;
             toolStripStatusLabel1.Text = "Chargement...";
             config = new Config();
-            functions = new Functions();
+            try
+            {
+                functions = MainForm.functions;
+            }
+            catch (Exception)
+            {
+                functions = new Functions();
+            }
+
             try
             {
                 repoList = MainForm.repoList;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                repoList = await functions.GetRepoList();
-                Console.WriteLine(ex.Message);
+                repoList = functions.GetRepoList();
             }
             moduleList = repoList;
             backgroundWorker1.RunWorkerAsync();
@@ -62,7 +69,7 @@ namespace module_manager
          */
         private void MetroButton1_Click(object sender, EventArgs e)
         {
-            if(checkedListBox1.CheckedItems.Count != 0)
+            if (checkedListBox1.CheckedItems.Count != 0)
             {
                 // Si des modules ont été sélectionnés
                 List<string> installList = new List<string>();
@@ -74,12 +81,19 @@ namespace module_manager
                         installList.Add(item.ToString());
                     }
                 }
-
-                var frm = new AddConfirmForm(installList);
-                frm.Location = this.Location;
-                frm.StartPosition = FormStartPosition.Manual;
-                frm.FormClosed += CloseForm;
-                frm.Show();
+                if(installList.Count != 0)
+                {
+                    var frm = new AddConfirmForm(installList);
+                    frm.Location = this.Location;
+                    frm.StartPosition = FormStartPosition.Manual;
+                    frm.FormClosed += CloseForm;
+                    frm.Show();
+                }
+                else
+                {
+                    MessageBox.Show("Veuillez sélectionner un module", "Aucun module séléctionné", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+                
             } else
             {
                 MessageBox.Show("Veuillez sélectionner un module", "Aucun module séléctionné", MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -91,7 +105,7 @@ namespace module_manager
             this.Close();
         }
 
-        private async void BackgroundWorker1_DoWork(object sender, DoWorkEventArgs e)
+        private void BackgroundWorker1_DoWork(object sender, DoWorkEventArgs e)
         {
             BackgroundWorker worker = sender as BackgroundWorker;
 
@@ -101,11 +115,11 @@ namespace module_manager
             try
             {
                 // Récupère la liste des modules du projet (lecture sur projet distant)
-                projModules = await functions.GetSubmodList(config.GetBranchDev(), functions.GetProjFullName(repo).Replace(".git", ""));
+                projModules = functions.GetSubmodList(config.GetBranchDev(), functions.GetProjFullName(repo).Replace(".git", ""));
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                Console.WriteLine("Add Mod error retreiving submod : " + ex.Message);
             }
             
             repo = repo.Substring(repo.LastIndexOf("\\") + 1, repo.Length - repo.LastIndexOf("\\") - 1);
@@ -119,7 +133,7 @@ namespace module_manager
                 
                 foreach (string module in projModules)
                 {
-                    if (mod.Contains(module))
+                    if (mod.ToLower() == module.ToLower())
                     {
                         // Si le module est déjà ajouté au projet, ajoute un indicateur et grise la case
                         checkedListBox1.Invoke(new Action(() => checkedListBox1.Items.Add(mod + " (✓)", true)));
@@ -135,9 +149,9 @@ namespace module_manager
                 }
 
                 i++;
-                //worker.ReportProgress(i * 100 / modList.Count());
+                worker.ReportProgress(i * 100 / modList.Count());
             }
-            //worker.ReportProgress(0);
+            worker.ReportProgress(0);
         }
 
         private void BackgroundWorker1_ProgressChanged(object sender, ProgressChangedEventArgs e)

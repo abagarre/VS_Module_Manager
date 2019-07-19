@@ -371,6 +371,7 @@
             // 
             // toolStripStatusLabel2
             // 
+            this.toolStripStatusLabel2.ActiveLinkColor = System.Drawing.Color.Black;
             this.toolStripStatusLabel2.BackColor = System.Drawing.Color.Transparent;
             this.toolStripStatusLabel2.BorderSides = System.Windows.Forms.ToolStripStatusLabelBorderSides.Left;
             this.toolStripStatusLabel2.ForeColor = System.Drawing.SystemColors.GrayText;
@@ -378,7 +379,7 @@
             this.toolStripStatusLabel2.LinkColor = System.Drawing.SystemColors.GrayText;
             this.toolStripStatusLabel2.Margin = new System.Windows.Forms.Padding(10, 3, 0, 2);
             this.toolStripStatusLabel2.Name = "toolStripStatusLabel2";
-            this.toolStripStatusLabel2.Size = new System.Drawing.Size(325, 19);
+            this.toolStripStatusLabel2.Size = new System.Drawing.Size(356, 19);
             this.toolStripStatusLabel2.Spring = true;
             this.toolStripStatusLabel2.Text = "                       ";
             this.toolStripStatusLabel2.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
@@ -650,7 +651,7 @@
             this.Controls.Add(this.metroTabControl1);
             this.MainMenuStrip = this.menuStrip1;
             this.Name = "MainForm";
-            this.Text = "Form1";
+            this.Text = "Module Manager";
             this.Load += new System.EventHandler(this.Form1_Load);
             this.metroTabControl1.ResumeLayout(false);
             this.metroTabPage1.ResumeLayout(false);

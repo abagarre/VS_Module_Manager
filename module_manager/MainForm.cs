@@ -10,7 +10,6 @@ using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using System.Windows.Forms;
-using System.Xml.Linq;
 
 namespace module_manager
 {
@@ -21,7 +20,7 @@ namespace module_manager
         private List<string> clientList;             // Liste des projets ouverts dans SmartGit
         private List<string> moduleList;
         private List<int> readmeState;
-        Functions functions;
+        public static Functions functions;
         Config config;
         bool bg3IsWorking = false;
         int treeViewIndex;
@@ -137,24 +136,25 @@ namespace module_manager
         /**
          * Récupère toutes les informations des projet locaux et des modules distants
          */
-        private async void BackgroundWorker1_DoWork(object sender, DoWorkEventArgs e)
+        private void BackgroundWorker1_DoWork(object sender, DoWorkEventArgs e)
         {
             BackgroundWorker worker = sender as BackgroundWorker;
 
-            repoList = await functions.GetRepoList(); // Récupère la liste de tous les dépôts distants
+            repoList = functions.GetRepoList(); // Récupère la liste de tous les dépôts distants
+
             int i = 1;
             foreach(string rep in repoList)
             {
                 //=============== MODULES FOLDER NAME (GITBLIT) =================//
                 if (rep.Contains("MODULE"))
-                //===============================================================//
+                    //===============================================================//
                     // Si le dépôt est un module, l'ajoute au TreeView des modules
                     treeView2.Invoke(new Action(() => treeView2.Nodes.Add(new TreeNode(rep.Replace(".git", "")))));
-               
+
                 // Récupère la liste des modules de ce projet et l'ajoute à la liste projList
                 try
                 {
-                    List<string> proj = await functions.GetSubmodList(config.GetBranchDev(), rep);
+                    List<string> proj = functions.GetSubmodList(config.GetBranchDev(), rep);
                     projList.Add(proj);
                 }
                 catch (Exception)
@@ -162,15 +162,15 @@ namespace module_manager
                     // Si pas de modules, ajoute liste vide
                     projList.Add(new List<string>());
                 }
-                //worker.ReportProgress((i * 100) / repoList.Count);
+                worker.ReportProgress((i * 100) / repoList.Count);
                 i++;
             }
-            
+
             if (backgroundWorker1.CancellationPending)
             {
                 e.Cancel = true;
                 return;
-            }       
+            }
         }
 
         private void BackgroundWorker1_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
@@ -181,6 +181,7 @@ namespace module_manager
             metroTabControl1.Enabled = true;
             treeView1.Enabled = true;
             treeView2.Enabled = true;
+            this.Activate();
         }
 
         private void BackgroundWorker1_ProgressChanged(object sender, ProgressChangedEventArgs e)
@@ -219,7 +220,6 @@ namespace module_manager
             {
                 if (!bg3IsWorking)
                 {
-                    Console.WriteLine("bgworker3");
                     // Si la tache n'est pas déjà en cours, charge le README dans le WebBrowser
                     backgroundWorker3.RunWorkerAsync(argument: e.Node.Text);
                 }
@@ -251,31 +251,33 @@ namespace module_manager
                 List<string> distantModules = new List<string>();
                 metroLabel4.Text = "Modules présents dans le projet";
                 int i = 0;
-                foreach(List<string> proj in projList)
+                if(projList.Count != 0)
                 {
-                    if (repoList.ElementAt(i).IndexOf(e.Node.Text, StringComparison.OrdinalIgnoreCase) >= 0)
+                    foreach (List<string> proj in projList)
                     {
-                        // Si le noeud séléctionné est présent dans repoList.ElementAt(i)
-                        // Récupère la liste des sous-modules présents dans le projet distant
-                        foreach (string module in proj)
+                        if (repoList.ElementAt(i).IndexOf(e.Node.Text, StringComparison.OrdinalIgnoreCase) >= 0)
                         {
-                            if(gitmodulesLocList.Contains(module))
+                            // Si le noeud séléctionné est présent dans repoList.ElementAt(i)
+                            // Récupère la liste des sous-modules présents dans le projet distant
+                            foreach (string module in proj)
                             {
-                                // Si le module est à la fois présent localement et sur le serveur (autorise la suppression locale)
-                                dataGridView1.Rows.Add(module, "Distant / Local", "Dépendances");
+                                if (gitmodulesLocList.Contains(module))
+                                {
+                                    // Si le module est à la fois présent localement et sur le serveur (autorise la suppression locale)
+                                    dataGridView1.Rows.Add(module, "Distant / Local", "Dépendances");
+                                }
+                                else
+                                {
+                                    // Si il n'est présent que sur le serveur (autorise l'affichage des dépendances)
+                                    dataGridView1.Rows.Add(module, "Distant", "Dépendances");
+                                }
+                                distantModules.Add(module);
                             }
-                            else
-                            {
-                                // Si il n'est présent que sur le serveur (autorise l'affichage des dépendances)
-                                dataGridView1.Rows.Add(module, "Distant", "Dépendances");
-                            }
-                            distantModules.Add(module);
+                            break;
                         }
-                        break;
+                        i++;
                     }
-                    i++;
                 }
-
                 foreach (string submodule in gitmodulesLocList)
                 {
                     if(!distantModules.Contains(submodule))
@@ -607,7 +609,7 @@ namespace module_manager
         private void BackgroundWorker3_DoWork(object sender, DoWorkEventArgs e)
         {
             bg3IsWorking = true;
-            string project = (string) e.Argument;
+            string project = (string)e.Argument;
             string md = "";
             string path = "";
             TreeNode treeNode = new TreeNode(); ;
@@ -616,7 +618,7 @@ namespace module_manager
             int treeIndex = functions.GetIndex(treeView1.SelectedNode);
             Console.WriteLine("index : " + treeIndex);
             */
-            if (readmeState.ElementAt(treeViewIndex) == 1) 
+            if (readmeState.ElementAt(treeViewIndex) == 1)
                 md = functions.GetMarkdown(project, config.GetBranchDev()); // Récupère le markdown dans une string
             else
             {
@@ -632,10 +634,10 @@ namespace module_manager
                     List<string> gitmodulesLocPathList = functions.GetGitmodulesLocPath(path);
                     foreach (string submodule in gitmodulesLocPathList)
                     {
-                        if(submodule.Contains(project.Substring(project.LastIndexOf("/") + 1, project.Length - project.LastIndexOf("/") - 1)))
+                        if (submodule.Contains(project.Substring(project.LastIndexOf("/") + 1, project.Length - project.LastIndexOf("/") - 1)))
                         {
                             md = functions.GetMarkdownLoc(path + @"\" + submodule.Replace(@"/", @"\"));
-                        } 
+                        }
                     }
                 }
             }
@@ -650,13 +652,12 @@ namespace module_manager
                 Console.WriteLine("Markdow ToHTML error : " + ex.Message);
             }
             // TODO: Adapter le markdown à la source
-            if(config.GetCurrentType() == "gitblit")
+            if (config.GetCurrentType() == "gitblit")
             {
                 html = html.Replace("img src=\"", "img src=\"" + config.GetServerUrl() + @"raw/" + project + ".git/master/");
                 html = html.Replace(@"%5C", @"/");
             }
             e.Result = html;
-            Console.WriteLine("result : " + e.Result);
         }
 
         private void BackgroundWorker3_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
@@ -699,44 +700,62 @@ namespace module_manager
          */
         private void ComptesEtConnexionsToolStripMenuItem_ClickAsync(object sender, EventArgs e)
         {
-            /*
-            //string url = "https://api.bitbucket.org/2.0/repositories/bglx/pressure/src/master/";
-            //string url = "https://bitbucket.org/bglx/pressure/raw/master/Pressure.c";
-            List<string> modl = functions.GetModuleDep("pressure","master");
-            foreach(string mod in modl)
+            string entropy = "";
+            string url = "https://dev.azure.com/" + config.GetUserName() + "/KIPROjects/_apis/git/repositories/PORT_SONDES_2019/items?path=.gitmodules&includeContent=true&api-version=5.0";
+            if (entropy == "")
             {
-                Console.WriteLine(mod);
-            }
-            
-            string json = File.ReadAllText(@"C:\Users\STBE\Downloads\PortableGit\home\PORT_DISTRI_2019\.git\index");
-            byte[] bytes = Encoding.Default.GetBytes(json);
-            json = Encoding.UTF8.GetString(bytes);
-            Console.WriteLine(json)*/
-
-            //functions.GetProjects();
-            //List<string> list = await functions.DevOpsRepoList();
-            /*
-            using (Password formOptions = new Password())
-            {
-                formOptions.ShowDialog();
-                try
+                using (Password formOptions = new Password())
                 {
-                    string entropy = formOptions.pass;
-                    if (entropy.Length != 0)
+                    formOptions.ShowDialog();
+                    try
                     {
-                        byte[] ciphertext = File.ReadAllBytes(config.GetAppData() + @".credBucketChanllenge");
-                        Console.WriteLine(Encoding.UTF8.GetString(ProtectedData.Unprotect(ciphertext, Encoding.Default.GetBytes(entropy), DataProtectionScope.CurrentUser)));
+                        if (formOptions.pass.Length != 0)
+                            entropy = formOptions.pass;
                     }
-
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex.Message);
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                    }
                 }
             }
-            */
+            try
+            {
+                byte[] ciphertext = File.ReadAllBytes(config.GetAppData() + @".cred" + config.GetCurrentSource());
 
-            functions.DevOpsRepoList();
+                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+                WebRequest myReq = WebRequest.Create(url);
+                myReq.Method = "GET";
+                CredentialCache mycache = new CredentialCache();
+                myReq.Headers["Authorization"] = "Basic " + Convert.ToBase64String(
+                    ASCIIEncoding.ASCII.GetBytes(
+                        string.Format("{0}:{1}", "", Encoding.UTF8.GetString(ProtectedData.Unprotect(ciphertext, Encoding.Default.GetBytes(entropy), DataProtectionScope.CurrentUser)))));
+                WebResponse wr = myReq.GetResponse();
+                Stream receiveStream = wr.GetResponseStream();
+                StreamReader reader = new StreamReader(receiveStream, Encoding.UTF8);
+                /*
+                using (HttpClient client = new HttpClient())
+                {
+                    client.DefaultRequestHeaders.Accept.Add(
+                        new MediaTypeWithQualityHeaderValue("application/json"));
+
+                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
+                        Convert.ToBase64String(
+                            ASCIIEncoding.ASCII.GetBytes(
+                                string.Format("{0}:{1}", "", Encoding.UTF8.GetString(ProtectedData.Unprotect(ciphertext, Encoding.Default.GetBytes(entropy), DataProtectionScope.CurrentUser))))));
+
+                    using (HttpResponseMessage response = await client.GetAsync(url))
+                    {
+                        response.EnsureSuccessStatusCode();
+                        string responseBody = await response.Content.ReadAsStringAsync();
+                        return responseBody;
+                    }
+                }
+                */
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("DevOps query error : " + ex.Message);
+            }
         }
 
         private void ParamètresToolStripMenuItem_Click(object sender, EventArgs e)
@@ -770,13 +789,43 @@ namespace module_manager
             {
                 if(treeView1.SelectedNode.Name == "module")
                 {
-                    string path = functions.GetProjURL(@toolStripStatusLabel2.Text, treeView1.SelectedNode.Text, "module").Replace(@"/r/", @"/summary/");
-                    Process.Start(path.Insert(path.LastIndexOf(@"/"),@"%2F").Replace(@"%2F/",@"%2F"));
+                    string path = functions.GetProjURL(@toolStripStatusLabel2.Text, treeView1.SelectedNode.Text, "module");
+                    if (path.Contains("bitbucket"))
+                    {
+
+                    }
+                    else if (path.Contains("azure"))
+                    {
+
+                    }
+                    else
+                    {
+                        path = path.Replace(@"/r/", @"/summary/");
+                        path = path.Insert(path.LastIndexOf(@"/"), @"%2F").Replace(@"%2F/", @"%2F");
+                    }
+                    Process.Start(path);
                 }
                 else
                 {
-                    string path = functions.GetProjURL(@toolStripStatusLabel2.Text, treeView1.SelectedNode.Text, "projet").Replace(@"/r/", @"/summary/");
-                    Process.Start(path.Insert(path.LastIndexOf(@"/"), @"%2F").Replace(@"%2F/", @"%2F"));
+                    string path = functions.GetProjURL(@toolStripStatusLabel2.Text, treeView1.SelectedNode.Text, "projet");
+                    if (path.Contains("bitbucket"))
+                    {
+
+                    }
+                    else if(path.Contains("azure"))
+                    {
+
+                    }
+                    else
+                    {
+                        path = path.Replace(@"/r/", @"/summary/");
+                        try
+                        {
+                            path = path.Insert(path.LastIndexOf(@"/"), @"%2F").Replace(@"%2F/", @"%2F");
+                        } catch (Exception) { }
+                    }
+                    if(path.Length != 0)
+                        Process.Start(path);
                 }
             }
         }
@@ -872,8 +921,6 @@ namespace module_manager
             string projPath = "";
             treeView1.Invoke(new Action(() => modName = treeView1.SelectedNode.Tag.ToString()));
             treeView1.Invoke(new Action(() => projPath = treeView1.SelectedNode.Parent.Name));
-
-            Console.WriteLine("\"" + modName + "\" \"" + e.Argument.ToString() + "\"");
             
             Process process = new Process();
             process.StartInfo.FileName = config.GetAppData() + "mv.bat";
@@ -915,7 +962,7 @@ class CustomProfessionalColors : ProfessionalColorTable
     { get { return Color.CornflowerBlue; } }
 
     public override Color MenuStripGradientBegin
-    { get { return SystemColors.ControlLight; } }
+    { get { return SystemColors.MenuBar; } }
 
     public override Color MenuStripGradientEnd
     { get { return Color.White; } }

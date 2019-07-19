@@ -241,7 +241,7 @@
             this.Controls.Add(this.metroButton1);
             this.Controls.Add(this.metroLabel1);
             this.Name = "AddSource";
-            this.Text = "AddSource";
+            this.Text = "Ajouter un serveur";
             this.panel1.ResumeLayout(false);
             this.panel1.PerformLayout();
             this.panel2.ResumeLayout(false);

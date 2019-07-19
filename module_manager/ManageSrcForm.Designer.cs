@@ -99,7 +99,7 @@
             this.Controls.Add(this.metroLabel2);
             this.Controls.Add(this.metroLabel1);
             this.Name = "ManageSrcForm";
-            this.Text = "Form6";
+            this.Text = "Gérer le sources";
             this.Load += new System.EventHandler(this.Form6_Load);
             this.ResumeLayout(false);
 

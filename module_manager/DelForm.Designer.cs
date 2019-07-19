@@ -117,7 +117,7 @@
             this.Font = new System.Drawing.Font("Century Gothic", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.Name = "Form4";
-            this.Text = "Form4";
+            this.Text = "Supprimer";
             this.Load += new System.EventHandler(this.Form4_Load);
             this.statusStrip1.ResumeLayout(false);
             this.statusStrip1.PerformLayout();

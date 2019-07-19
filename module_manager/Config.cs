@@ -22,6 +22,12 @@ namespace module_manager
             return path;
         }
 
+        public string GetSettingsPath()
+        {
+            string path = GetAppData() + @"settings.json";
+            return path;
+        }
+
         public string GetAppData()
         {
             string path = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + @"\ModuleManager\";

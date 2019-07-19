@@ -19,8 +19,16 @@ namespace module_manager
         {
             InitializeComponent();
             modules = args;
-            functions = new Functions();
             config = new Config();
+            try
+            {
+                functions = MainForm.functions;
+            }
+            catch (Exception)
+            {
+                functions = new Functions();
+            }
+
         }
 
         private void Form3_Load(object sender, EventArgs e)
@@ -148,14 +156,21 @@ namespace module_manager
                         process.StartInfo.UseShellExecute = false;
                         process.StartInfo.CreateNoWindow = true;
                         process.StartInfo.RedirectStandardOutput = true;
+                        process.StartInfo.RedirectStandardError = true;
                         process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
                         process.StartInfo.WorkingDirectory = AddSubForm.path;
                         //============================================== MODULES FOLDER NAME ==================================================//
                         string modName = node.Replace("_MODULES_/", "").Replace(".h", "");
                         if (config.GetCurrentType() == "gitblit")
                             process.StartInfo.Arguments = config.GetServerUrl() + @"r/" + "_MODULES_/" + modName + " " + "_MODULES_/" + modName;
+                        else if(config.GetCurrentType() == "devops")
+                        {
+                            process.StartInfo.CreateNoWindow = false;
+                            process.StartInfo.Arguments = config.GetServerUrl() + modName + " " + "_MODULES_/" + modName;
+                        }
                         //=====================================================================================================================//
                         process.Start();
+                        e.Result = process.StandardError.ReadToEnd(); // Récupère les erreurs et warning du process
                         while (!process.StandardOutput.EndOfStream)
                         {
                             string line = process.StandardOutput.ReadLine();
@@ -213,6 +228,8 @@ namespace module_manager
 
         private void BackgroundWorker1_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
+            if(e.Result.ToString().Contains("fatal"))
+                MessageBox.Show(e.Result.ToString(), "Attention", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             this.Close();
         }
 

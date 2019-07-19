@@ -24,7 +24,6 @@ public class Functions
 
     public string BitBucketQuery(string url)
     {
-        Console.WriteLine(url);
         if(entropy == "")
         {
             using (Password formOptions = new Password())
@@ -61,9 +60,8 @@ public class Functions
         return "";
     }
 
-    public async Task<string> DevOpsQuery(string url)
+    public string DevOpsQuery(string url)
     {
-        Console.WriteLine(url);
         if (entropy == "")
         {
             using (Password formOptions = new Password())
@@ -83,6 +81,20 @@ public class Functions
         try
         {
             byte[] ciphertext = File.ReadAllBytes(config.GetAppData() + @".cred" + config.GetCurrentSource());
+
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+            WebRequest myReq = WebRequest.Create(url);
+            myReq.Method = "GET";
+            CredentialCache mycache = new CredentialCache();
+            myReq.Headers["Authorization"] = "Basic " + Convert.ToBase64String(
+                ASCIIEncoding.ASCII.GetBytes(
+                    string.Format("{0}:{1}", "", Encoding.UTF8.GetString(ProtectedData.Unprotect(ciphertext, Encoding.Default.GetBytes(entropy), DataProtectionScope.CurrentUser)))));
+            WebResponse wr = myReq.GetResponse();
+            Stream receiveStream = wr.GetResponseStream();
+            StreamReader reader = new StreamReader(receiveStream, Encoding.UTF8);
+            return reader.ReadToEnd();
+            /*
+            
             using (HttpClient client = new HttpClient())
             {
                 client.DefaultRequestHeaders.Accept.Add(
@@ -97,10 +109,10 @@ public class Functions
                 {
                     response.EnsureSuccessStatusCode();
                     string responseBody = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine(responseBody);
                     return responseBody;
                 }
             }
+            */
         }
         catch (Exception ex)
         {
@@ -183,14 +195,16 @@ public class Functions
         List<string> repoList = new List<string>();
         string url = "https://api.bitbucket.org/2.0/repositories/bglx/";
         string json = BitBucketQuery(url);
-        JObject obj = JObject.Parse(json);
-        JArray list = (JArray)obj["values"];
-        foreach(JObject ob in list)
+        if(json != "")
         {
-            string name = ((string)ob["name"]).Replace(".git","");
-            repoList.Add(name.Substring(name.LastIndexOf("/") + 1, name.Length - name.LastIndexOf("/") - 1));
+            JObject obj = JObject.Parse(json);
+            JArray list = (JArray)obj["values"];
+            foreach (JObject ob in list)
+            {
+                string name = ((string)ob["name"]).Replace(".git", "");
+                repoList.Add(name.Substring(name.LastIndexOf("/") + 1, name.Length - name.LastIndexOf("/") - 1));
+            }
         }
-
         return repoList;
     }
 
@@ -223,23 +237,40 @@ public class Functions
         return repoList;
     }
 
-    public async Task<List<string>> DevOpsRepoList()
+    public List<string> DevOpsRepoList()
     {
         List<string> repoList = new List<string>();
         string json;
         try
         {
-            json = await DevOpsQuery("https://dev.azure.com/thebagalex/KIMOdules/_apis/git/repositories?api-version=5.0");
-            Console.WriteLine(json);
-
-            JObject obj = JObject.Parse(json);
-            JArray list = (JArray)obj["value"];
-            foreach(JObject jObject in list)
+            json = DevOpsQuery("https://dev.azure.com/thebagalex/KIMOdules/_apis/git/repositories?api-version=5.0");
+            if (json != "")
             {
-                repoList.Add(jObject["name"].ToString());
-                Console.WriteLine(jObject["name"].ToString());
+                JObject obj = JObject.Parse(json);
+                JArray list = (JArray)obj["value"];
+                foreach (JObject jObject in list)
+                {
+                    Console.WriteLine(jObject["name"].ToString());
+                    repoList.Add(jObject["name"].ToString());
+                }
             }
-
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.ToString());
+        }
+        try
+        {
+            json = DevOpsQuery("https://dev.azure.com/thebagalex/KIPROjects/_apis/git/repositories?api-version=5.0");
+            if (json != "")
+            {
+                JObject obj = JObject.Parse(json);
+                JArray list = (JArray)obj["value"];
+                foreach (JObject jObject in list)
+                {
+                    repoList.Add(jObject["name"].ToString());
+                }
+            }
         }
         catch (Exception ex)
         {
@@ -251,20 +282,20 @@ public class Functions
     /**
      * Retourne la liste des dépôts du serveur
      */
-    public async Task<List<string>> GetRepoList()
+    public List<string> GetRepoList()
     {
         List<string> repoList = new List<string>();
         if (config.GetCurrentType() == "gitblit")
         {
             return GitBlitRepoList();
         }
-        else if(config.GetCurrentType() == "bitbucket")
+        else if (config.GetCurrentType() == "bitbucket")
         {
             return BitBucketRepoList();
         }
-        else if(config.GetCurrentType() == "devops")
+        else if (config.GetCurrentType() == "devops")
         {
-            return await DevOpsRepoList();
+            return DevOpsRepoList();
         }
         return repoList;
     }
@@ -309,8 +340,7 @@ public class Functions
                 document.LoadHtml(html);
                 if (html.Contains("branch!") && branch != "master")
                 {
-                    dep.AddRange(GetModuleDep(moduleText, "master"));
-                    return dep;
+                    return GetModuleDep(moduleText, "master");
                 }
                 HtmlNodeCollection collection = document.DocumentNode.SelectNodes("//a");
                 foreach (HtmlNode link in collection)
@@ -329,15 +359,45 @@ public class Functions
         {
             string url = "https://api.bitbucket.org/2.0/repositories/bglx/" + moduleText + "/src/" + branch + "/";
             string json = BitBucketQuery(url);
-            JObject obj = JObject.Parse(json);
-            JArray list = (JArray)obj["values"];
-            foreach (JObject ob in list)
+            if(json != "")
             {
-                if(((string)ob["path"]).Contains(".c") || ((string)ob["path"]).Contains(".h"))
+                JObject obj = JObject.Parse(json);
+                JArray list = (JArray)obj["values"];
+                foreach (JObject ob in list)
                 {
-                    dep.AddRange(GetIncludes("https://bitbucket.org/bglx/" + moduleText + "/raw/" + branch + "/" + (string)ob["path"]));
+                    if (((string)ob["path"]).Contains(".c") || ((string)ob["path"]).Contains(".h"))
+                    {
+                        dep.AddRange(GetIncludes("https://bitbucket.org/bglx/" + moduleText + "/raw/" + branch + "/" + (string)ob["path"]));
+                    }
                 }
             }
+            else if(branch != "master")
+            {
+                return GetModuleDep(moduleText, "master");
+            }
+            
+        }
+        else if(config.GetCurrentType() == "devops")
+        {
+            string urlh = "https://dev.azure.com/" + config.GetUserName() + "/KIMOdules/_apis/git/repositories/" + moduleText + "/items?path=" + moduleText + ".h&versionType=Branch&version=" + branch + "&includeContent=true&api-version=5.0";
+            string urlc = "https://dev.azure.com/" + config.GetUserName() + "/KIMOdules/_apis/git/repositories/" + moduleText + "/items?path=" + moduleText + ".c&versionType=Branch&version=" + branch + "&includeContent=true&api-version=5.0";
+            try
+            {
+                string json = DevOpsQuery(urlh);
+                if (!json.Contains("include") && branch!= "master")
+                {
+                    return GetModuleDep(moduleText, "master");
+                }
+            }
+            catch (Exception)
+            {
+                if (branch != "master")
+                {
+                    return GetModuleDep(moduleText, "master");
+                }
+            }
+            dep.AddRange(GetIncludes(urlc));
+            dep.AddRange(GetIncludes(urlh));
         }
         return dep;
     }
@@ -348,7 +408,7 @@ public class Functions
     public List<string> GetIncludes(string url)
     {
         List<string> dep = new List<string>();
-        if(config.GetCurrentType() == "gitblit")
+        if (config.GetCurrentType() == "gitblit")
         {
             var client = new WebClient();
             using (var stream = client.OpenRead(url))
@@ -366,7 +426,7 @@ public class Functions
                 }
             }
         }
-        else if(config.GetCurrentType() == "bitbucket")
+        else if (config.GetCurrentType() == "bitbucket")
         {
             string result = BitBucketQuery(url);
             using (StringReader reader = new StringReader(result))
@@ -383,7 +443,28 @@ public class Functions
                 }
             }
         }
-        
+        else if (config.GetCurrentType() == "devops")
+        {
+            string result = DevOpsQuery(url);
+            using (StringReader reader = new StringReader(result))
+            {
+                string ligne;
+
+                while ((ligne = reader.ReadLine()) != null)
+                {
+                    if (!ligne.Contains("Error") && ligne.Contains("#include \""))
+                    {
+                        string module = ligne.Replace("\"", "").Replace("#include ", "").Replace(" ", "");
+                        if (!url.Contains(module.Replace(".h", "")))
+                        {
+                            dep.Add(module);
+                        }
+
+                    }
+                }
+            }
+        }
+
         return dep;
     }
 
@@ -420,7 +501,7 @@ public class Functions
     /**
      * Retourne la liste des modules présents dans le fichier .gitmodules d'un projet distant
      */
-    public async Task<List<string>> GetSubmodList(string branch, string rep)
+    public List<string> GetSubmodList(string branch, string rep)
     {
         List<string> modList = new List<string>();
         if(config.GetCurrentType() == "gitblit")
@@ -445,7 +526,7 @@ public class Functions
                             {
                                 affiche = !ShowDialog("Ne plus afficher", "Le projet " + rep + " ne contient pas de branche " + config.GetBranchDev() + " ! \n\nRecherche sur la branche master\n ");
                             }
-                            return await GetSubmodList("master", rep);
+                            return GetSubmodList("master", rep);
                         }
                         switch (compteur)
                         {
@@ -481,11 +562,11 @@ public class Functions
             {
                 Console.WriteLine("GetSubmodError : " + ex.Message);
                 if(branch != "master")
-                    return await GetSubmodList("master", rep);
+                    return GetSubmodList("master", rep);
                 result = "null";
             }
             if (result.Length == 0 && branch != "master")
-                return await GetSubmodList("master", rep);
+                return GetSubmodList("master", rep);
             using (StringReader reader = new StringReader(result))
             {
                 string ligne;
@@ -497,7 +578,7 @@ public class Functions
                         {
                             affiche = !ShowDialog("Ne plus afficher", "Le projet " + rep + " ne contient pas de branche " + config.GetBranchDev() + " ! \n\nRecherche sur la branche master\n ");
                         }
-                        return await GetSubmodList("master", rep);
+                        return GetSubmodList("master", rep);
                     }
                     if (ligne.Contains("url = "))
                     {
@@ -512,21 +593,18 @@ public class Functions
             string result;
             try
             {
-                result = await DevOpsQuery("https://dev.azure.com/" + config.GetUserName() + "/KIMOdules/_apis/git/repositories/" + rep + "/items?path=.gitmodules&includeContent=true&api-version=5.0");
+                result = DevOpsQuery("https://dev.azure.com/" + config.GetUserName() + "/KIPROjects/_apis/git/repositories/" + rep + "/items?path=.gitmodules&includeContent=true&api-version=5.0");
             }
             catch (Exception ex)
             {
                 Console.WriteLine("GetSubmodError : " + ex.Message);
                 if (branch != "master")
-                    return await GetSubmodList("master", rep);
+                    return GetSubmodList("master", rep);
                 result = "null";
             }
             if (result.Length == 0 && branch != "master")
-                return await GetSubmodList("master", rep);
+                return GetSubmodList("master", rep);
 
-            JObject obj = JObject.Parse(result);
-            result = (string)obj["content"];
-            Console.WriteLine(result);
             using (StringReader reader = new StringReader(result))
             {
                 string ligne;
@@ -573,11 +651,17 @@ public class Functions
         }
         else if(config.GetCurrentType() == "bitbucket")
         {
-            //========================================= BITBUCKET USERNAME ===============================================//
+            //========================================= BITBUCKET PATH ===============================================//
             fullName = fullName.Substring(fullName.IndexOf(config.GetUserName() + @"/") + 5, fullName.Length - fullName.IndexOf(config.GetUserName() + @"/") - 5);
             //============================================================================================================//
         }
-            
+        else if(config.GetCurrentType() == "devops")
+        {
+            //========================================= DEVOPS PATH ===============================================//
+            fullName = fullName.Substring(fullName.LastIndexOf(@"/") + 1, fullName.Length - fullName.LastIndexOf(@"/") - 1);
+            //============================================================================================================//
+        }
+
         return fullName;
 
     }
@@ -669,11 +753,26 @@ public class Functions
             string url = "https://bitbucket.org/" + config.GetUserName() + "/" + projName + "/raw/" + branch + "/README.md";
             if(BitBucketQuery(url).Length == 0 && branch != "master")
             {
-                Console.WriteLine(GetMarkdown(projName, "master"));
                 return GetMarkdown(projName, "master");
             } else
             {
                 return BitBucketQuery(url);
+            }
+        }
+        else if(config.GetCurrentType() == "devops")
+        {
+            string result = DevOpsQuery("https://dev.azure.com/" + config.GetUserName() + "/KIPROjects/_apis/git/repositories/" + projName + "/items?path=README.md&includeContent=true&api-version=5.0");
+            /*
+            JObject obj = JObject.Parse(result);
+            result = (string)obj["content"];
+            */
+            if (result.Length == 0 && branch != "master")
+            {
+                return GetMarkdown(projName, "master");
+            }
+            else
+            {
+                return result;
             }
         }
         return md;
@@ -681,7 +780,6 @@ public class Functions
 
     public string GetMarkdownLoc(string projPath)
     {
-        Console.WriteLine(projPath);
         string md = "";
         try
         {
@@ -736,7 +834,6 @@ public class Functions
                     {
                         entropy = Encoding.Default.GetBytes(result);
                         ciphertext = ProtectedData.Protect(plaintext, entropy, DataProtectionScope.CurrentUser);
-                        //=================== CREDIT FILE PATH ===========//
                         File.WriteAllBytes(config.GetAppData() + ".cred" + config.GetCurrentSource(), ciphertext);
                         config.SetPass("true");
                         return true;
@@ -865,13 +962,12 @@ public class Functions
                 {
                     response.EnsureSuccessStatusCode();
                     string responseBody = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine(responseBody);
                 }
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex.ToString());
+            Console.WriteLine(ex.Message);
         }
     }
 

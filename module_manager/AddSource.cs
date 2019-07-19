@@ -32,6 +32,10 @@ namespace module_manager
                     config.AddServer(checkedButton.Text.ToLower(), textBox1.Text, textBox2.Text, textBox3.Text, "private");
                     this.Close();
                 }
+                else
+                {
+                    MessageBox.Show("Mot de passe incorrect", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
 
             }
         }
