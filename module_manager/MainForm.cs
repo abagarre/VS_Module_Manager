@@ -18,7 +18,6 @@ namespace module_manager
         public static List<string> repoList;        // Liste des dépots distants
         public static List<List<string>> projList;  // Liste des listes des sous-modules de chaque dépôt de repoList
         private List<string> clientList;             // Liste des projets ouverts dans SmartGit
-        private List<string> moduleList;
         private List<int> readmeState;
         public static Functions functions;
         Config config;
@@ -46,7 +45,6 @@ namespace module_manager
             repoList = new List<string>();
             projList = new List<List<string>>();
             clientList = new List<string>();
-            moduleList = new List<string>();
             readmeState = new List<int>();
             toolStripStatusLabel2.Text = "";
             metroLabel6.Text = "";
@@ -146,7 +144,7 @@ namespace module_manager
             foreach(string rep in repoList)
             {
                 //=============== MODULES FOLDER NAME (GITBLIT) =================//
-                if (rep.Contains("MODULE"))
+                if (rep.IndexOf("module", StringComparison.OrdinalIgnoreCase) >= 0)
                     //===============================================================//
                     // Si le dépôt est un module, l'ajoute au TreeView des modules
                     treeView2.Invoke(new Action(() => treeView2.Nodes.Add(new TreeNode(rep.Replace(".git", "")))));
@@ -700,62 +698,7 @@ namespace module_manager
          */
         private void ComptesEtConnexionsToolStripMenuItem_ClickAsync(object sender, EventArgs e)
         {
-            string entropy = "";
-            string url = "https://dev.azure.com/" + config.GetUserName() + "/KIPROjects/_apis/git/repositories/PORT_SONDES_2019/items?path=.gitmodules&includeContent=true&api-version=5.0";
-            if (entropy == "")
-            {
-                using (Password formOptions = new Password())
-                {
-                    formOptions.ShowDialog();
-                    try
-                    {
-                        if (formOptions.pass.Length != 0)
-                            entropy = formOptions.pass;
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine(ex.Message);
-                    }
-                }
-            }
-            try
-            {
-                byte[] ciphertext = File.ReadAllBytes(config.GetAppData() + @".cred" + config.GetCurrentSource());
-
-                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
-                WebRequest myReq = WebRequest.Create(url);
-                myReq.Method = "GET";
-                CredentialCache mycache = new CredentialCache();
-                myReq.Headers["Authorization"] = "Basic " + Convert.ToBase64String(
-                    ASCIIEncoding.ASCII.GetBytes(
-                        string.Format("{0}:{1}", "", Encoding.UTF8.GetString(ProtectedData.Unprotect(ciphertext, Encoding.Default.GetBytes(entropy), DataProtectionScope.CurrentUser)))));
-                WebResponse wr = myReq.GetResponse();
-                Stream receiveStream = wr.GetResponseStream();
-                StreamReader reader = new StreamReader(receiveStream, Encoding.UTF8);
-                /*
-                using (HttpClient client = new HttpClient())
-                {
-                    client.DefaultRequestHeaders.Accept.Add(
-                        new MediaTypeWithQualityHeaderValue("application/json"));
-
-                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
-                        Convert.ToBase64String(
-                            ASCIIEncoding.ASCII.GetBytes(
-                                string.Format("{0}:{1}", "", Encoding.UTF8.GetString(ProtectedData.Unprotect(ciphertext, Encoding.Default.GetBytes(entropy), DataProtectionScope.CurrentUser))))));
-
-                    using (HttpResponseMessage response = await client.GetAsync(url))
-                    {
-                        response.EnsureSuccessStatusCode();
-                        string responseBody = await response.Content.ReadAsStringAsync();
-                        return responseBody;
-                    }
-                }
-                */
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("DevOps query error : " + ex.Message);
-            }
+            
         }
 
         private void ParamètresToolStripMenuItem_Click(object sender, EventArgs e)

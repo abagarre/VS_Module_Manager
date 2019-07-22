@@ -12,7 +12,6 @@ using System.Xml.Linq;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Threading.Tasks;
 
 public class Functions
 {
@@ -53,8 +52,13 @@ public class Functions
             StreamReader reader = new StreamReader(receiveStream, Encoding.UTF8);
             return reader.ReadToEnd();
         }
-        catch (Exception ex)
+        catch (System.Security.Cryptography.CryptographicException ex)
         {
+            entropy = "";
+            if(MessageBox.Show("Mot de passe incorrect", "Erreur", MessageBoxButtons.RetryCancel, MessageBoxIcon.Error) == DialogResult.Retry)
+            {
+                BitBucketQuery(url);
+            }
             Console.WriteLine("BitBuquet query error : " + ex.Message);
         }
         return "";
@@ -114,8 +118,13 @@ public class Functions
             }
             */
         }
-        catch (Exception ex)
+        catch (System.Security.Cryptography.CryptographicException ex)
         {
+            entropy = "";
+            if (MessageBox.Show("Mot de passe incorrect", "Erreur", MessageBoxButtons.RetryCancel, MessageBoxIcon.Error) == DialogResult.Retry)
+            {
+                return BitBucketQuery(url);
+            }
             Console.WriteLine("DevOps query error : " + ex.Message);
         }
         return "";
@@ -327,9 +336,7 @@ public class Functions
         List<string> dep = new List<string>();
         if(config.GetCurrentType() == "gitblit")
         {
-            //=============================== GITBLIT RAW URL =====================//
             string url = config.GetServerUrl() + "raw/" + moduleText + "/" + branch;
-            //=====================================================================//
             try {
                 string html;
                 using (var client = new WebClient())
@@ -357,8 +364,17 @@ public class Functions
         }
         else if(config.GetCurrentType() == "bitbucket")
         {
-            string url = "https://api.bitbucket.org/2.0/repositories/bglx/" + moduleText + "/src/" + branch + "/";
-            string json = BitBucketQuery(url);
+            string url = "https://api.bitbucket.org/2.0/repositories/" + config.GetUserName() + "/" + moduleText + "/src/" + branch + "/";
+            string json = "";
+            try
+            {
+                json = BitBucketQuery(url);
+            }
+            catch (Exception)
+            {
+                if(branch != "master")
+                    return GetModuleDep(moduleText, "master");
+            }
             if(json != "")
             {
                 JObject obj = JObject.Parse(json);
@@ -367,7 +383,7 @@ public class Functions
                 {
                     if (((string)ob["path"]).Contains(".c") || ((string)ob["path"]).Contains(".h"))
                     {
-                        dep.AddRange(GetIncludes("https://bitbucket.org/bglx/" + moduleText + "/raw/" + branch + "/" + (string)ob["path"]));
+                        dep.AddRange(GetIncludes("https://bitbucket.org/" + config.GetUserName() + "/" + moduleText + "/raw/" + branch + "/" + (string)ob["path"]));
                     }
                 }
             }
@@ -379,6 +395,42 @@ public class Functions
         }
         else if(config.GetCurrentType() == "devops")
         {
+            string res = DevOpsQuery("https://dev.azure.com/" + config.GetUserName() + "/KIMOdules/_apis/git/repositories/" + moduleText + "/items?recursionLevel=OneLevel&api-version=5.0");
+            JObject obj = JObject.Parse(res);
+            JArray list = (JArray)obj["value"];
+            foreach(JObject ob in list)
+            {
+                if(ob["path"].ToString().Contains(".c"))
+                {
+                    string url = "https://dev.azure.com/" + config.GetUserName() + "/KIMOdules/_apis/git/repositories/" + moduleText + "/items?path=" + ob["path"].ToString() + "&versionType=Branch&version=" + branch + "&includeContent=true&api-version=5.0";
+                    try
+                    {
+                        DevOpsQuery(url);
+                    }
+                    catch (Exception)
+                    {
+                        if (branch != "master")
+                            return GetModuleDep(moduleText, "master");
+                    }
+                    dep.AddRange(GetIncludes(url));
+                }
+                if (ob["path"].ToString().Contains(".h"))
+                {
+                    string url = "https://dev.azure.com/" + config.GetUserName() + "/KIMOdules/_apis/git/repositories/" + moduleText + "/items?path=" + ob["path"].ToString() + "&versionType=Branch&version=" + branch + "&includeContent=true&api-version=5.0";
+                    
+                    try
+                    {
+                        DevOpsQuery(url);
+                    }
+                    catch (Exception)
+                    {
+                        if (branch != "master")
+                            return GetModuleDep(moduleText, "master");
+                    }
+                    dep.AddRange(GetIncludes(url));
+                }
+            }
+            /*
             string urlh = "https://dev.azure.com/" + config.GetUserName() + "/KIMOdules/_apis/git/repositories/" + moduleText + "/items?path=" + moduleText + ".h&versionType=Branch&version=" + branch + "&includeContent=true&api-version=5.0";
             string urlc = "https://dev.azure.com/" + config.GetUserName() + "/KIMOdules/_apis/git/repositories/" + moduleText + "/items?path=" + moduleText + ".c&versionType=Branch&version=" + branch + "&includeContent=true&api-version=5.0";
             try
@@ -398,6 +450,7 @@ public class Functions
             }
             dep.AddRange(GetIncludes(urlc));
             dep.AddRange(GetIncludes(urlh));
+            */
         }
         return dep;
     }
@@ -408,59 +461,32 @@ public class Functions
     public List<string> GetIncludes(string url)
     {
         List<string> dep = new List<string>();
+        string result = "";
+
         if (config.GetCurrentType() == "gitblit")
         {
-            var client = new WebClient();
-            using (var stream = client.OpenRead(url))
-            using (var reader = new StreamReader(stream))
-            {
-                string ligne;
-                while ((ligne = reader.ReadLine()) != null)
-                {
-                    if (!ligne.Contains("Error") && ligne.Contains("#include \""))
-                    {
-                        string module = ligne.Replace("\"", "").Replace("#include ", "").Replace(" ", "");
-                        if (!url.Contains(module.Replace(".h", "")))
-                            dep.Add(module);
-                    }
-                }
-            }
+            using (var wc = new WebClient())
+                result = wc.DownloadString(url);
         }
         else if (config.GetCurrentType() == "bitbucket")
         {
-            string result = BitBucketQuery(url);
-            using (StringReader reader = new StringReader(result))
-            {
-                string ligne;
-                while ((ligne = reader.ReadLine()) != null)
-                {
-                    if (!ligne.Contains("Error") && ligne.Contains("#include \""))
-                    {
-                        string module = ligne.Replace("\"", "").Replace("#include ", "").Replace(" ", "");
-                        if (!url.Contains(module.Replace(".h", "")))
-                            dep.Add(module);
-                    }
-                }
-            }
+            result = BitBucketQuery(url);
         }
         else if (config.GetCurrentType() == "devops")
         {
-            string result = DevOpsQuery(url);
-            using (StringReader reader = new StringReader(result))
+            result = DevOpsQuery(url);
+        }
+
+        using (StringReader reader = new StringReader(result))
+        {
+            string ligne;
+            while ((ligne = reader.ReadLine()) != null)
             {
-                string ligne;
-
-                while ((ligne = reader.ReadLine()) != null)
+                if (!ligne.Contains("Error") && ligne.Contains("#include \""))
                 {
-                    if (!ligne.Contains("Error") && ligne.Contains("#include \""))
-                    {
-                        string module = ligne.Replace("\"", "").Replace("#include ", "").Replace(" ", "");
-                        if (!url.Contains(module.Replace(".h", "")))
-                        {
-                            dep.Add(module);
-                        }
-
-                    }
+                    string module = ligne.Replace("\"", "").Replace("#include ", "").Replace(" ", "");
+                    if (!url.Contains(module.Replace(".h", "")))
+                        dep.Add(module);
                 }
             }
         }
@@ -498,6 +524,127 @@ public class Functions
         return chk.Checked;
     }
 
+    public List<string> GetSubGitblit(string branch, string rep)
+    {
+        List<string> modList = new List<string>();
+        string url = config.GetServerUrl() + "raw/" + rep + "/" + branch + "/.gitmodules";
+        try
+        {
+            var client = new WebClient();
+            using (var stream = client.OpenRead(url))
+            using (var reader = new StreamReader(stream))
+            {
+                string ligne;
+                string ligne1 = "", ligne2 = "", ligne3 = "";
+                int compteur = 1;
+                while ((ligne = reader.ReadLine()) != null)
+                {
+                    if (ligne.Contains("branch!") && branch != "master")
+                    {
+                        if (affiche)
+                        {
+                            affiche = !ShowDialog("Ne plus afficher", "Le projet " + rep + " ne contient pas de branche " + config.GetBranchDev() + " ! \n\nRecherche sur la branche master\n ");
+                        }
+                        return GetSubmodList("master", rep);
+                    }
+                    switch (compteur)
+                    {
+                        case 1:
+                            ligne1 = ligne;
+                            break;
+                        case 2:
+                            ligne2 = ligne;
+                            break;
+                        case 3:
+                            ligne3 = ligne;
+                            compteur = 1;
+                            break;
+                    }
+                    if (ligne.Contains("url = "))
+                    {
+                        string name = ligne.Replace("url = ", "").Replace(".git", "");
+                        modList.Add(name.Substring(name.LastIndexOf("/") + 1, name.Length - name.LastIndexOf("/") - 1));
+                    }
+                }
+            }
+        }
+        catch (Exception) { }
+        return modList;
+    }
+
+    public List<string> GetSubBitBucket(string branch, string rep)
+    {
+        List<string> modList = new List<string>();
+        string result;
+        try
+        {
+            result = BitBucketQuery("https://bitbucket.org/bglx/" + rep + "/raw/" + branch + "/.gitmodules");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("GetSubmodError : " + ex.Message);
+            if (branch != "master")
+                return GetSubmodList("master", rep);
+            result = "null";
+        }
+        if (result.Length == 0 && branch != "master")
+            return GetSubmodList("master", rep);
+        using (StringReader reader = new StringReader(result))
+        {
+            string ligne;
+            while ((ligne = reader.ReadLine()) != null)
+            {
+                if (ligne.Contains("dashboard") && branch != "master")
+                {
+                    if (affiche)
+                    {
+                        affiche = !ShowDialog("Ne plus afficher", "Le projet " + rep + " ne contient pas de branche " + config.GetBranchDev() + " ! \n\nRecherche sur la branche master\n ");
+                    }
+                    return GetSubmodList("master", rep);
+                }
+                if (ligne.Contains("url = "))
+                {
+                    string name = ligne.Replace("url = ", "").Replace(".git", "").Trim();
+                    modList.Add(name.Substring(name.LastIndexOf("/") + 1, name.Length - name.LastIndexOf("/") - 1));
+                }
+            }
+        }
+        return modList;
+    }
+
+    public List<string> GetSubDevOps(string branch, string rep)
+    {
+        List<string> modList = new List<string>();
+        string result;
+        try
+        {
+            result = DevOpsQuery("https://dev.azure.com/" + config.GetUserName() + "/KIPROjects/_apis/git/repositories/" + rep + "/items?path=.gitmodules&includeContent=true&api-version=5.0");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("GetSubmodError : " + ex.Message);
+            if (branch != "master")
+                return GetSubmodList("master", rep);
+            result = "null";
+        }
+        if (result.Length == 0 && branch != "master")
+            return GetSubmodList("master", rep);
+
+        using (StringReader reader = new StringReader(result))
+        {
+            string ligne;
+            while ((ligne = reader.ReadLine()) != null)
+            {
+                if (ligne.Contains("url = "))
+                {
+                    string name = ligne.Replace("url = ", "").Replace(".git", "").Trim();
+                    modList.Add(name.Substring(name.LastIndexOf("/") + 1, name.Length - name.LastIndexOf("/") - 1));
+                }
+            }
+        }
+        return modList;
+    }
+
     /**
      * Retourne la liste des modules présents dans le fichier .gitmodules d'un projet distant
      */
@@ -506,117 +653,15 @@ public class Functions
         List<string> modList = new List<string>();
         if(config.GetCurrentType() == "gitblit")
         {
-            //=============================== GITBLIT RAW URL ==============================//
-            string url = config.GetServerUrl() + "raw/" + rep + "/" + branch + "/.gitmodules";
-            //==============================================================================//
-            try
-            {
-                var client = new WebClient();
-                using (var stream = client.OpenRead(url))
-                using (var reader = new StreamReader(stream))
-                {
-                    string ligne;
-                    string ligne1 = "", ligne2 = "", ligne3 = "";
-                    int compteur = 1;
-                    while ((ligne = reader.ReadLine()) != null)
-                    {
-                        if (ligne.Contains("branch!") && branch != "master")
-                        {
-                            if (affiche)
-                            {
-                                affiche = !ShowDialog("Ne plus afficher", "Le projet " + rep + " ne contient pas de branche " + config.GetBranchDev() + " ! \n\nRecherche sur la branche master\n ");
-                            }
-                            return GetSubmodList("master", rep);
-                        }
-                        switch (compteur)
-                        {
-                            case 1:
-                                ligne1 = ligne;
-                                break;
-                            case 2:
-                                ligne2 = ligne;
-                                break;
-                            case 3:
-                                ligne3 = ligne;
-                                compteur = 1;
-                                break;
-                        }
-                        if (ligne.Contains("url = "))
-                        {
-                            string name = ligne.Replace("url = ", "").Replace(".git", "");
-                            modList.Add(name.Substring(name.LastIndexOf("/") + 1, name.Length - name.LastIndexOf("/") - 1));
-                        }
-                    }
-                }
-            } catch(Exception) { }
-            
+            return GetSubGitblit(branch, rep);
         }
         else if (config.GetCurrentType() == "bitbucket")
         {
-            string result;
-            try
-            {
-                result = BitBucketQuery("https://bitbucket.org/bglx/" + rep + "/raw/" + branch + "/.gitmodules");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("GetSubmodError : " + ex.Message);
-                if(branch != "master")
-                    return GetSubmodList("master", rep);
-                result = "null";
-            }
-            if (result.Length == 0 && branch != "master")
-                return GetSubmodList("master", rep);
-            using (StringReader reader = new StringReader(result))
-            {
-                string ligne;
-                while ((ligne = reader.ReadLine()) != null)
-                {
-                    if (ligne.Contains("dashboard") && branch != "master")
-                    {
-                        if (affiche)
-                        {
-                            affiche = !ShowDialog("Ne plus afficher", "Le projet " + rep + " ne contient pas de branche " + config.GetBranchDev() + " ! \n\nRecherche sur la branche master\n ");
-                        }
-                        return GetSubmodList("master", rep);
-                    }
-                    if (ligne.Contains("url = "))
-                    {
-                        string name = ligne.Replace("url = ", "").Replace(".git","").Trim();
-                        modList.Add(name.Substring(name.LastIndexOf("/") + 1, name.Length - name.LastIndexOf("/") - 1 ));
-                    }
-                }
-            }
+            return GetSubBitBucket(branch, rep);
         }
         else if (config.GetCurrentType() == "devops")
         {
-            string result;
-            try
-            {
-                result = DevOpsQuery("https://dev.azure.com/" + config.GetUserName() + "/KIPROjects/_apis/git/repositories/" + rep + "/items?path=.gitmodules&includeContent=true&api-version=5.0");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("GetSubmodError : " + ex.Message);
-                if (branch != "master")
-                    return GetSubmodList("master", rep);
-                result = "null";
-            }
-            if (result.Length == 0 && branch != "master")
-                return GetSubmodList("master", rep);
-
-            using (StringReader reader = new StringReader(result))
-            {
-                string ligne;
-                while ((ligne = reader.ReadLine()) != null)
-                {
-                    if (ligne.Contains("url = "))
-                    {
-                        string name = ligne.Replace("url = ", "").Replace(".git", "").Trim();
-                        modList.Add(name.Substring(name.LastIndexOf("/") + 1, name.Length - name.LastIndexOf("/") - 1));
-                    }
-                }
-            }
+            return GetSubDevOps(branch, rep);
         }
         return modList;
     }
@@ -702,15 +747,15 @@ public class Functions
     /**
      * Retourne la liste des neouds cochés dans un TreeView
      */
-    public List<string> GetCheckedNodes(TreeNodeCollection treeNode)
+    public List<TreeNode> GetCheckedNodes(TreeNodeCollection treeNode)
     {
-        List<string> checkedList = new List<string>();
+        List<TreeNode> checkedList = new List<TreeNode>();
 
         foreach (TreeNode node in treeNode)
         {
             if (node.Checked)
             {
-                checkedList.Add(node.Text);
+                checkedList.Add(node);
             }
 
             if(node.Nodes.Count != 0)

@@ -119,12 +119,13 @@ namespace module_manager
         {
             BackgroundWorker worker = sender as BackgroundWorker;
 
-            List<string> checkedNodes = functions.GetCheckedNodes(treeView1.Nodes);
+            List<TreeNode> checkedNodes = functions.GetCheckedNodes(treeView1.Nodes);
             List<string> addedNodes = new List<string>();
             int counter = (100/checkedNodes.Count)/4;
             string mainMod = "";
-            foreach (string node in checkedNodes)
+            foreach (TreeNode treeNode in checkedNodes)
             {
+                string node = treeNode.Text;
                 if(addedNodes.Contains(node.Replace(".h", "").Replace("_MODULES_/", "")))
                 {
                     worker.ReportProgress(counter);

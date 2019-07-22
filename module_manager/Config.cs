@@ -158,7 +158,7 @@ namespace module_manager
             File.WriteAllText(GetConfigPath(), conf.ToString());
         }
 
-        public void AddServer(string type, string name, string url, string username, string access)
+        public void AddServer(string type, string name, string url, string username)
         {
             string json;
             json = File.ReadAllText(GetServersPath());
@@ -169,7 +169,6 @@ namespace module_manager
             itemToAdd["name"] = name;
             itemToAdd["url"] = url;
             itemToAdd["username"] = username;
-            itemToAdd["access"] = access;
             list.Add(itemToAdd);
             File.WriteAllText(GetServersPath(), conf.ToString());
         }

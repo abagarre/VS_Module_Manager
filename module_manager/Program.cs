@@ -23,12 +23,6 @@ namespace module_manager
                     case "add":
                         Application.Run(new AddSubForm(args.Skip(1).ToArray()));
                         break;
-                    case "list":
-                        //Application.Run(new Form4(args.Skip(1).ToArray()));
-                        break;
-                    case "del":
-                        Application.Run(new DelForm(args.Skip(1).ToArray()));
-                        break;
                     default:
                         Application.Run(new MainForm());
                         break;

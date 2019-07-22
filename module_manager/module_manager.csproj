@@ -160,12 +160,6 @@
     <Compile Include="AddConfirmForm.Designer.cs">
       <DependentUpon>AddConfirmForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="DelForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="DelForm.Designer.cs">
-      <DependentUpon>DelForm.cs</DependentUpon>
-    </Compile>
     <Compile Include="LoadProjForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -211,9 +205,6 @@
     </EmbeddedResource>
     <EmbeddedResource Include="AddConfirmForm.resx">
       <DependentUpon>AddConfirmForm.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="DelForm.resx">
-      <DependentUpon>DelForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="LoadProjForm.resx">
       <DependentUpon>LoadProjForm.cs</DependentUpon>

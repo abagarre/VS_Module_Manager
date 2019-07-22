@@ -29,7 +29,7 @@ namespace module_manager
                 if(functions.SavePassword(textBox4.Text,textBox1.Text))
                 {
                     var checkedButton = panel1.Controls.OfType<RadioButton>().FirstOrDefault(r => r.Checked);
-                    config.AddServer(checkedButton.Text.ToLower(), textBox1.Text, textBox2.Text, textBox3.Text, "private");
+                    config.AddServer(checkedButton.Text.ToLower(), textBox1.Text, textBox2.Text, textBox3.Text);
                     this.Close();
                 }
                 else
@@ -46,6 +46,7 @@ namespace module_manager
             metroButton1.Enabled = true;
             button1.Visible = false;
             metroLabel5.Text = "Mot de passe";
+            textBox2.Text = "{address}:{port}/";
         }
 
         private void MetroButton2_Click(object sender, EventArgs e)
@@ -59,6 +60,7 @@ namespace module_manager
             metroButton1.Enabled = true;
             button1.Visible = false;
             metroLabel5.Text = "Mot de passe";
+            textBox2.Text = "https://bitbucket.org/{username}/";
         }
 
         private void RadioButton3_CheckedChanged(object sender, EventArgs e)
@@ -67,6 +69,7 @@ namespace module_manager
             metroButton1.Enabled = true;
             button1.Visible = true;
             metroLabel5.Text = "Token";
+            textBox2.Text = "https://dev.azure.com/{organization}/{project}/_git/";
         }
 
         private void Button1_Click(object sender, EventArgs e)
