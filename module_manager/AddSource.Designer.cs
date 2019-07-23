@@ -45,6 +45,7 @@
             this.metroLabel4 = new MetroFramework.Controls.MetroLabel();
             this.metroLabel3 = new MetroFramework.Controls.MetroLabel();
             this.metroLabel2 = new MetroFramework.Controls.MetroLabel();
+            this.radioButton4 = new System.Windows.Forms.RadioButton();
             this.panel1.SuspendLayout();
             this.panel2.SuspendLayout();
             this.SuspendLayout();
@@ -84,12 +85,13 @@
             // 
             // panel1
             // 
+            this.panel1.Controls.Add(this.radioButton4);
             this.panel1.Controls.Add(this.radioButton3);
             this.panel1.Controls.Add(this.radioButton2);
             this.panel1.Controls.Add(this.radioButton1);
             this.panel1.Location = new System.Drawing.Point(13, 63);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(339, 29);
+            this.panel1.Size = new System.Drawing.Size(362, 29);
             this.panel1.TabIndex = 11;
             // 
             // radioButton3
@@ -246,6 +248,19 @@
             this.metroLabel2.TabIndex = 9;
             this.metroLabel2.Text = "Nom";
             // 
+            // radioButton4
+            // 
+            this.radioButton4.AutoSize = true;
+            this.radioButton4.Font = new System.Drawing.Font("Century Gothic", 9F);
+            this.radioButton4.Location = new System.Drawing.Point(240, 3);
+            this.radioButton4.Name = "radioButton4";
+            this.radioButton4.Size = new System.Drawing.Size(67, 21);
+            this.radioButton4.TabIndex = 3;
+            this.radioButton4.TabStop = true;
+            this.radioButton4.Text = "GitHub";
+            this.radioButton4.UseVisualStyleBackColor = true;
+            this.radioButton4.CheckedChanged += new System.EventHandler(this.RadioButton4_CheckedChanged);
+            // 
             // AddSource
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -259,6 +274,7 @@
             this.Controls.Add(this.metroLabel1);
             this.Name = "AddSource";
             this.Text = "Ajouter un serveur";
+            this.Load += new System.EventHandler(this.AddSource_Load);
             this.panel1.ResumeLayout(false);
             this.panel1.PerformLayout();
             this.panel2.ResumeLayout(false);
@@ -287,5 +303,6 @@
         private MetroFramework.Controls.MetroLabel metroLabel3;
         private MetroFramework.Controls.MetroLabel metroLabel2;
         private System.Windows.Forms.Button button1;
+        private System.Windows.Forms.RadioButton radioButton4;
     }
 }

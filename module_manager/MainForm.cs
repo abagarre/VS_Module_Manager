@@ -39,9 +39,11 @@ namespace module_manager
             LoadForm();
         }
 
+        ///<summary>
+        ///Remise à zéro de toute les listes, Labels, TreeViews, DataGridViews...
+        ///</summary>
         private void LoadForm()
         {
-            // Remise à zéro de toute les listes, Labels, TreeViews, DataGridViews...
             repoList = new List<string>();
             projList = new List<List<string>>();
             clientList = new List<string>();
@@ -81,11 +83,10 @@ namespace module_manager
                 }
                 foreach (string chemin in clientList)
                 {
-                    List<string> gitmodulesLocList = functions.GetGitmodulesLoc(chemin); // Liste contenant les sous-dépôts = modules
-                    List<string> gitmodulesLocPathList = functions.GetGitmodulesLocPath(chemin);
-                    TreeNode treeNode;
-                    
-                    treeNode = new TreeNode(chemin.Substring(chemin.LastIndexOf("\\") + 1, chemin.Length - chemin.LastIndexOf("\\") - 1).Replace(".git", ""));
+                    List<string> gitmodulesLocList = functions.GetGitmodulesLoc(chemin); // Liste contenant les modules
+                    List<string> gitmodulesLocPathList = functions.GetGitmodulesLocPath(chemin); // Liste des chemins des modules
+
+                    TreeNode treeNode = new TreeNode(chemin.Substring(chemin.LastIndexOf("\\") + 1, chemin.Length - chemin.LastIndexOf("\\") - 1).Replace(".git", ""));
                     treeNode.Name = chemin;      // Précise le chemin du projet dans le paramètre Name du noeud
                     contextMenuStrip = new ContextMenuStrip();
                     contextMenuStrip.Items.Add("Ouvrir (local)");
@@ -131,9 +132,9 @@ namespace module_manager
             }
         }
 
-        /**
-         * Récupère toutes les informations des projet locaux et des modules distants
-         */
+        ///<summary>
+        ///Récupère toutes les informations des projet locaux et des modules distants
+        ///</summary>
         private void BackgroundWorker1_DoWork(object sender, DoWorkEventArgs e)
         {
             BackgroundWorker worker = sender as BackgroundWorker;
@@ -145,7 +146,7 @@ namespace module_manager
             {
                 //=============== MODULES FOLDER NAME (GITBLIT) =================//
                 if (rep.IndexOf("module", StringComparison.OrdinalIgnoreCase) >= 0)
-                    //===============================================================//
+                //===============================================================//
                     // Si le dépôt est un module, l'ajoute au TreeView des modules
                     treeView2.Invoke(new Action(() => treeView2.Nodes.Add(new TreeNode(rep.Replace(".git", "")))));
 
@@ -191,11 +192,11 @@ namespace module_manager
             backgroundWorker1.CancelAsync();
         }
 
-        /**
-         * Au clic sur un noeud du TreeView1 (projets) :
-         *      - Affiche le README
-         *      - Charge les dépendances
-         */
+        ///<summary>
+        ///Au clic sur un noeud du TreeView1 (projets) :<para />
+        /// - Affiche le README<para />
+        /// - Charge les dépendances
+        ///</summary>
         private void TreeView1_AfterSelect(object sender, TreeViewEventArgs e)
         {
             metroLabel5.Text = e.Node.Text;
@@ -206,7 +207,8 @@ namespace module_manager
                 // Si le noeud est un projet, autorise l'ajout de modules
                 metroButton1.Enabled = true;
                 toolStripStatusLabel2.Text = e.Node.Name;
-            } else
+            }
+            else
             {
                 metroButton1.Enabled = false;
                 toolStripStatusLabel2.Text = e.Node.Parent.Name;
@@ -296,21 +298,7 @@ namespace module_manager
 
             if (senderGrid.Columns[e.ColumnIndex] is DataGridViewButtonColumn && e.RowIndex >= 0)
             {
-                /* if((string) senderGrid.Rows[e.RowIndex].Cells[e.ColumnIndex].Value == "Supprimer")
-                {
-                    // Supprimer un module
-                    string modName = dataGridView1.Rows[e.RowIndex].Cells[0].Value.ToString();
-                    if (MessageBox.Show("Voulez vous supprimer le module " + modName + " du projet " + metroLabel5.Text + " ?", "Supprimer un module", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
-                    {
-                        toolStripProgressBar1.Visible = true;
-                        toolStripSplitButton2.Visible = true;
-                        toolStripProgressBar1.Value = 0;
-                        toolStripStatusLabel1.Text = "Suppression...";
-                        metroTabControl1.Enabled = false;
-                        backgroundWorker2.RunWorkerAsync(argument: modName);
-                    }
-                }
-                else */if ((string)senderGrid.Rows[e.RowIndex].Cells[e.ColumnIndex].Value == "Détails")
+                if ((string)senderGrid.Rows[e.RowIndex].Cells[e.ColumnIndex].Value == "Détails")
                 {
                     // Détails d'un projet (modules et README)
                     treeView1.SelectedNode = null;
@@ -698,7 +686,41 @@ namespace module_manager
          */
         private void ComptesEtConnexionsToolStripMenuItem_ClickAsync(object sender, EventArgs e)
         {
-            
+            string entropy = "";
+            if (entropy == "")
+            {
+                using (Password formOptions = new Password())
+                {
+                    formOptions.ShowDialog();
+                    try
+                    {
+                        if (formOptions.pass.Length != 0)
+                            entropy = formOptions.pass;
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                    }
+                }
+            }
+            try
+            {
+                byte[] ciphertext = File.ReadAllBytes(config.GetAppData() + @".cred" + config.GetCurrentSource());
+                ServicePointManager.ServerCertificateValidationCallback = delegate { return true; };
+                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+                WebRequest myReq = WebRequest.Create("https://api.github.com/users/bglx/repos");
+                myReq.Method = "GET";
+                CredentialCache mycache = new CredentialCache();
+                //myReq.Headers["Authorization"] = "Basic " + Convert.ToBase64String(Encoding.ASCII.GetBytes(config.GetUserName() + ":" + Encoding.UTF8.GetString(ProtectedData.Unprotect(ciphertext, Encoding.Default.GetBytes(entropy), DataProtectionScope.CurrentUser))));
+                WebResponse wr = myReq.GetResponse();
+                Stream receiveStream = wr.GetResponseStream();
+                StreamReader reader = new StreamReader(receiveStream, Encoding.UTF8);
+                Console.WriteLine(reader.ReadToEnd());
+            }
+            catch (CryptographicException ex)
+            {
+                
+            }
         }
 
         private void ParamètresToolStripMenuItem_Click(object sender, EventArgs e)
@@ -737,7 +759,7 @@ namespace module_manager
                     {
 
                     }
-                    else if (path.Contains("azure"))
+                    else if (path.Contains("azure") || path.Contains("visualstudio"))
                     {
 
                     }
@@ -755,7 +777,7 @@ namespace module_manager
                     {
 
                     }
-                    else if(path.Contains("azure"))
+                    else if(path.Contains("azure") || path.Contains("visualstudio"))
                     {
 
                     }

@@ -52,6 +52,7 @@ namespace module_manager
                     Anchor = AnchorStyles.None,
                     Width = picture.Width
                 };
+                buttonDetails.Click += EditSourceClick;
                 buttonDetails.Click += GetDetailsServer;
                 panel.Controls.Add(buttonDetails);
                 MetroFramework.Controls.MetroButton buttonSwitch = new MetroFramework.Controls.MetroButton()
@@ -65,6 +66,16 @@ namespace module_manager
                 panel.Controls.Add(buttonSwitch);
                 flowLayoutPanel1.Controls.Add(panel);
             }
+        }
+
+        private void EditSourceClick(object sender, EventArgs e)
+        {
+            string name = (sender as Button).Name;
+            string[] args = { name };
+            var frm = new DetailsSrc(args);
+            frm.Location = this.Location;
+            frm.StartPosition = FormStartPosition.Manual;
+            frm.Show();
         }
 
         private void SwitchServer(object sender, EventArgs e)

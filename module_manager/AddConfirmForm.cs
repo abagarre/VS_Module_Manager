@@ -119,31 +119,35 @@ namespace module_manager
         {
             BackgroundWorker worker = sender as BackgroundWorker;
 
-            List<TreeNode> checkedNodes = functions.GetCheckedNodes(treeView1.Nodes);
+            List<string> checkedNodes = functions.GetCheckedNodes(treeView1.Nodes);
+            List<string> allNodes = functions.GetNodes(treeView1.Nodes);
             List<string> addedNodes = new List<string>();
-            int counter = (100/checkedNodes.Count)/4;
-            string mainMod = "";
-            foreach (TreeNode treeNode in checkedNodes)
+            int counter = 0;
+            Console.WriteLine(counter);
+            string mainMod = allNodes.ElementAt(0);
+            foreach (string node in allNodes)
             {
-                string node = treeNode.Text;
-                if(addedNodes.Contains(node.Replace(".h", "").Replace("_MODULES_/", "")))
+                if(!node.Contains(".h"))
+                {
+                    mainMod = node;
+                }
+                if((!node.Contains(".h") && !checkedNodes.Contains(node)) ||
+                   (node.Contains(".h") && !checkedNodes.Contains(mainMod)) ||
+                    (addedNodes.Contains(node.Replace(".h", "").Replace("_MODULES_/", ""))))
                 {
                     worker.ReportProgress(counter);
-                    counter += (100 / checkedNodes.Count);
+                    counter += (100 / allNodes.Count);
                     continue;
                 }
-                //================ MODULES FOLDER NAME =====================//
-                if (node.Contains("_MODULES_/"))
-                    mainMod = node.Replace("_MODULES_/",""); // Nom du module en cours
-                //==========================================================//
                 if(AddSubForm.moduleList.FirstOrDefault(stringToCheck => stringToCheck.Contains(node.Replace(".h",""))) != null)
                 {
+                    Console.WriteLine(node + " is a module");
                     addedNodes.Add(node.Replace(".h","").Replace("_MODULES_/",""));
 
                     if (node.Contains(".h") && MessageBox.Show("Le module [ " + node.Replace(".h", "") + " ] fait partie des dépendances du module [ " + mainMod + " ], voulez-vous l'installer ?", "Ajouter un module", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.No)
                     {
                         worker.ReportProgress(counter);
-                        counter += (100 / checkedNodes.Count);
+                        counter += (100 / allNodes.Count);
                         continue;
                     }
                     
@@ -162,12 +166,21 @@ namespace module_manager
                         process.StartInfo.WorkingDirectory = AddSubForm.path;
                         //============================================== MODULES FOLDER NAME ==================================================//
                         string modName = node.Replace("_MODULES_/", "").Replace(".h", "");
-                        if (config.GetCurrentType() == "gitblit")
+                        string currentType = config.GetCurrentType();
+                        if (currentType == "gitblit")
                             process.StartInfo.Arguments = config.GetServerUrl() + @"r/" + "_MODULES_/" + modName + " " + "_MODULES_/" + modName;
-                        else if(config.GetCurrentType() == "devops")
+                        else if(currentType == "devops")
                         {
                             process.StartInfo.CreateNoWindow = false;
-                            process.StartInfo.Arguments = config.GetServerUrl() + modName + " " + "_MODULES_/" + modName;
+                            process.StartInfo.Arguments = config.GetServerUrl() + "_git" + modName + " " + "_MODULES_/" + modName;
+                        }
+                        else if(currentType == "bitbucket")
+                        {
+                            process.StartInfo.Arguments = config.GetServerUrl() + modName + ".git " + "_MODULES_/" + modName;
+                        }
+                        else if(currentType == "github")
+                        {
+                            process.StartInfo.Arguments = config.GetServerUrl() + modName + ".git " + "_MODULES_/" + modName;
                         }
                         //=====================================================================================================================//
                         process.Start();
@@ -178,22 +191,22 @@ namespace module_manager
                             if (line == "\"status 25\"")
                             {
                                 worker.ReportProgress(counter);
-                                counter += (100 / checkedNodes.Count) / 4;
+                                counter += (100 / allNodes.Count) / 4;
                             }
                             else if (line == "\"status 50\"")
                             {
                                 worker.ReportProgress(counter);
-                                counter += (100 / checkedNodes.Count) / 4;
+                                counter += (100 / allNodes.Count) / 4;
                             }
                             else if (line == "\"status 75\"")
                             {
                                 worker.ReportProgress(counter);
-                                counter += (100 / checkedNodes.Count) / 4;
+                                counter += (100 / allNodes.Count) / 4;
                             }
                             else if (line == "\"status 100\"")
                             {
                                 worker.ReportProgress(counter);
-                                counter += (100 / checkedNodes.Count) / 4;
+                                counter += (100 / allNodes.Count) / 4;
                             }
                             if (backgroundWorker1.CancellationPending)
                             {
@@ -211,7 +224,7 @@ namespace module_manager
                 {
                     MessageBox.Show("Le module [ " + mainMod + " ] fait appel au fichier [ " + node + " ] absent du projet local et des modules distant","Fichier manquant", MessageBoxButtons.OK,MessageBoxIcon.Warning);
                     worker.ReportProgress(counter);
-                    counter += (100 / checkedNodes.Count);
+                    counter += (100 / allNodes.Count);
                     worker.ReportProgress(counter);
                 }
                 if (backgroundWorker1.CancellationPending)
@@ -224,6 +237,7 @@ namespace module_manager
 
         private void BackgroundWorker1_ProgressChanged(object sender, ProgressChangedEventArgs e)
         {
+            Console.WriteLine(e.ProgressPercentage);
             toolStripProgressBar1.Value = e.ProgressPercentage;
         }
 

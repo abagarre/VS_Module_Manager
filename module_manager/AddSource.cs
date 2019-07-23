@@ -36,7 +36,6 @@ namespace module_manager
                 {
                     MessageBox.Show("Mot de passe incorrect", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
-
             }
         }
 
@@ -69,12 +68,26 @@ namespace module_manager
             metroButton1.Enabled = true;
             button1.Visible = true;
             metroLabel5.Text = "Token";
-            textBox2.Text = "https://dev.azure.com/{organization}/{project}/_git/";
+            textBox2.Text = "https://dev.azure.com/{organization}/{project}/";
         }
 
         private void Button1_Click(object sender, EventArgs e)
         {
             Process.Start("https://docs.microsoft.com/en-us/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate?view=azure-devops");
+        }
+
+        private void AddSource_Load(object sender, EventArgs e)
+        {
+
+        }
+
+        private void RadioButton4_CheckedChanged(object sender, EventArgs e)
+        {
+            panel2.Enabled = true;
+            metroButton1.Enabled = true;
+            button1.Visible = false;
+            metroLabel5.Text = "Mot de passe";
+            textBox2.Text = "https://github.com/{username}/";
         }
     }
 }

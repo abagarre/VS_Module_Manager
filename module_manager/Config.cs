@@ -97,6 +97,21 @@ namespace module_manager
             return (string)serv["url"];
         }
 
+        public string GetServerUrl(string name)
+        {
+            string json = File.ReadAllText(GetServersPath());
+            JObject conf = JObject.Parse(json);
+            JArray list = (JArray)conf["servers"];
+            foreach (JObject serv in list)
+            {
+                if (serv["name"].ToString() == name)
+                {
+                    return serv["url"].ToString();
+                }
+            }
+            return "";
+        }
+
         public string GetUserName()
         {
             string json = File.ReadAllText(GetConfigPath());
@@ -104,6 +119,34 @@ namespace module_manager
             json = Encoding.UTF8.GetString(bytes);
             JObject serv = JObject.Parse(json);
             return (string)serv["username"];
+        }
+
+        public string GetUserName(string name)
+        {
+            string json = File.ReadAllText(GetServersPath());
+            JObject conf = JObject.Parse(json);
+            JArray list = (JArray)conf["servers"];
+            foreach (JObject serv in list)
+            {
+                if (serv["name"].ToString() == name)
+                {
+                    return serv["username"].ToString();
+                }
+            }
+            return "";
+        }
+
+        public List<string> GetAllNames()
+        {
+            List<string> allNames = new List<string>();
+            string json = File.ReadAllText(GetServersPath());
+            JObject conf = JObject.Parse(json);
+            JArray list = (JArray)conf["servers"];
+            foreach (JObject serv in list)
+            {
+                allNames.Add(serv["name"].ToString());
+            }
+            return allNames;
         }
 
         public string GetClient()
@@ -170,6 +213,25 @@ namespace module_manager
             itemToAdd["url"] = url;
             itemToAdd["username"] = username;
             list.Add(itemToAdd);
+            File.WriteAllText(GetServersPath(), conf.ToString());
+        }
+
+        public void EditServer(string oldName, string newName, string URL, string username)
+        {
+            string json;
+            json = File.ReadAllText(GetServersPath());
+            JObject conf = JObject.Parse(json);
+            JArray list = (JArray)conf["servers"];
+            foreach(JObject serv in list)
+            {
+                if(serv["name"].ToString() == oldName)
+                {
+                    serv["name"] = newName;
+                    serv["url"] = URL;
+                    serv["username"] = username;
+                    break;
+                }
+            }
             File.WriteAllText(GetServersPath(), conf.ToString());
         }
 
