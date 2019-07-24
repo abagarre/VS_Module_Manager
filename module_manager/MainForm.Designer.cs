@@ -614,6 +614,7 @@
             this.comptesEtConnexionsToolStripMenuItem.Name = "comptesEtConnexionsToolStripMenuItem";
             this.comptesEtConnexionsToolStripMenuItem.Size = new System.Drawing.Size(198, 22);
             this.comptesEtConnexionsToolStripMenuItem.Text = "Comptes et connexions";
+            this.comptesEtConnexionsToolStripMenuItem.Visible = false;
             this.comptesEtConnexionsToolStripMenuItem.Click += new System.EventHandler(this.ComptesEtConnexionsToolStripMenuItem_ClickAsync);
             // 
             // paramètresToolStripMenuItem

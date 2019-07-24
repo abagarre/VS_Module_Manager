@@ -172,7 +172,7 @@ namespace module_manager
                         else if(currentType == "devops")
                         {
                             process.StartInfo.CreateNoWindow = false;
-                            process.StartInfo.Arguments = config.GetServerUrl() + "_git" + modName + " " + "_MODULES_/" + modName;
+                            process.StartInfo.Arguments = config.GetServerUrl() + "_git/" + modName + " " + "_MODULES_/" + modName;
                         }
                         else if(currentType == "bitbucket")
                         {

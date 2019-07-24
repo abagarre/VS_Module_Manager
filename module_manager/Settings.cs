@@ -34,6 +34,14 @@ namespace module_manager
             {
                 radioButton2.Checked = true;
             }
+            else if ((string)conf["client"] == "dossierlocal")
+            {
+                radioButton3.Checked = true;
+            }
+
+            textBox4.Text = config.GetSmartGitRepo();
+            textBox3.Text = config.GetSourceTreeRepo();
+            textBox1.Text = config.GetLocalRepo();
         }
 
         private void MetroButton1_Click(object sender, EventArgs e)
@@ -71,29 +79,38 @@ namespace module_manager
             JObject conf = JObject.Parse(json);
             conf["smartgit"] = textBox4.Text;
             conf["sourcetree"] = textBox3.Text;
-            /*string servs = File.ReadAllText(config.GetServersPath());
-            JObject servlist = JObject.Parse(servs);
-            foreach (JObject obj in servlist["servers"])
-            {
-                if ((string)obj["name"] == name)
-                {
-                    conf["type"] = obj["type"];
-                    conf["url"] = obj["url"];
-                    conf["username"] = obj["username"];
-                }
-            }*/
+            conf["local"] = textBox1.Text;
             File.WriteAllText(config.GetSettingsPath(), conf.ToString());
 
             var checkedButton = panel3.Controls.OfType<RadioButton>().FirstOrDefault(r => r.Checked);
             json = File.ReadAllText(config.GetConfigPath());
             JObject confg = JObject.Parse(json);
-            confg["client"] = checkedButton.Text.ToLower();
+            confg["client"] = checkedButton.Text.ToLower().Replace(" ","");
             File.WriteAllText(config.GetConfigPath(), confg.ToString());
 
             this.Close();
         }
 
         private void RadioButton1_CheckedChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void MetroButton2_Click(object sender, EventArgs e)
+        {
+            if (folderBrowserDialog1.ShowDialog() == DialogResult.OK)
+            {
+                string path = folderBrowserDialog1.SelectedPath;
+                textBox1.Text = path;
+            }
+        }
+
+        private void RadioButton3_CheckedChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void TextBox4_TextChanged(object sender, EventArgs e)
         {
 
         }

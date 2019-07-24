@@ -38,5 +38,15 @@ namespace module_manager
         {
             this.Close();
         }
+
+        private void MetroButton3_Click(object sender, EventArgs e)
+        {
+            if(MessageBox.Show("Êtes vous sûr de vouloir supprimer le serveur " + name + " ?","Supprimer", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
+            {
+                config.DeleteServer(name);
+                this.Close();
+            }
+                
+        }
     }
 }

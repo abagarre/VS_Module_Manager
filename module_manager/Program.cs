@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -27,6 +28,12 @@ namespace module_manager
                         Application.Run(new MainForm());
                         break;
                 }
+            }
+            else if(!Directory.Exists(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + @"\ModuleManager\"))
+            {
+                string path = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + @"\ModuleManager\";
+                Directory.CreateDirectory(path);
+                Application.Run(new FirstLaunch());
             }
             else
             {

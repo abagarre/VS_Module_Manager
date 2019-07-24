@@ -24,18 +24,25 @@ namespace module_manager
 
         private void MetroButton1_Click(object sender, EventArgs e)
         {
-            if(textBox1.Text != "" && textBox2.Text != "" && textBox3.Text != "" && textBox4.Text != "")
+            var checkedButton = panel1.Controls.OfType<RadioButton>().FirstOrDefault(r => r.Checked);
+            if (textBox1.Text != "" && textBox2.Text != "" && textBox3.Text != "" && textBox4.Text != "")
             {
-                if(functions.SavePassword(textBox4.Text,textBox1.Text))
+                if (functions.SavePassword(textBox4.Text,textBox1.Text))
                 {
-                    var checkedButton = panel1.Controls.OfType<RadioButton>().FirstOrDefault(r => r.Checked);
-                    config.AddServer(checkedButton.Text.ToLower(), textBox1.Text, textBox2.Text, textBox3.Text);
-                    this.Close();
+                    if(config.AddServer(checkedButton.Text.ToLower(), textBox1.Text, textBox2.Text, textBox3.Text))
+                        this.Close();
+                    else
+                        MessageBox.Show("Un serveur de ce nom existe déjà", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
                 else
-                {
                     MessageBox.Show("Mot de passe incorrect", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
+            }
+            else if(textBox4.Text == "" && MessageBox.Show("Vous êtes sur le point d'ajouter un serveur ne nécessitant pas de mot de passe. \nContinuer ?", "", MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.Yes)
+            {
+                if (config.AddServer(checkedButton.Text.ToLower(), textBox1.Text, textBox2.Text, textBox3.Text))
+                    this.Close();
+                else
+                    MessageBox.Show("Un serveur de ce nom existe déjà", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 

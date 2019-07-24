@@ -107,6 +107,24 @@ public class Functions
         return submodules;
     }
 
+    internal List<string> GetLocalList(string path)
+    {
+        List<string> localList = new List<string>();
+        string[] subdir = Directory.GetDirectories(path);
+        foreach(string dir in subdir)
+        {
+            if(Directory.Exists(Path.Combine(dir,".git")))
+            {
+                localList.Add(dir);
+            }
+            else
+            {
+                localList.AddRange(GetLocalList(dir));
+            }
+        }
+        return localList; 
+    }
+
     public List<string> GetGitmodulesLocPath(string path)
     {
         List<string> submodules = new List<string>();
@@ -798,12 +816,15 @@ public class Functions
         {
             try
             {
+                Console.WriteLine(config.GetServerUrl() + @"raw/" + projName + @".git/" + branch + @"/README.md");
                 using (var wc = new WebClient())
                     md = wc.DownloadString(config.GetServerUrl() + @"raw/" + projName + @".git/" + branch + @"/README.md");
             }
             catch (Exception ex)
             {
                 Console.WriteLine("Failed downloading README.md : " + ex.Message);
+                if (branch != "master")
+                    return GetMarkdown(projName, "master");
             }
             if (md.Contains("branch") && branch != "master")
             {
@@ -825,6 +846,7 @@ public class Functions
         }
         else if(currentType == "devops")
         {
+            Console.WriteLine(config.GetServerUrl() + "_apis/git/repositories/" + projName + "/items?path=README.md&includeContent=true&api-version=5.0");
             string result = Query("devops", config.GetServerUrl() + "_apis/git/repositories/" + projName + "/items?path=README.md&includeContent=true&api-version=5.0");
             /*
             JObject obj = JObject.Parse(result);
@@ -914,7 +936,7 @@ public class Functions
                     {
                         entropy = Encoding.Default.GetBytes(result);
                         ciphertext = ProtectedData.Protect(plaintext, entropy, DataProtectionScope.CurrentUser);
-                        File.WriteAllBytes(config.GetAppData() + ".cred" + config.GetCurrentSource(), ciphertext);
+                        File.WriteAllBytes(config.GetAppData() + ".cred" + name, ciphertext);
                         config.SetPass("true");
                         return true;
                     }

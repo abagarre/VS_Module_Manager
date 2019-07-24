@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Octokit;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -80,6 +81,10 @@ namespace module_manager
                 else if(config.GetClient() == "sourcetree")
                 {
                     clientList = functions.GetSourceTreetList();
+                }
+                else if(config.GetClient() == "dossierlocal")
+                {
+                    clientList = functions.GetLocalList(config.GetLocalRepo());
                 }
                 foreach (string chemin in clientList)
                 {
@@ -336,6 +341,7 @@ namespace module_manager
                 else if ((string)senderGrid.Rows[e.RowIndex].Cells[e.ColumnIndex].Value == "Dépendances")
                 {
                     // Détails d'un module distant (projets utilisant le module et description)
+                    treeView1.SelectedNode = null;
                     string modName = dataGridView1.Rows[e.RowIndex].Cells[0].Value.ToString();
                     metroLabel5.Text = modName;
                     metroButton1.Enabled = false;
@@ -598,34 +604,24 @@ namespace module_manager
             string project = (string)e.Argument;
             string md = "";
             string path = "";
-            TreeNode treeNode = new TreeNode(); ;
+            TreeNode treeNode = new TreeNode();
             string html = project; // Par défaut, affiche le nom du projet
-            /*
-            int treeIndex = functions.GetIndex(treeView1.SelectedNode);
-            Console.WriteLine("index : " + treeIndex);
-            */
+            
+            treeView1.Invoke(new Action(() => treeNode = treeView1.SelectedNode.Parent));
+            if (treeNode == null)
+            {
+                treeView1.Invoke(new Action(() => path = treeView1.SelectedNode.Name));
+            }
+            else
+            {
+                treeView1.Invoke(new Action(() => path = treeView1.SelectedNode.Parent.Name + @"\" + treeView1.SelectedNode.Tag.ToString()));
+            }
+            
             if (readmeState.ElementAt(treeViewIndex) == 1)
                 md = functions.GetMarkdown(project, config.GetBranchDev()); // Récupère le markdown dans une string
             else
             {
-                treeView1.Invoke(new Action(() => treeNode = treeView1.SelectedNode.Parent));
-                if (treeNode == null)
-                {
-                    treeView1.Invoke(new Action(() => path = treeView1.SelectedNode.Name));
-                    md = functions.GetMarkdownLoc(path);
-                }
-                else
-                {
-                    treeView1.Invoke(new Action(() => path = treeView1.SelectedNode.Parent.Name));
-                    List<string> gitmodulesLocPathList = functions.GetGitmodulesLocPath(path);
-                    foreach (string submodule in gitmodulesLocPathList)
-                    {
-                        if (submodule.Contains(project.Substring(project.LastIndexOf("/") + 1, project.Length - project.LastIndexOf("/") - 1)))
-                        {
-                            md = functions.GetMarkdownLoc(path + @"\" + submodule.Replace(@"/", @"\"));
-                        }
-                    }
-                }
+                md = functions.GetMarkdownLoc(path);
             }
 
             try
@@ -684,8 +680,27 @@ namespace module_manager
         /**
          * En cours de développement
          */
-        private void ComptesEtConnexionsToolStripMenuItem_ClickAsync(object sender, EventArgs e)
+        private async void ComptesEtConnexionsToolStripMenuItem_ClickAsync(object sender, EventArgs e)
         {
+            var github = new GitHubClient(new ProductHeaderValue("ModuleManager"));
+            var user = await github.User.Get("bglx");
+            Console.WriteLine(user.PublicRepos + " folks love the half ogre!");
+
+            var request = new SearchRepositoriesRequest("module")
+            {
+                User = "bglx"
+            };
+            
+            IReadOnlyList<Repository> result = await github.Repository.GetAllForUser("bglx");
+            Console.WriteLine(result.ElementAt(0).Name);
+            IReadOnlyList<RepositoryContent> content = await github.Repository.Content.GetAllContents("bglx", result.ElementAt(0).Name);
+            Console.WriteLine(content.ElementAt(0).DownloadUrl);
+            using (var client = new WebClient())
+            {
+                string data = client.DownloadString(content.ElementAt(0).DownloadUrl);
+                Console.WriteLine(data);
+            }
+            /*
             string entropy = "";
             if (entropy == "")
             {
@@ -721,6 +736,7 @@ namespace module_manager
             {
                 
             }
+            */
         }
 
         private void ParamètresToolStripMenuItem_Click(object sender, EventArgs e)

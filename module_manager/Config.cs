@@ -37,14 +37,29 @@ namespace module_manager
 
         public string GetSmartGitRepo()
         {
-            string path = @"C:\Users\STBE\Downloads\SmartGit\.settings\repositories.xml";
-            return path;
+            string json = File.ReadAllText(GetSettingsPath());
+            byte[] bytes = Encoding.Default.GetBytes(json);
+            json = Encoding.UTF8.GetString(bytes);
+            JObject sett = JObject.Parse(json);
+            return (string)sett["smartgit"];
         }
 
         public string GetSourceTreeRepo()
         {
-            string path = @"C:\Users\STBE\AppData\Local\Atlassian\SourceTree\opentabs.xml";
-            return path;
+            string json = File.ReadAllText(GetSettingsPath());
+            byte[] bytes = Encoding.Default.GetBytes(json);
+            json = Encoding.UTF8.GetString(bytes);
+            JObject sett = JObject.Parse(json);
+            return (string)sett["sourcetree"];
+        }
+
+        public string GetLocalRepo()
+        {
+            string json = File.ReadAllText(GetSettingsPath());
+            byte[] bytes = Encoding.Default.GetBytes(json);
+            json = Encoding.UTF8.GetString(bytes);
+            JObject sett = JObject.Parse(json);
+            return (string)sett["local"];
         }
 
         /**
@@ -201,8 +216,11 @@ namespace module_manager
             File.WriteAllText(GetConfigPath(), conf.ToString());
         }
 
-        public void AddServer(string type, string name, string url, string username)
+        public bool AddServer(string type, string name, string url, string username)
         {
+            List<string> allNames = GetAllNames();
+            if (allNames.Contains(name))
+                return false;
             string json;
             json = File.ReadAllText(GetServersPath());
             JObject conf = JObject.Parse(json);
@@ -214,6 +232,7 @@ namespace module_manager
             itemToAdd["username"] = username;
             list.Add(itemToAdd);
             File.WriteAllText(GetServersPath(), conf.ToString());
+            return true;
         }
 
         public void EditServer(string oldName, string newName, string URL, string username)
@@ -233,6 +252,26 @@ namespace module_manager
                 }
             }
             File.WriteAllText(GetServersPath(), conf.ToString());
+        }
+
+        public void DeleteServer(string name)
+        {
+            string json;
+            json = File.ReadAllText(GetServersPath());
+            JObject conf = JObject.Parse(json);
+            JArray list = (JArray)conf["servers"];
+            int i = 0;
+            foreach (JObject serv in list)
+            {
+                if (serv["name"].ToString() == name)
+                {
+                    list.RemoveAt(i);
+                    break;
+                }
+                i++;
+            }
+            File.WriteAllText(GetServersPath(), conf.ToString());
+            File.Delete(GetAppData() + ".cred" + name);
         }
 
         public string GetBranchDev()

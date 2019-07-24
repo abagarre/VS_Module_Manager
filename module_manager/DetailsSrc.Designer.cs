@@ -38,6 +38,7 @@
             this.metroButton2 = new MetroFramework.Controls.MetroButton();
             this.metroButton1 = new MetroFramework.Controls.MetroButton();
             this.metroLabel1 = new MetroFramework.Controls.MetroLabel();
+            this.metroButton3 = new MetroFramework.Controls.MetroButton();
             this.panel2.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -146,17 +147,29 @@
             this.metroLabel1.TabIndex = 13;
             this.metroLabel1.Text = "Modifier la source";
             // 
+            // metroButton3
+            // 
+            this.metroButton3.ForeColor = System.Drawing.Color.Red;
+            this.metroButton3.Location = new System.Drawing.Point(24, 194);
+            this.metroButton3.Name = "metroButton3";
+            this.metroButton3.Size = new System.Drawing.Size(75, 23);
+            this.metroButton3.TabIndex = 18;
+            this.metroButton3.Text = "Supprimer";
+            this.metroButton3.UseSelectable = true;
+            this.metroButton3.Click += new System.EventHandler(this.MetroButton3_Click);
+            // 
             // DetailsSrc
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.Window;
             this.ClientSize = new System.Drawing.Size(514, 235);
+            this.Controls.Add(this.metroButton3);
             this.Controls.Add(this.panel2);
             this.Controls.Add(this.metroButton2);
             this.Controls.Add(this.metroButton1);
             this.Controls.Add(this.metroLabel1);
-            this.Name = "Modifier";
+            this.Name = "DetailsSrc";
             this.Text = "Modifier";
             this.Load += new System.EventHandler(this.DetailsSrc_Load);
             this.panel2.ResumeLayout(false);
@@ -177,5 +190,6 @@
         private MetroFramework.Controls.MetroButton metroButton2;
         private MetroFramework.Controls.MetroButton metroButton1;
         private MetroFramework.Controls.MetroLabel metroLabel1;
+        private MetroFramework.Controls.MetroButton metroButton3;
     }
 }

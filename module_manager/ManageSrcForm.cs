@@ -76,6 +76,7 @@ namespace module_manager
             frm.Location = this.Location;
             frm.StartPosition = FormStartPosition.Manual;
             frm.Show();
+            frm.FormClosed += RefreshForm;
         }
 
         private void SwitchServer(object sender, EventArgs e)
@@ -108,6 +109,13 @@ namespace module_manager
             frm.Location = this.Location;
             frm.StartPosition = FormStartPosition.Manual;
             frm.Show();
+            frm.FormClosed += RefreshForm;
+        }
+
+        private void RefreshForm(object sender, FormClosedEventArgs e)
+        {
+            flowLayoutPanel1.Controls.Clear();
+            Form6_Load(sender, e);
         }
     }
 }
