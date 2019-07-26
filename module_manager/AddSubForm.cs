@@ -12,8 +12,8 @@ namespace module_manager
 
         private string repo;        // Chemin du répertoire du projet sélectionné
         public static string path;  // Chemin du répertoire du projet sélectionné
-        public static List<string> moduleList = new List<string>(); // Liste de tous les modules du serveur
-        List<string> repoList = new List<string>();
+        public static List<Repo> moduleList = new List<Repo>(); // Liste de tous les modules du serveur
+        List<Repo> repoList = new List<Repo>();
         Functions functions;
         Config config;
 
@@ -109,13 +109,13 @@ namespace module_manager
         {
             BackgroundWorker worker = sender as BackgroundWorker;
 
-            List<string> projModules = new List<string>();  // Liste des modules du projet
+            List<Repo> projModules = new List<Repo>();  // Liste des modules du projet
 
             int i = 0;
             try
             {
                 // Récupère la liste des modules du projet (lecture sur projet distant)
-                projModules = functions.GetSubmodList(config.GetBranchDev(), functions.GetProjFullName(repo).Replace(".git", ""));
+                projModules = functions.GetSubmodList(config.GetBranchDev(), functions.GetProjFullName(repo).Replace(".git", ""), new Repo());
             }
             catch (Exception ex)
             {
@@ -124,16 +124,16 @@ namespace module_manager
             
             repo = repo.Substring(repo.LastIndexOf("\\") + 1, repo.Length - repo.LastIndexOf("\\") - 1);
 
-            List<string> modList = moduleList.ToList();
+            List<Repo> modList = moduleList.ToList();
             modList.Sort();
             i = 0;
-            foreach (string mod in modList)
+            foreach (Repo mod in modList)
             {
                 int toAdd = 1;
                 
-                foreach (string module in projModules)
+                foreach (Repo module in projModules)
                 {
-                    if (mod.ToLower() == module.ToLower())
+                    if (mod.Name.ToLower() == module.Name.ToLower())
                     {
                         // Si le module est déjà ajouté au projet, ajoute un indicateur et grise la case
                         checkedListBox1.Invoke(new Action(() => checkedListBox1.Items.Add(mod + " (✓)", true)));

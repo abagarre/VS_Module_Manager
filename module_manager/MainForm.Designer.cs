@@ -80,6 +80,7 @@
             this.paramètresToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.backgroundWorker3 = new System.ComponentModel.BackgroundWorker();
             this.backgroundWorker4 = new System.ComponentModel.BackgroundWorker();
+            this.label2 = new System.Windows.Forms.Label();
             this.metroTabControl1.SuspendLayout();
             this.metroTabPage1.SuspendLayout();
             this.metroTabPage2.SuspendLayout();
@@ -422,7 +423,7 @@
             this.metroLabel5.FontWeight = MetroFramework.MetroLabelWeight.Regular;
             this.metroLabel5.Location = new System.Drawing.Point(402, 37);
             this.metroLabel5.Name = "metroLabel5";
-            this.metroLabel5.Size = new System.Drawing.Size(379, 34);
+            this.metroLabel5.Size = new System.Drawing.Size(284, 34);
             this.metroLabel5.TabIndex = 6;
             this.metroLabel5.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
@@ -614,7 +615,6 @@
             this.comptesEtConnexionsToolStripMenuItem.Name = "comptesEtConnexionsToolStripMenuItem";
             this.comptesEtConnexionsToolStripMenuItem.Size = new System.Drawing.Size(198, 22);
             this.comptesEtConnexionsToolStripMenuItem.Text = "Comptes et connexions";
-            this.comptesEtConnexionsToolStripMenuItem.Visible = false;
             this.comptesEtConnexionsToolStripMenuItem.Click += new System.EventHandler(this.ComptesEtConnexionsToolStripMenuItem_ClickAsync);
             // 
             // paramètresToolStripMenuItem
@@ -637,12 +637,24 @@
             this.backgroundWorker4.ProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.BackgroundWorker4_ProgressChanged);
             this.backgroundWorker4.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.BackgroundWorker4_RunWorkerCompleted);
             // 
+            // label2
+            // 
+            this.label2.Font = new System.Drawing.Font("Century Gothic", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label2.ForeColor = System.Drawing.Color.RoyalBlue;
+            this.label2.Location = new System.Drawing.Point(692, 37);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(92, 34);
+            this.label2.TabIndex = 10;
+            this.label2.Text = "label2";
+            this.label2.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.Window;
             this.ClientSize = new System.Drawing.Size(800, 450);
+            this.Controls.Add(this.label2);
             this.Controls.Add(this.metroTabControl2);
             this.Controls.Add(this.metroLabel5);
             this.Controls.Add(this.statusStrip1);
@@ -724,6 +736,7 @@
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabel3;
         private System.ComponentModel.BackgroundWorker backgroundWorker4;
+        private System.Windows.Forms.Label label2;
     }
 }
 

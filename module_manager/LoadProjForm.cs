@@ -8,7 +8,7 @@ namespace module_manager
     public partial class LoadProjForm : Form
     {
         internal string path = "";
-        List<string> repoList = new List<string>();
+        List<Repo> repoList = new List<Repo>();
         Functions functions;
 
         public LoadProjForm()
@@ -21,10 +21,10 @@ namespace module_manager
         {
             repoList = MainForm.repoList.ToList();
             repoList.Sort();
-            foreach(string rep in repoList)
+            foreach(Repo rep in repoList)
             {
-                if(!rep.Contains("MODULES"))
-                    dataGridView1.Rows.Add(rep);
+                if(!rep.Name.Contains("MODULES"))
+                    dataGridView1.Rows.Add(rep.Name);
             }
         }
 

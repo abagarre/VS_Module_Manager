@@ -139,7 +139,7 @@ namespace module_manager
                     counter += (100 / allNodes.Count);
                     continue;
                 }
-                if(AddSubForm.moduleList.FirstOrDefault(stringToCheck => stringToCheck.Contains(node.Replace(".h",""))) != null)
+                if(AddSubForm.moduleList.FirstOrDefault(stringToCheck => stringToCheck.Name.Contains(node.Replace(".h",""))) != null)
                 {
                     Console.WriteLine(node + " is a module");
                     addedNodes.Add(node.Replace(".h","").Replace("_MODULES_/",""));
