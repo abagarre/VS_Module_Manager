@@ -37,7 +37,7 @@ namespace module_manager
                 else
                     MessageBox.Show("Mot de passe incorrect", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-            else if(textBox4.Text == "" && MessageBox.Show("Vous êtes sur le point d'ajouter un serveur ne nécessitant pas de mot de passe. \nContinuer ?", "", MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.Yes)
+            else if(textBox4.Text == "")
             {
                 if (config.AddServer(checkedButton.Text.ToLower(), textBox1.Text, textBox2.Text, textBox3.Text))
                     this.Close();
@@ -66,7 +66,7 @@ namespace module_manager
             metroButton1.Enabled = true;
             button1.Visible = false;
             metroLabel5.Text = "Mot de passe";
-            textBox2.Text = "https://bitbucket.org/{username}/";
+            textBox2.Text = "https://bitbucket.org/{organization}/";
         }
 
         private void RadioButton3_CheckedChanged(object sender, EventArgs e)

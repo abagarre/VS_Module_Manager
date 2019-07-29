@@ -146,7 +146,7 @@ namespace module_manager
             metroButton2.Enabled = true;
             button1.Visible = false;
             metroLabel5.Text = "Mot de passe";
-            textBox2.Text = "https://bitbucket.org/{username}/";
+            textBox2.Text = "https://bitbucket.org/{organization}/";
         }
 
         private void RadioButton5_CheckedChanged(object sender, EventArgs e)

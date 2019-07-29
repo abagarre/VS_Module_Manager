@@ -17,19 +17,7 @@ namespace module_manager
         { 
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            if (args.Length > 1)
-            {
-                switch (args[0])
-                {
-                    case "add":
-                        Application.Run(new AddSubForm(args.Skip(1).ToArray()));
-                        break;
-                    default:
-                        Application.Run(new MainForm());
-                        break;
-                }
-            }
-            else if(!Directory.Exists(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + @"\ModuleManager\"))
+            if(!Directory.Exists(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + @"\ModuleManager\"))
             {
                 string path = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + @"\ModuleManager\";
                 Directory.CreateDirectory(path);

@@ -151,6 +151,12 @@
     <Compile Include="AddSource.Designer.cs">
       <DependentUpon>AddSource.cs</DependentUpon>
     </Compile>
+    <Compile Include="AddSubmodule.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="AddSubmodule.Designer.cs">
+      <DependentUpon>AddSubmodule.cs</DependentUpon>
+    </Compile>
     <Compile Include="Config.cs" />
     <Compile Include="DetailsSrc.cs">
       <SubType>Form</SubType>
@@ -219,6 +225,9 @@
     <Compile Include="TreeViewExtensions.cs" />
     <EmbeddedResource Include="AddSource.resx">
       <DependentUpon>AddSource.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="AddSubmodule.resx">
+      <DependentUpon>AddSubmodule.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="DetailsSrc.resx">
       <DependentUpon>DetailsSrc.cs</DependentUpon>

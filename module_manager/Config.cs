@@ -164,6 +164,32 @@ namespace module_manager
             return allNames;
         }
 
+        public List<string> GetAllUniques()
+        {
+            List<string> allUniques = new List<string>();
+            string json = File.ReadAllText(GetServersPath());
+            JObject conf = JObject.Parse(json);
+            JArray list = (JArray)conf["servers"];
+            foreach (JObject serv in list)
+            {
+                allUniques.Add(serv["unique"].ToString());
+            }
+            return allUniques;
+        }
+
+        public List<string> GetAllTypes()
+        {
+            List<string> allTypes = new List<string>();
+            string json = File.ReadAllText(GetServersPath());
+            JObject conf = JObject.Parse(json);
+            JArray list = (JArray)conf["servers"];
+            foreach (JObject serv in list)
+            {
+                allTypes.Add(serv["type"].ToString());
+            }
+            return allTypes;
+        }
+
         public string GetClient()
         {
             string json = File.ReadAllText(GetConfigPath());
@@ -228,8 +254,18 @@ namespace module_manager
             var itemToAdd = new JObject();
             itemToAdd["type"] = type;
             itemToAdd["name"] = name;
-            itemToAdd["url"] = url;
+            url = url.EndsWith("/") ? url : url + "/";
+            itemToAdd["url"] = url.EndsWith("/") ? url : url+"/";
             itemToAdd["username"] = username;
+            if(type == "gitblit")
+            {
+                Uri myUri = new Uri(url);
+                itemToAdd["unique"] = myUri.Host;
+            } else
+            {
+                url = url.Remove(url.Length - 1);
+                itemToAdd["unique"] = url.Substring(url.LastIndexOf("/") + 1, url.Length - url.LastIndexOf("/") - 1);
+            }
             list.Add(itemToAdd);
             File.WriteAllText(GetServersPath(), conf.ToString());
             return true;

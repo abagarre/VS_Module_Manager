@@ -95,41 +95,18 @@ public class Functions
                         {
                             if (repo.Branch == null || repo.Tag == null)
                             {
-                                
-                                Console.WriteLine(Path.Combine(path, @".git\modules\", subpath, "HEAD"));
-                                StreamReader head = new StreamReader(System.IO.Path.Combine(path, @".git\modules\", subpath, "HEAD"));
+                                StreamReader headFile = new StreamReader(System.IO.Path.Combine(path, @".git\modules\", subpath, "HEAD"));
                                 string subline;
-                                while ((subline = head.ReadLine()) != null)
+                                string head = "";
+                                while ((subline = headFile.ReadLine()) != null)
                                 {
-                                    if (subline.Contains("ref"))
-                                    {
-                                        repo.Branch = subline.Substring(subline.LastIndexOf("/") + 1, subline.Length - subline.LastIndexOf("/") - 1);
-                                        Console.WriteLine(repo.Branch);
-                                        
-                                    }
-                                    else if (File.Exists(System.IO.Path.Combine(path, @".git\modules\", subpath, "packed-refs")))
-                                    {
-                                        Console.WriteLine(Path.Combine(path, @".git\modules\", subpath, "packed-refs"));
-                                        string ligne;
-                                        StreamReader pack = new StreamReader(System.IO.Path.Combine(path, @".git\modules\", subpath, "packed-refs"));
-                                        while ((ligne = pack.ReadLine()) != null)
-                                        {
-                                            if (ligne.Contains(subline) && ligne.Contains("remote"))
-                                            {
-                                                repo.Branch = ligne.Substring(ligne.LastIndexOf("/") + 1, ligne.Length - ligne.LastIndexOf("/") - 1);
-                                                Console.WriteLine(repo.Branch);
-                                            }
-                                            if (ligne.Contains(subline) && ligne.Contains("tag"))
-                                            {
-                                                repo.Tag = ligne.Substring(ligne.LastIndexOf("/") + 1, ligne.Length - ligne.LastIndexOf("/") - 1);
-                                                Console.WriteLine(repo.Tag);
-                                            }
-                                        }
-                                        pack.Close();
-                                    }
+                                    head = subline;
                                 }
-                                head.Close();
+                                headFile.Close();
+                                repo.Branch = GetBranch(Path.Combine(path, @".git\modules\", subpath), head);
+                                repo.Tag = GetTag(Path.Combine(path, @".git\modules\", subpath), head);
                             }
+                            repo.ServerName = GetServerName(repo);
                             repos.Add(repo);
                         }
                             
@@ -150,9 +127,6 @@ public class Functions
                         repo.Name = name;
                         string url = line.Replace("url = ", "");
                         repo.Url = url;
-                        //Uri myUri = new Uri(url);
-                        //string host = myUri.Host;
-                        //Console.WriteLine(host);
                         if (url.Contains("azure") || url.Contains("azure"))
                             repo.Server = "devops";
                         else if (url.Contains("bitbucket"))
@@ -168,10 +142,24 @@ public class Functions
                 }
                 file.Close();
 
-                
                 if (repo.Name != null)
+                {
+                    if (repo.Branch == null || repo.Tag == null)
+                    {
+                        StreamReader headFile = new StreamReader(System.IO.Path.Combine(path, @".git\modules\", subpath, "HEAD"));
+                        string subline;
+                        string head = "";
+                        while ((subline = headFile.ReadLine()) != null)
+                        {
+                            head = subline;
+                        }
+                        headFile.Close();
+                        repo.Branch = GetBranch(Path.Combine(path, @".git\modules\", subpath), head);
+                        repo.Tag = GetTag(Path.Combine(path, @".git\modules\", subpath), head);
+                    }
+                    repo.ServerName = GetServerName(repo);
                     repos.Add(repo);
-                
+                }
             }
         }
         catch (Exception excpt)
@@ -247,12 +235,12 @@ public class Functions
             {
                 Repo repo = new Repo();
                 repo.Name = ob["name"].ToString();
-                Console.WriteLine(ob["links"]["html"]["href"].ToString());
                 repo.Url = ob["links"]["html"]["href"].ToString();
                 repo.Branch = ob["mainbranch"]["name"].ToString();
                 repo.Localisation = Repo.Loc.distant;
                 repo.ReadmeIndex = 1;
                 repo.Server = "bitbucket";
+                repo.ServerName = config.GetCurrentSource();
                 string name = ((string)ob["name"]).Replace(".git", "");
                 repoList.Add(name.Substring(name.LastIndexOf("/") + 1, name.Length - name.LastIndexOf("/") - 1));
                 repos.Add(repo);
@@ -288,6 +276,7 @@ public class Functions
                 string repoName = infos["name"].ToString().Replace(".git", "");
                 repo.Name = repoName.Substring(repoName.LastIndexOf("/") + 1, repoName.Length - repoName.LastIndexOf("/") - 1);
                 repo.Server = "gitblit";
+                repo.ServerName = config.GetCurrentSource();
                 string head = infos["HEAD"].ToString();
                 repo.Branch = head.Substring(head.LastIndexOf("/") + 1, head.Length - head.LastIndexOf("/") - 1);
                 repos.Add(repo);
@@ -327,6 +316,7 @@ public class Functions
                     repo.Localisation = Repo.Loc.distant;
                     repo.ReadmeIndex = 1;
                     repo.Server = "devops";
+                    repo.ServerName = config.GetCurrentSource();
                     repoList.Add(ob["name"].ToString());
                     repos.Add(repo);
                 }
@@ -339,6 +329,7 @@ public class Functions
         return repos;
     }
 
+    /*
     public List<string> GitHubRepoList()
     {
         List<string> repoList = new List<string>();
@@ -369,6 +360,7 @@ public class Functions
         }
         return repoList;
     }
+    */
 
     /**
      * Retourne la liste des dépôts du serveur
@@ -625,7 +617,11 @@ public class Functions
                     if (ligne.Contains("submodule"))
                     {
                         if (repo.Name != null)
+                        {
+                            repo.ServerName = GetServerName(repo);
                             repos.Add(repo);
+                        }
+                            
                         repo = new Repo();
                         repo.ReadmeIndex = 0;
                         repo.Type = "module";
@@ -635,13 +631,9 @@ public class Functions
                     {
                         string name = ligne.Substring(ligne.LastIndexOf("/") + 1, ligne.Length - ligne.LastIndexOf("/") - 1).Replace(".git", "");
                         repo.Name = name;
-                        Console.WriteLine(name + " is a submod of " + rep);
                         string URL = ligne.Replace("url = ", "");
                         repo.Url = URL;
-                        //Uri myUri = new Uri(url);
-                        //string host = myUri.Host;
-                        //Console.WriteLine(host);
-                        if (URL.Contains("azure") || URL.Contains("azure"))
+                        if (URL.Contains("azure") || URL.Contains("visualstudio"))
                             repo.Server = "devops";
                         else if (URL.Contains("bitbucket"))
                             repo.Server = "bitbucket";
@@ -655,7 +647,10 @@ public class Functions
                     }
                 }
                 if (repo.Name != null)
+                {
+                    repo.ServerName = GetServerName(repo);
                     repos.Add(repo);
+                }
             }
         }
         catch (Exception) { }
@@ -696,7 +691,11 @@ public class Functions
                 if (ligne.Contains("submodule"))
                 {
                     if (repo.Name != null)
+                    {
+                        repo.ServerName = GetServerName(repo);
                         repos.Add(repo);
+                    }
+
                     repo = new Repo();
                     repo.ReadmeIndex = 0;
                     repo.Type = "module";
@@ -706,7 +705,6 @@ public class Functions
                 {
                     string name = ligne.Substring(ligne.LastIndexOf("/") + 1, ligne.Length - ligne.LastIndexOf("/") - 1).Replace(".git", "");
                     repo.Name = name;
-                    Console.WriteLine(name + " is a submod of " + rep);
                     string URL = ligne.Replace("url = ", "");
                     repo.Url = URL;
                     //Uri myUri = new Uri(url);
@@ -727,12 +725,16 @@ public class Functions
             }
         }
         if (repo.Name != null)
+        {
+            repo.ServerName = GetServerName(repo);
             repos.Add(repo);
+        }
         return repos;
     }
 
     public List<Repo> GetSubDevOps(string branch, string rep, Repo proj)
     {
+        Console.WriteLine("//==================GETSUBDEVOPS====================//");
         List<Repo> repos = new List<Repo>();
         string result;
         try
@@ -742,23 +744,48 @@ public class Functions
         catch (Exception ex)
         {
             Console.WriteLine("GetSubmodError : " + ex.Message);
-            if (branch != "master")
-                return GetSubmodList("master", rep, proj);
+            //if (branch != "master")
+                //return GetSubmodList("master", rep, proj);
             result = "null";
         }
-        if (result.Length == 0 && branch != "master")
-            return GetSubmodList("master", rep, proj);
+        //if (result.Length == 0 && branch != "master")
+            //return GetSubmodList("master", rep, proj);
 
         using (StringReader reader = new StringReader(result))
         {
             string ligne;
+            string commit = "";
             Repo repo = new Repo();
             while ((ligne = reader.ReadLine()) != null)
             {
+                Console.WriteLine(ligne);
                 if (ligne.Contains("submodule"))
                 {
                     if (repo.Name != null)
+                    {
+                        repo.ServerName = GetServerName(repo);
+                        Console.WriteLine(config.GetServerUrl(repo.ServerName) + "_apis/git/repositories/" + repo.Name + "/refs?filter=tags/&peelTags=true&api-version=5.0");
+                        try
+                        {
+                            result = Query("devops", config.GetServerUrl(repo.ServerName) + "_apis/git/repositories/" + repo.Name + "/refs?filter=tags/&peelTags=true&api-version=5.0");
+                            Console.WriteLine(result);
+                            JObject json = JObject.Parse(result);
+                            JArray values = (JArray)json["value"];
+                            foreach (JObject ob in values)
+                            {
+                                Console.WriteLine(ob["name"]);
+                                if (ob["peeledObjectId"].ToString() == commit)
+                                {
+                                    string tag = ob["name"].ToString();
+                                    repo.Tag = tag.Substring(tag.LastIndexOf("/") + 1, tag.Length - tag.LastIndexOf("/") - 1);
+                                    break;
+                                }
+                            }
+                            Console.WriteLine("Tags of " + repo.Name + " : \n" + repo.Tag ?? repo.Tag);
+                        } catch (Exception) { }
+                        
                         repos.Add(repo);
+                    }
                     repo = new Repo();
                     repo.ReadmeIndex = 0;
                     repo.Type = "module";
@@ -768,13 +795,12 @@ public class Functions
                 {
                     string name = ligne.Substring(ligne.LastIndexOf("/") + 1, ligne.Length - ligne.LastIndexOf("/") - 1).Replace(".git", "");
                     repo.Name = name;
-                    Console.WriteLine(name + " is a submod of " + rep);
                     string URL = ligne.Replace("url = ", "");
                     repo.Url = URL;
                     //Uri myUri = new Uri(url);
                     //string host = myUri.Host;
                     //Console.WriteLine(host);
-                    if (URL.Contains("azure") || URL.Contains("azure"))
+                    if (URL.Contains("azure") || URL.Contains("visualstudio"))
                         repo.Server = "devops";
                     else if (URL.Contains("bitbucket"))
                         repo.Server = "bitbucket";
@@ -786,9 +812,43 @@ public class Functions
                     string branche = ligne.Replace("branch = ", "");
                     repo.Branch = branche;
                 }
+                if(ligne.Contains("path"))
+                {
+                    string modPath = ligne.Replace("path = ", "").Trim();
+                    try
+                    {
+                        Console.WriteLine(config.GetServerUrl() + "_apis/git/repositories/" + rep + "/items?path=" + modPath + "&includeContent=true&api-version=5.0");
+                        commit = Query("devops", config.GetServerUrl() + "_apis/git/repositories/" + rep + "/items?path=" + modPath + "&includeContent=true&api-version=5.0");
+                        Console.WriteLine(commit);
+                    }
+                    catch (Exception) { }
+                    
+                }
             }
-            if(repo.Name != null)
+            if (repo.Name != null)
+            {
+                repo.ServerName = GetServerName(repo);
+                Console.WriteLine(config.GetServerUrl(repo.ServerName) + "_apis/git/repositories/" + repo.Name + "/refs?filter=tags/&peelTags=true&api-version=5.0");
+                try
+                {
+                    result = Query("devops", config.GetServerUrl(repo.ServerName) + "_apis/git/repositories/" + repo.Name + "/refs?filter=tags/&peelTags=true&api-version=5.0");
+                    JObject json = JObject.Parse(result);
+                    JArray values = (JArray)json["value"];
+                    foreach (JObject ob in values)
+                    {
+                        Console.WriteLine(ob["name"]);
+                        if (ob["peeledObjectId"].ToString() == commit)
+                        {
+                            string tag = ob["name"].ToString();
+                            repo.Tag = tag.Substring(tag.LastIndexOf("/") + 1, tag.Length - tag.LastIndexOf("/") - 1);
+                            break;
+                        }
+                    }
+                    Console.WriteLine("Tags of " + repo.Name + " : \n" + repo.Tag ?? repo.Tag);
+                } catch (Exception) { }
+                
                 repos.Add(repo);
+            }
         }
         return repos;
     }
@@ -1199,10 +1259,8 @@ public class Functions
 
         IEnumerable<XElement> ob = xml.Root.Elements();
         IEnumerable<XElement> coll = ob.ElementAt(0).Elements();
-        Console.WriteLine(coll.Count());
         for (int i = 0; i < coll.Count(); i++)
         {
-            Console.WriteLine(i);
             XElement obj = coll.ElementAt(i);
             var query = from c in obj.Descendants("prop")
                         where c.Attribute("key").Value == "path"
@@ -1232,6 +1290,85 @@ public class Functions
         }
 
         return sourceList;
+    }
+
+    public string GetBranch(string path, string head)
+    {
+        if (head.Contains("ref"))
+        {
+            return head.Substring(head.LastIndexOf("/") + 1, head.Length - head.LastIndexOf("/") - 1);
+        }
+        else
+        {
+            foreach (var file in new DirectoryInfo(Path.Combine(path,@"refs\heads")).GetFiles())
+            {
+                string ligne;
+                StreamReader pack = new StreamReader(file.FullName);
+                while ((ligne = pack.ReadLine()) != null)
+                {
+                    if (ligne.Contains(head))
+                    {
+                        return file.Name;
+                    }
+                }
+                pack.Close();
+            }
+        }
+        return null;
+    }
+
+    public string GetTag(string path, string head)
+    {
+        foreach (var file in new DirectoryInfo(Path.Combine(path, @"refs\tags")).GetFiles())
+        {
+            string ligne;
+            StreamReader pack = new StreamReader(file.FullName);
+            while ((ligne = pack.ReadLine()) != null)
+            {
+                if (ligne.Contains(head))
+                {
+                    return file.Name;
+                }
+            }
+            pack.Close();
+        }
+
+        if(File.Exists(Path.Combine(path,"packed-refs")))
+        {
+            string ligne;
+            StreamReader pack = new StreamReader(Path.Combine(path, "packed-refs"));
+            while ((ligne = pack.ReadLine()) != null)
+            {
+                if (ligne.Contains(head) && ligne.Contains("tags"))
+                {
+                    return ligne.Substring(ligne.LastIndexOf("/") + 1, ligne.Length - ligne.LastIndexOf("/") - 1);
+                }
+            }
+            pack.Close();
+        }
+
+        return null;
+    }
+
+    public string GetServerName(Repo repo)
+    {
+        if (repo.Name != null)
+        {
+            List<string> allNames = config.GetAllNames();
+            List<string> allServ = config.GetAllTypes();
+            List<string> alluniques = config.GetAllUniques();
+            int i = 0;
+            foreach (string unique in alluniques)
+            {
+                if (repo.Url.Contains(unique) && repo.Server == allServ.ElementAt(i))
+                {
+                    return allNames.ElementAt(i);
+                }
+
+                i++;
+            }
+        }
+        return null;
     }
 
 }

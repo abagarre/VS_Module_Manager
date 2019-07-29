@@ -13,6 +13,7 @@ namespace module_manager
 
         public string Name { get; set; }    // last part of the URL
         public string Server { get; set; }  // <gitblit|bitbucket|devops>
+        public string ServerName { get; set; }
         public string Url { get; set; }
         public string Path { get; set; }    // local path or null
         public string Type { get; set; }    // <project|module>
@@ -24,8 +25,8 @@ namespace module_manager
         
         public bool Equal(Repo repo)
         {
-            if (Server == "gitblit" && repo.Server == Server && Name.ToLower().Contains(repo.Name.ToLower()))
-                return true;
+            //if (Server == "gitblit" && repo.Server == Server && Name.ToLower().Contains(repo.Name.ToLower()))
+                //return true;
             if (repo.Name.ToLower() == Name.ToLower() && repo.Server == Server)
                 return true;
             return false;
@@ -38,6 +39,10 @@ namespace module_manager
 
         public Repo Init(string path)
         {
+            Config config = new Config();
+            List<string> allNames = config.GetAllNames();
+            List<string> allServ = config.GetAllTypes();
+            List<string> alluniques = config.GetAllUniques();
             Modules = new List<Repo>();
             if (File.Exists(System.IO.Path.Combine(path, ".gitmodules")))
                 Type = "project";
@@ -72,33 +77,28 @@ namespace module_manager
             }
             conf.Close();
 
-            StreamReader head = new StreamReader(System.IO.Path.Combine(path, @".git\HEAD"));
-            while ((line = head.ReadLine()) != null)
+            string head = "";
+            StreamReader headFile = new StreamReader(System.IO.Path.Combine(path, @".git\HEAD"));
+            while ((line = headFile.ReadLine()) != null)
             {
-                if (line.Contains("ref"))
-                {
-                    Branch = line.Substring(line.LastIndexOf("/") + 1, line.Length - line.LastIndexOf("/") - 1);
-                }
-                else if(File.Exists(System.IO.Path.Combine(path, @".git\packed-refs")))
-                {
-                    string ligne;
-                    StreamReader pack = new StreamReader(System.IO.Path.Combine(path, @".git\packed-refs"));
-                    while ((ligne = pack.ReadLine()) != null)
-                    {
-                        if(ligne.Contains(line) && ligne.Contains("remote"))
-                        {
-                            Branch = ligne.Substring(ligne.LastIndexOf("/") + 1, ligne.Length - ligne.LastIndexOf("/") - 1);
-                        }
-                        if (ligne.Contains(line) && ligne.Contains("tag"))
-                        {
-                            Tag = ligne.Substring(ligne.LastIndexOf("/") + 1, ligne.Length - ligne.LastIndexOf("/") - 1);
-                        }
-                    }
-                    pack.Close();
-                }
+                head = line;
             }
-            head.Close();
+            headFile.Close();
 
+            Functions functions = new Functions();
+            Branch = functions.GetBranch(System.IO.Path.Combine(path,@".git\"), head);
+            Tag = functions.GetTag(System.IO.Path.Combine(path, @".git\"), head);
+
+            int i = 0;
+            foreach (string unique in alluniques)
+            {
+                if (Url != null && Url.Contains(unique) && Server == allServ.ElementAt(i))
+                {
+                    ServerName = allNames.ElementAt(i);
+                    break;
+                }
+                i++;
+            }
             return this;
         }
     }

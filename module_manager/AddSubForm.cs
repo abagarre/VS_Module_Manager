@@ -9,24 +9,22 @@ namespace module_manager
 {
     public partial class AddSubForm : Form
     {
-
-        private string repo;        // Chemin du répertoire du projet sélectionné
         public static string path;  // Chemin du répertoire du projet sélectionné
         public static List<Repo> moduleList = new List<Repo>(); // Liste de tous les modules du serveur
+        Repo proj;
         List<Repo> repoList = new List<Repo>();
         Functions functions;
         Config config;
 
-        public AddSubForm(string[] args)
+        public AddSubForm(Repo repo)
         {
-            repo = args[0];
             InitializeComponent();
+            proj = repo;
         }
 
         private void Form2_Load(object sender, EventArgs e)
         {
-            toolStripStatusLabel2.Text = repo;
-            path = repo;
+            toolStripStatusLabel2.Text = proj.Path;
             toolStripStatusLabel1.Text = "Chargement...";
             config = new Config();
             try
@@ -40,13 +38,14 @@ namespace module_manager
 
             try
             {
-                repoList = MainForm.repoList;
+                repoList = MainForm.repoList.ToList();
             }
             catch (Exception)
             {
+                Console.WriteLine("Can't retreive repoList from MainForm");
                 repoList = functions.GetRepoList();
             }
-            moduleList = repoList;
+
             backgroundWorker1.RunWorkerAsync();
         }
 
@@ -78,7 +77,7 @@ namespace module_manager
                     if (!item.ToString().Contains("(✓)"))
                     {
                         // Si le module n'est pas déjà installé dans le projet
-                        installList.Add(item.ToString());
+                        installList.Add(item.ToString().Substring(0,item.ToString().IndexOf("(")-1));
                     }
                 }
                 if(installList.Count != 0)
@@ -109,47 +108,35 @@ namespace module_manager
         {
             BackgroundWorker worker = sender as BackgroundWorker;
 
-            List<Repo> projModules = new List<Repo>();  // Liste des modules du projet
+            int i = 0, j = 0;
 
-            int i = 0;
-            try
-            {
-                // Récupère la liste des modules du projet (lecture sur projet distant)
-                projModules = functions.GetSubmodList(config.GetBranchDev(), functions.GetProjFullName(repo).Replace(".git", ""), new Repo());
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Add Mod error retreiving submod : " + ex.Message);
-            }
-            
-            repo = repo.Substring(repo.LastIndexOf("\\") + 1, repo.Length - repo.LastIndexOf("\\") - 1);
-
-            List<Repo> modList = moduleList.ToList();
-            modList.Sort();
+            List<Repo> modList = repoList.OrderBy(mod => mod.Name).ToList();
             i = 0;
             foreach (Repo mod in modList)
             {
-                int toAdd = 1;
-                
-                foreach (Repo module in projModules)
+                if(mod.Type == "module")
                 {
-                    if (mod.Name.ToLower() == module.Name.ToLower())
+                    int toAdd = 1;
+
+                    if (mod.IsInList(proj.Modules))
                     {
                         // Si le module est déjà ajouté au projet, ajoute un indicateur et grise la case
-                        checkedListBox1.Invoke(new Action(() => checkedListBox1.Items.Add(mod + " (✓)", true)));
+                        checkedListBox1.Invoke(new Action(() => checkedListBox1.Items.Add(mod.Name + " (" + mod.Server + ")" + " (✓)", true)));
                         checkedListBox1.Invoke(new Action(() => checkedListBox1.SetItemCheckState(i, CheckState.Indeterminate)));
                         toAdd = 0;
-                        break;
                     }
-                }
-                
-                if (toAdd == 1)
-                {
-                    checkedListBox1.Invoke(new Action(() => checkedListBox1.Items.Add(mod)));
-                }
 
-                i++;
-                worker.ReportProgress(i * 100 / modList.Count());
+                    if (toAdd == 1)
+                    {
+                        checkedListBox1.Invoke(new Action(() => checkedListBox1.Items.Add(mod.Name + " (" + mod.Server + ")")));
+                    }
+
+                    i++;
+                    
+                }
+                j++;
+                worker.ReportProgress(j * 100 / modList.Count());
+
             }
             worker.ReportProgress(0);
         }
