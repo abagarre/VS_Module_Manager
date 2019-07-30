@@ -83,6 +83,8 @@
             this.Version = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.tag = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.Actions = new System.Windows.Forms.DataGridViewButtonColumn();
+            this.url = new System.Windows.Forms.DataGridViewLinkColumn();
+            this.identifier = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.metroTabControl1.SuspendLayout();
             this.metroTabPage1.SuspendLayout();
             this.tableLayoutPanel1.SuspendLayout();
@@ -298,7 +300,9 @@
             this.Nom,
             this.Version,
             this.tag,
-            this.Actions});
+            this.Actions,
+            this.url,
+            this.identifier});
             this.dataGridView1.Location = new System.Drawing.Point(4, 48);
             this.dataGridView1.Name = "dataGridView1";
             this.dataGridView1.RowHeadersVisible = false;
@@ -677,6 +681,17 @@
             this.Actions.HeaderText = "Action";
             this.Actions.Name = "Actions";
             // 
+            // url
+            // 
+            this.url.HeaderText = "URL";
+            this.url.Name = "url";
+            // 
+            // identifier
+            // 
+            this.identifier.HeaderText = "ID";
+            this.identifier.Name = "identifier";
+            this.identifier.Visible = false;
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -769,6 +784,8 @@
         private System.Windows.Forms.DataGridViewTextBoxColumn Version;
         private System.Windows.Forms.DataGridViewTextBoxColumn tag;
         private System.Windows.Forms.DataGridViewButtonColumn Actions;
+        private System.Windows.Forms.DataGridViewLinkColumn url;
+        private System.Windows.Forms.DataGridViewTextBoxColumn identifier;
     }
 }
 

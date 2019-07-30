@@ -10,6 +10,7 @@ namespace module_manager
         internal string path = "";
         List<Repo> repoList = new List<Repo>();
         Functions functions;
+        internal string id;
 
         public LoadProjForm()
         {
@@ -20,11 +21,11 @@ namespace module_manager
         private void Form5_Load(object sender, EventArgs e)
         {
             repoList = MainForm.repoList.ToList();
-            repoList.Sort();
-            foreach(Repo rep in repoList)
+            repoList = repoList.OrderBy(repo => repo.Name).ToList();
+            foreach (Repo rep in repoList)
             {
                 if(!rep.Name.Contains("MODULES"))
-                    dataGridView1.Rows.Add(rep.Name);
+                    dataGridView1.Rows.Add(rep.Name, rep.ServerName ?? rep.Server, rep.Id.ToString());
             }
         }
 
@@ -48,10 +49,11 @@ namespace module_manager
 
         private void DataGridView1_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
         {
-            if(e.RowIndex >= 0)
+            if (e.RowIndex >= 0 && e.ColumnIndex == 0)
             {
                 path = dataGridView1[e.ColumnIndex, e.RowIndex].Value.ToString();
                 path = path.Replace(".git", "");
+                id = dataGridView1[e.ColumnIndex + 2, e.RowIndex].Value.ToString();
                 this.Close();
             }
         }

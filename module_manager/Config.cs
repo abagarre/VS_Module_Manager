@@ -284,6 +284,7 @@ namespace module_manager
                     serv["name"] = newName;
                     serv["url"] = URL;
                     serv["username"] = username;
+                    File.Move(Path.Combine(GetAppData(), ".cred" + oldName), Path.Combine(GetAppData(), ".cred" + newName));
                     break;
                 }
             }

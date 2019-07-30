@@ -11,14 +11,14 @@ namespace module_manager
     public partial class AddConfirmForm : Form
     {
 
-        List<string> modules;   // Liste des modules à ajouter
+        List<Repo> modules;   // Liste des modules à ajouter
         Functions functions;
         Config config;
 
-        public AddConfirmForm(List<string> args)
+        public AddConfirmForm(List<Repo> repo)
         {
             InitializeComponent();
-            modules = args;
+            modules = repo;
             config = new Config();
             try
             {
@@ -48,20 +48,20 @@ namespace module_manager
             BackgroundWorker worker = sender as BackgroundWorker;
 
             int i = 1;
-            foreach (string mod in modules)
+            foreach (Repo repo in modules)
             {
-                TreeNode treeNode = new TreeNode(mod);
+                TreeNode treeNode = new TreeNode(repo.Name);
                 treeNode.Checked = true;
                 treeNode.Name = "module";
                 treeView1.Invoke(new Action(() => treeView1.Nodes.Add(treeNode))); // Ajoute le module comme noeud du TreeView
                 try
                 {
-                    List<string> dep = functions.GetModuleDep(mod, config.GetBranchDev()); // Liste des #include du module
+                    List<string> dep = functions.GetModuleDep(repo.Name, config.GetBranchDev()); // Liste des #include du module
                     List<string> allFiles = Directory.GetFiles(AddSubForm.path, "*.*", SearchOption.AllDirectories).ToList(); // Liste de tous les fichiers (locaux)
                     foreach (string dependency in dep)
                     {
                         var match = allFiles.FirstOrDefault(stringToCheck => stringToCheck.Contains(dependency));
-
+                        /*
                         if (match == null && !modules.Contains(dependency))
                         {
                             // Si le fichier #include n'est pas présent localement et s'il n'est pas dans la liste des modules à installer
@@ -71,6 +71,7 @@ namespace module_manager
                             childNode.Name = "subInclude";
                             treeView1.Invoke(new Action(() => treeNode.Nodes.Add(childNode)));
                         }
+                        */
                     }
                 }
                 catch (Exception ex)
@@ -123,7 +124,6 @@ namespace module_manager
             List<string> allNodes = functions.GetNodes(treeView1.Nodes);
             List<string> addedNodes = new List<string>();
             int counter = 0;
-            Console.WriteLine(counter);
             string mainMod = allNodes.ElementAt(0);
             foreach (string node in allNodes)
             {
@@ -141,7 +141,6 @@ namespace module_manager
                 }
                 if(AddSubForm.moduleList.FirstOrDefault(stringToCheck => stringToCheck.Name.Contains(node.Replace(".h",""))) != null)
                 {
-                    Console.WriteLine(node + " is a module");
                     addedNodes.Add(node.Replace(".h","").Replace("_MODULES_/",""));
 
                     if (node.Contains(".h") && MessageBox.Show("Le module [ " + node.Replace(".h", "") + " ] fait partie des dépendances du module [ " + mainMod + " ], voulez-vous l'installer ?", "Ajouter un module", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.No)
@@ -237,7 +236,6 @@ namespace module_manager
 
         private void BackgroundWorker1_ProgressChanged(object sender, ProgressChangedEventArgs e)
         {
-            Console.WriteLine(e.ProgressPercentage);
             toolStripProgressBar1.Value = e.ProgressPercentage;
         }
 

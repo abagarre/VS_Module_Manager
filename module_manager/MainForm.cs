@@ -48,7 +48,6 @@ namespace module_manager
         {
             repoList = new List<Repo>();
             projList = new List<List<string>>();
-            clientList = new List<string>();
             readmeState = new List<int>();
             repositories = new List<Repo>();
             toolStripStatusLabel2.Text = "";
@@ -120,6 +119,7 @@ namespace module_manager
                             repo.Modules.Add(submodule);
                             if(!submodule.IsInList(modules))
                                 modules.Add(submodule);
+                            repositories.Add(submodule);
                             j++;
                         }
                     }
@@ -187,17 +187,15 @@ namespace module_manager
                     repoList.Add(repo);
                     worker.ReportProgress(i * 100 / (servNb * repos.Count()) + j * 100 / servNb);
                     i++;
+                    if (backgroundWorker1.CancellationPending)
+                    {
+                        e.Cancel = true;
+                        return;
+                    }
                 }
                 j++;
             }
-
             config.ChangeServer(currentServ);
-
-            if (backgroundWorker1.CancellationPending)
-            {
-                e.Cancel = true;
-                return;
-            }
         }
 
         private void BackgroundWorker1_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
@@ -262,7 +260,7 @@ namespace module_manager
                 if (!bg3IsWorking)
                 {
                     // Si la tache n'est pas déjà en cours, charge le README dans le WebBrowser
-                    backgroundWorker3.RunWorkerAsync(argument: e.Node.Text);
+                    backgroundWorker3.RunWorkerAsync(argument: ((Repo)e.Node.Tag).Id);
                 }
             } catch (Exception) { }
             dataGridView1.Rows.Clear();
@@ -279,7 +277,7 @@ namespace module_manager
                         if(module.Equal((Repo)e.Node.Tag))
                         {
                             // Si le module sélectionné apparait dans les dépendances d'un projet, affiche ce projet dans le DataGridView
-                            dataGridView1.Rows.Add(repo.Name, repo.Url, "Détails");
+                            dataGridView1.Rows.Add(repo.Name, repo.Url, module.Tag, "Détails", repo.Url, repo.Id);
                         }
                     }
                     i++;
@@ -287,8 +285,12 @@ namespace module_manager
             }
             else
             {
+                List<Repo> submods = new List<Repo>();
                 // Si le noeud sélectionné est un projet
-                List<Repo> submods = ((Repo)e.Node.Tag).Modules; // Récupère la liste des sous-modules locaux (lecture du fichier .gitmodules)
+                if (((Repo)e.Node.Tag).Localisation == Repo.Loc.local)
+                {
+                    submods = ((Repo)e.Node.Tag).Modules; // Récupère la liste des sous-modules locaux (lecture du fichier .gitmodules)
+                }
                 List<Repo> distantModules = new List<Repo>();
                 metroLabel4.Text = "Modules présents dans le projet";
                 int i = 0;
@@ -302,17 +304,15 @@ namespace module_manager
                             // Récupère la liste des sous-modules présents dans le projet distant
                             foreach (Repo module in proj.Modules)
                             {
-                                
                                 if (module.IsInList(submods))
                                 {
-                                    Console.WriteLine(module.Name + " local of " + proj.Name);
                                     // Si le module est à la fois présent localement et sur le serveur (autorise la suppression locale)
-                                    dataGridView1.Rows.Add(module.Name, "Distant / Local", "Dépendances");
+                                    dataGridView1.Rows.Add(module.Name, "Distant / Local", module.Tag, "Dépendances", module.Url, module.Id);
                                 }
                                 else
                                 {
                                     // Si il n'est présent que sur le serveur (autorise l'affichage des dépendances)
-                                    dataGridView1.Rows.Add(module.Name, "Distant", "Dépendances");
+                                    dataGridView1.Rows.Add(module.Name, "Distant", module.Tag, "Dépendances", module.Url, module.Id);
                                 }
                                 distantModules.Add(module);
                             }
@@ -326,7 +326,7 @@ namespace module_manager
                     if(!submodule.IsInList(distantModules))
                     {
                         // Si le module n'est présent que localement (autorise la suppression locale)
-                        dataGridView1.Rows.Add(submodule.Name, "Local", "Dépendances");
+                        dataGridView1.Rows.Add(submodule.Name, "Local", submodule.Tag, "Dépendances", submodule.Url, submodule.Id);
                     }
                 }
             }
@@ -351,8 +351,9 @@ namespace module_manager
                     try
                     {
                         if (!bg3IsWorking)
-                            backgroundWorker3.RunWorkerAsync(argument: projName);
-                    } catch (Exception) { }
+                            backgroundWorker3.RunWorkerAsync(argument: dataGridView1.Rows[e.RowIndex].Cells[5].Value.ToString());
+                    }
+                    catch (Exception) { }
                     dataGridView1.Rows.Clear();
                     dataGridView1.Refresh();
                     metroLabel4.Text = "Modules présents dans le projet";
@@ -387,8 +388,9 @@ namespace module_manager
                     try
                     {
                         if (!bg3IsWorking)
-                            backgroundWorker3.RunWorkerAsync(argument: modName);
-                    } catch (Exception) { }
+                            backgroundWorker3.RunWorkerAsync(argument: dataGridView1.Rows[e.RowIndex].Cells[5].Value.ToString());
+                    }
+                    catch (Exception) { }
                     dataGridView1.Rows.Clear();
                     dataGridView1.Refresh();
                     metroLabel4.Text = "Projets dépendant du module";
@@ -399,12 +401,23 @@ namespace module_manager
                         {
                             if (module.Name.Substring(module.Name.LastIndexOf(@"/") + 1, module.Name.Length - module.Name.LastIndexOf(@"/") - 1).Replace(".git", "") == modName.Substring(modName.LastIndexOf(@"/") + 1, modName.Length - modName.LastIndexOf(@"/") - 1).Replace(".git", ""))
                             {
-                                dataGridView1.Rows.Add(proj.Name, proj.Url, "Détails");
+                                dataGridView1.Rows.Add(proj.Name, "", module.Tag, "Détails", proj.Url, proj.Id);
                             }
                         }
                         i++;
                     }
                 }
+            }
+            if (senderGrid.Columns[e.ColumnIndex] is DataGridViewLinkColumn && e.RowIndex >= 0 && senderGrid.Columns[e.ColumnIndex].HeaderText == "URL")
+            {
+                string url = (string)senderGrid.Rows[e.RowIndex].Cells[e.ColumnIndex].Value;
+                if (url.Contains("/r/"))
+                {
+                    int place = url.LastIndexOf("/");
+                    Process.Start(url.Remove(place,1).Insert(place,"%2F").Replace("/r/","/summary/"));
+                }
+                else
+                    Process.Start((string)senderGrid.Rows[e.RowIndex].Cells[e.ColumnIndex].Value);
             }
         }
 
@@ -427,7 +440,7 @@ namespace module_manager
          */
         private void MetroButton1_Click(object sender, EventArgs e)
         {
-            var frm = new AddSubForm((Repo)treeView1.SelectedNode.Tag);
+            var frm = new AddSubmodule((Repo)treeView1.SelectedNode.Tag);
             frm.Location = this.Location;
             frm.StartPosition = FormStartPosition.Manual;
             frm.FormClosed += AddModuleFormClosed; // Recharge la liste des modules quand la fenêtre est fermée
@@ -562,7 +575,7 @@ namespace module_manager
             try
             {
                 if (!bg3IsWorking)
-                    backgroundWorker3.RunWorkerAsync(argument: e.Node.Text);
+                    backgroundWorker3.RunWorkerAsync(argument: ((Repo)e.Node.Tag).Id);
             } catch(Exception) { }
             dataGridView1.Rows.Clear();
             dataGridView1.Refresh();
@@ -574,7 +587,7 @@ namespace module_manager
                 {
                     if (((Repo)e.Node.Tag).Equal(mod))
                     {
-                        dataGridView1.Rows.Add(proj.Name, proj.Url, "Détails");
+                        dataGridView1.Rows.Add(proj.Name, "", mod.Tag, "Détails", proj.Url, proj.Id);
                     }
                 }
                 i++;
@@ -633,6 +646,7 @@ namespace module_manager
                             repo.Modules.Add(submodule);
                             if (!submodule.IsInList(modules))
                                 modules.Add(submodule);
+                            repositories.Add(submodule);
                             j++;
                         }
                     }
@@ -662,11 +676,46 @@ namespace module_manager
                 formOptions.ShowDialog();
                 try
                 {
-                    string result = formOptions.path;
-                    if (result.Length != 0)
+                    if (formOptions.id.Length != 0)
                     {
-                        treeView1.Nodes.Add(new TreeNode(result));
-                        readmeState.Add(1);
+                        string result = formOptions.id;
+                        foreach (Repo repo in repoList)
+                        {
+                            if(repo.Id.ToString() == result)
+                            {
+                                TreeNode treeNode = new TreeNode(repo.Name);
+                                ContextMenuStrip contextMenuStrip = new ContextMenuStrip();
+                                contextMenuStrip.Items.Add("Ouvrir (URL)");
+                                contextMenuStrip.ItemClicked += ContextMenuStripClick;
+                                contextMenuStrip.Name = treeNode.Name;
+                                contextMenuStrip.Tag = repo;
+                                treeNode.ContextMenuStrip = contextMenuStrip;
+                                treeNode.Tag = repo;
+                                treeView1.Nodes.Add(treeNode);  // Ajout du projet au TreeView
+                                return;
+                            }
+                        }
+                    }
+                    else if(formOptions.path != "")
+                    {
+                        string result = formOptions.path;
+                        foreach (Repo repo in repoList)
+                        {
+                            if (repo.Url == result)
+                            {
+                                TreeNode treeNode = new TreeNode(repo.Name);
+                                ContextMenuStrip contextMenuStrip = new ContextMenuStrip();
+                                contextMenuStrip.Items.Add("Ouvrir (URL)");
+                                contextMenuStrip.ItemClicked += ContextMenuStripClick;
+                                contextMenuStrip.Name = treeNode.Name;
+                                contextMenuStrip.Tag = repo;
+                                treeNode.ContextMenuStrip = contextMenuStrip;
+                                treeNode.Tag = repo;
+                                treeView1.Nodes.Add(treeNode);  // Ajout du projet au TreeView
+                                return;
+                            }
+                        }
+
                     }
                         
                 }
@@ -683,20 +732,26 @@ namespace module_manager
         private void BackgroundWorker3_DoWork(object sender, DoWorkEventArgs e)
         {
             bg3IsWorking = true;
-            string project = (string)e.Argument;
+            string id = e.Argument.ToString();
+            Console.WriteLine(id);
             string md = "";
-            string path = "";
-            TreeNode treeNode = new TreeNode();
-            string html = project; // Par défaut, affiche le nom du projet
-            int readmeIndex = 1;
-            treeView1.Invoke(new Action(() => readmeIndex = ((Repo)treeView1.SelectedNode.Tag).ReadmeIndex));
-            if (readmeIndex == 1)
-                md = functions.GetMarkdown(project, config.GetBranchDev()); // Récupère le markdown dans une string
-            else
+            Repo repo = null;
+            List<Repo> repos = repositories.ToList();
+            repos.AddRange(repoList);
+            foreach(Repo repository in repos)
             {
-                treeView1.Invoke(new Action(() => path = ((Repo)treeView1.SelectedNode.Tag).Path));
-                md = functions.GetMarkdownLoc(path);
+                if(repository.Id.ToString() == id)
+                    repo = repository;
             }
+            if (repo == null)
+                return;
+                
+            string html = repo.Name; // Par défaut, affiche le nom du projet
+            int readmeIndex = repo.ReadmeIndex;
+            if (readmeIndex == 1)
+                md = functions.GetMarkdown(repo, config.GetBranchDev()); // Récupère le markdown dans une string
+            else if(repo.Path != null)
+                md = functions.GetMarkdownLoc(repo.Path);
 
             try
             {
@@ -710,7 +765,7 @@ namespace module_manager
             // TODO: Adapter le markdown à la source
             if (config.GetCurrentType() == "gitblit")
             {
-                html = html.Replace("img src=\"", "img src=\"" + config.GetServerUrl() + @"raw/" + project + ".git/master/");
+                html = html.Replace("img src=\"", "img src=\"" + config.GetServerUrl() + @"raw/" + repo.Name + ".git/master/");
                 html = html.Replace(@"%5C", @"/");
             }
             e.Result = html;
@@ -759,69 +814,12 @@ namespace module_manager
 
             try
             {
-                Console.WriteLine(functions.Query("devops", "https://dev.azure.com/thebagalex/KIPROjects/_apis/git/repositories/PORT_SONDES_2019/items?path=_MODULES_/Atmospherique&includeContent=true&api-version=5.0"));
+                Console.WriteLine(functions.Query("devops", "https://dev.azure.com/thebagalex/KIPROjects/_apis/git/repositories/PORT_SONDES_2019/items?path=_MODULES_/Atmospherique&includeContent=true&api-version=5.0",""));
             }
             catch (Exception)
             {
 
             }
-
-            /*
-            var github = new GitHubClient(new ProductHeaderValue("ModuleManager"));
-            var user = await github.User.Get("bglx");
-            Console.WriteLine(user.PublicRepos + " folks love the half ogre!");
-
-            var request = new SearchRepositoriesRequest("module")
-            {
-                User = "bglx"
-            };
-            
-            IReadOnlyList<Repository> result = await github.Repository.GetAllForUser("bglx");
-            Console.WriteLine(result.ElementAt(0).Name);
-            IReadOnlyList<RepositoryContent> content = await github.Repository.Content.GetAllContents("bglx", result.ElementAt(0).Name);
-            Console.WriteLine(content.ElementAt(0).DownloadUrl);
-            using (var client = new WebClient())
-            {
-                string data = client.DownloadString(content.ElementAt(0).DownloadUrl);
-                Console.WriteLine(data);
-            }
-            /*
-            string entropy = "";
-            if (entropy == "")
-            {
-                using (Password formOptions = new Password())
-                {
-                    formOptions.ShowDialog();
-                    try
-                    {
-                        if (formOptions.pass.Length != 0)
-                            entropy = formOptions.pass;
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine(ex.Message);
-                    }
-                }
-            }
-            try
-            {
-                byte[] ciphertext = File.ReadAllBytes(config.GetAppData() + @".cred" + config.GetCurrentSource());
-                ServicePointManager.ServerCertificateValidationCallback = delegate { return true; };
-                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
-                WebRequest myReq = WebRequest.Create("https://api.github.com/users/bglx/repos");
-                myReq.Method = "GET";
-                CredentialCache mycache = new CredentialCache();
-                //myReq.Headers["Authorization"] = "Basic " + Convert.ToBase64String(Encoding.ASCII.GetBytes(config.GetUserName() + ":" + Encoding.UTF8.GetString(ProtectedData.Unprotect(ciphertext, Encoding.Default.GetBytes(entropy), DataProtectionScope.CurrentUser))));
-                WebResponse wr = myReq.GetResponse();
-                Stream receiveStream = wr.GetResponseStream();
-                StreamReader reader = new StreamReader(receiveStream, Encoding.UTF8);
-                Console.WriteLine(reader.ReadToEnd());
-            }
-            catch (CryptographicException ex)
-            {
-                
-            }
-            */
         }
 
         private void ParamètresToolStripMenuItem_Click(object sender, EventArgs e)

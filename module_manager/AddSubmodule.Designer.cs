@@ -33,15 +33,25 @@
             this.toolStripProgressBar1 = new System.Windows.Forms.ToolStripProgressBar();
             this.toolStripStatusLabel2 = new System.Windows.Forms.ToolStripStatusLabel();
             this.metroLabel1 = new MetroFramework.Controls.MetroLabel();
-            this.checkedListBox1 = new System.Windows.Forms.CheckedListBox();
             this.metroButton1 = new MetroFramework.Controls.MetroButton();
             this.metroLabel3 = new MetroFramework.Controls.MetroLabel();
             this.backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
             this.metroTabControl1 = new MetroFramework.Controls.MetroTabControl();
             this.metroTabPage1 = new MetroFramework.Controls.MetroTabPage();
+            this.dataGridView1 = new System.Windows.Forms.DataGridView();
+            this.panel1 = new System.Windows.Forms.Panel();
+            this.metroButton2 = new MetroFramework.Controls.MetroButton();
+            this.metroButton3 = new MetroFramework.Controls.MetroButton();
+            this.treeView1 = new System.Windows.Forms.TreeView();
+            this.checkCase = new System.Windows.Forms.DataGridViewCheckBoxColumn();
+            this.nom = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.server = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.identifier = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.statusStrip1.SuspendLayout();
             this.metroTabControl1.SuspendLayout();
             this.metroTabPage1.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
+            this.panel1.SuspendLayout();
             this.SuspendLayout();
             // 
             // statusStrip1
@@ -89,21 +99,6 @@
             this.metroLabel1.Text = "Ajouter un module";
             this.metroLabel1.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
-            // checkedListBox1
-            // 
-            this.checkedListBox1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.checkedListBox1.CheckOnClick = true;
-            this.checkedListBox1.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.checkedListBox1.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.checkedListBox1.FormattingEnabled = true;
-            this.checkedListBox1.HorizontalScrollbar = true;
-            this.checkedListBox1.Location = new System.Drawing.Point(0, 7);
-            this.checkedListBox1.Name = "checkedListBox1";
-            this.checkedListBox1.Size = new System.Drawing.Size(359, 274);
-            this.checkedListBox1.TabIndex = 12;
-            // 
             // metroButton1
             // 
             this.metroButton1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
@@ -111,10 +106,11 @@
             this.metroButton1.FontSize = MetroFramework.MetroButtonSize.Medium;
             this.metroButton1.Location = new System.Drawing.Point(12, 383);
             this.metroButton1.Name = "metroButton1";
-            this.metroButton1.Size = new System.Drawing.Size(370, 28);
+            this.metroButton1.Size = new System.Drawing.Size(366, 28);
             this.metroButton1.TabIndex = 16;
             this.metroButton1.Text = "Ajouter les modules sélectionnés";
             this.metroButton1.UseSelectable = true;
+            this.metroButton1.Click += new System.EventHandler(this.MetroButton1_Click);
             // 
             // metroLabel3
             // 
@@ -130,6 +126,9 @@
             // 
             this.backgroundWorker1.WorkerReportsProgress = true;
             this.backgroundWorker1.WorkerSupportsCancellation = true;
+            this.backgroundWorker1.DoWork += new System.ComponentModel.DoWorkEventHandler(this.BackgroundWorker1_DoWork);
+            this.backgroundWorker1.ProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.BackgroundWorker1_ProgressChanged);
+            this.backgroundWorker1.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.BackgroundWorker1_RunWorkerCompleted);
             // 
             // metroTabControl1
             // 
@@ -143,7 +142,7 @@
             // 
             // metroTabPage1
             // 
-            this.metroTabPage1.Controls.Add(this.checkedListBox1);
+            this.metroTabPage1.Controls.Add(this.dataGridView1);
             this.metroTabPage1.HorizontalScrollbarBarColor = true;
             this.metroTabPage1.HorizontalScrollbarHighlightOnWheel = false;
             this.metroTabPage1.HorizontalScrollbarSize = 10;
@@ -156,12 +155,98 @@
             this.metroTabPage1.VerticalScrollbarHighlightOnWheel = false;
             this.metroTabPage1.VerticalScrollbarSize = 10;
             // 
+            // dataGridView1
+            // 
+            this.dataGridView1.AllowUserToAddRows = false;
+            this.dataGridView1.AllowUserToDeleteRows = false;
+            this.dataGridView1.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill;
+            this.dataGridView1.BackgroundColor = System.Drawing.SystemColors.Window;
+            this.dataGridView1.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            this.dataGridView1.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
+            this.checkCase,
+            this.nom,
+            this.server,
+            this.identifier});
+            this.dataGridView1.GridColor = System.Drawing.SystemColors.Window;
+            this.dataGridView1.Location = new System.Drawing.Point(0, 3);
+            this.dataGridView1.Name = "dataGridView1";
+            this.dataGridView1.RowHeadersVisible = false;
+            this.dataGridView1.Size = new System.Drawing.Size(362, 285);
+            this.dataGridView1.TabIndex = 2;
+            // 
+            // panel1
+            // 
+            this.panel1.Controls.Add(this.metroButton2);
+            this.panel1.Controls.Add(this.metroButton3);
+            this.panel1.Controls.Add(this.treeView1);
+            this.panel1.Location = new System.Drawing.Point(427, 43);
+            this.panel1.Name = "panel1";
+            this.panel1.Size = new System.Drawing.Size(361, 368);
+            this.panel1.TabIndex = 18;
+            // 
+            // metroButton2
+            // 
+            this.metroButton2.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.metroButton2.Location = new System.Drawing.Point(192, 342);
+            this.metroButton2.Name = "metroButton2";
+            this.metroButton2.Size = new System.Drawing.Size(79, 23);
+            this.metroButton2.TabIndex = 6;
+            this.metroButton2.Text = "Ajouter";
+            this.metroButton2.UseSelectable = true;
+            this.metroButton2.Click += new System.EventHandler(this.MetroButton2_Click);
+            // 
+            // metroButton3
+            // 
+            this.metroButton3.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.metroButton3.Location = new System.Drawing.Point(277, 342);
+            this.metroButton3.Name = "metroButton3";
+            this.metroButton3.Size = new System.Drawing.Size(81, 23);
+            this.metroButton3.TabIndex = 5;
+            this.metroButton3.Text = "Annuler";
+            this.metroButton3.UseSelectable = true;
+            this.metroButton3.Click += new System.EventHandler(this.MetroButton3_Click);
+            // 
+            // treeView1
+            // 
+            this.treeView1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.treeView1.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.treeView1.CheckBoxes = true;
+            this.treeView1.Location = new System.Drawing.Point(3, 3);
+            this.treeView1.Name = "treeView1";
+            this.treeView1.ShowNodeToolTips = true;
+            this.treeView1.Size = new System.Drawing.Size(355, 327);
+            this.treeView1.TabIndex = 4;
+            // 
+            // checkCase
+            // 
+            this.checkCase.HeaderText = "";
+            this.checkCase.Name = "checkCase";
+            // 
+            // nom
+            // 
+            this.nom.HeaderText = "Nom";
+            this.nom.Name = "nom";
+            // 
+            // server
+            // 
+            this.server.HeaderText = "Serveur";
+            this.server.Name = "server";
+            // 
+            // identifier
+            // 
+            this.identifier.HeaderText = "ID";
+            this.identifier.Name = "identifier";
+            this.identifier.Visible = false;
+            // 
             // AddSubmodule
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.Window;
             this.ClientSize = new System.Drawing.Size(800, 450);
+            this.Controls.Add(this.panel1);
             this.Controls.Add(this.metroTabControl1);
             this.Controls.Add(this.statusStrip1);
             this.Controls.Add(this.metroLabel1);
@@ -174,6 +259,8 @@
             this.statusStrip1.PerformLayout();
             this.metroTabControl1.ResumeLayout(false);
             this.metroTabPage1.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).EndInit();
+            this.panel1.ResumeLayout(false);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -186,11 +273,19 @@
         private System.Windows.Forms.ToolStripProgressBar toolStripProgressBar1;
         private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabel2;
         private MetroFramework.Controls.MetroLabel metroLabel1;
-        private System.Windows.Forms.CheckedListBox checkedListBox1;
         private MetroFramework.Controls.MetroButton metroButton1;
         private MetroFramework.Controls.MetroLabel metroLabel3;
         private System.ComponentModel.BackgroundWorker backgroundWorker1;
         private MetroFramework.Controls.MetroTabControl metroTabControl1;
         private MetroFramework.Controls.MetroTabPage metroTabPage1;
+        private System.Windows.Forms.DataGridView dataGridView1;
+        private System.Windows.Forms.Panel panel1;
+        private MetroFramework.Controls.MetroButton metroButton2;
+        private MetroFramework.Controls.MetroButton metroButton3;
+        private System.Windows.Forms.TreeView treeView1;
+        private System.Windows.Forms.DataGridViewCheckBoxColumn checkCase;
+        private System.Windows.Forms.DataGridViewTextBoxColumn nom;
+        private System.Windows.Forms.DataGridViewTextBoxColumn server;
+        private System.Windows.Forms.DataGridViewTextBoxColumn identifier;
     }
 }

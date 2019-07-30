@@ -11,6 +11,7 @@ namespace module_manager
     {
         public enum Loc : int { local = 0, distant = 1, both = -1 };
 
+        public Guid Id { get; set; }
         public string Name { get; set; }    // last part of the URL
         public string Server { get; set; }  // <gitblit|bitbucket|devops>
         public string ServerName { get; set; }
@@ -39,6 +40,7 @@ namespace module_manager
 
         public Repo Init(string path)
         {
+            Id = Guid.NewGuid();
             Config config = new Config();
             List<string> allNames = config.GetAllNames();
             List<string> allServ = config.GetAllTypes();

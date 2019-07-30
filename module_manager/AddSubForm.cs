@@ -54,8 +54,6 @@ namespace module_manager
          */
         private void CheckedListBox1_ItemCheck(object sender, ItemCheckEventArgs e)
         {
-            List<string> allItems = checkedListBox1.Items.OfType<string>().ToList();
-            string curItem = e.CurrentValue.ToString();
             int index = e.Index;
             if (checkedListBox1.GetItemCheckState(index) == CheckState.Indeterminate)
             {
@@ -82,7 +80,7 @@ namespace module_manager
                 }
                 if(installList.Count != 0)
                 {
-                    var frm = new AddConfirmForm(installList);
+                    var frm = new AddConfirmForm(new List<Repo>());
                     frm.Location = this.Location;
                     frm.StartPosition = FormStartPosition.Manual;
                     frm.FormClosed += CloseForm;

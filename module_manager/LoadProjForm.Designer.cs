@@ -34,6 +34,8 @@
             this.metroButton1 = new MetroFramework.Controls.MetroButton();
             this.dataGridView1 = new System.Windows.Forms.DataGridView();
             this.Nom = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.serveur = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.identifier = new System.Windows.Forms.DataGridViewTextBoxColumn();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
             this.SuspendLayout();
             // 
@@ -50,6 +52,8 @@
             // 
             // textBox1
             // 
+            this.textBox1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.textBox1.Location = new System.Drawing.Point(12, 67);
             this.textBox1.Name = "textBox1";
             this.textBox1.Size = new System.Drawing.Size(328, 20);
@@ -68,6 +72,7 @@
             // 
             // metroButton1
             // 
+            this.metroButton1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.metroButton1.Location = new System.Drawing.Point(346, 67);
             this.metroButton1.Name = "metroButton1";
             this.metroButton1.Size = new System.Drawing.Size(92, 19);
@@ -80,12 +85,17 @@
             // 
             this.dataGridView1.AllowUserToAddRows = false;
             this.dataGridView1.AllowUserToDeleteRows = false;
+            this.dataGridView1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.dataGridView1.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill;
             this.dataGridView1.BackgroundColor = System.Drawing.SystemColors.Window;
             this.dataGridView1.BorderStyle = System.Windows.Forms.BorderStyle.None;
             this.dataGridView1.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.dataGridView1.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
-            this.Nom});
+            this.Nom,
+            this.serveur,
+            this.identifier});
             this.dataGridView1.Location = new System.Drawing.Point(13, 152);
             this.dataGridView1.MultiSelect = false;
             this.dataGridView1.Name = "dataGridView1";
@@ -101,7 +111,20 @@
             this.Nom.Name = "Nom";
             this.Nom.ReadOnly = true;
             // 
-            // Form5
+            // serveur
+            // 
+            this.serveur.HeaderText = "Serveur";
+            this.serveur.Name = "serveur";
+            this.serveur.ReadOnly = true;
+            // 
+            // identifier
+            // 
+            this.identifier.HeaderText = "ID";
+            this.identifier.Name = "identifier";
+            this.identifier.ReadOnly = true;
+            this.identifier.Visible = false;
+            // 
+            // LoadProjForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
@@ -112,7 +135,7 @@
             this.Controls.Add(this.label2);
             this.Controls.Add(this.textBox1);
             this.Controls.Add(this.label1);
-            this.Name = "Form5";
+            this.Name = "LoadProjForm";
             this.Text = "Ouvrir un projet distant";
             this.Load += new System.EventHandler(this.Form5_Load);
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).EndInit();
@@ -129,5 +152,7 @@
         private MetroFramework.Controls.MetroButton metroButton1;
         private System.Windows.Forms.DataGridView dataGridView1;
         private System.Windows.Forms.DataGridViewTextBoxColumn Nom;
+        private System.Windows.Forms.DataGridViewTextBoxColumn serveur;
+        private System.Windows.Forms.DataGridViewTextBoxColumn identifier;
     }
 }
