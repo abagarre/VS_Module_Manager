@@ -109,7 +109,6 @@ public class Functions
                                     Branch = reposit.Head.FriendlyName;
                                     Console.WriteLine(Name + " : " + Branch + " - " + Tag);
                                 }
-
                             }
                             repo = new Repo()
                             {
@@ -162,7 +161,6 @@ public class Functions
                                     Tag = tags.FriendlyName;
                             }
                             Branch = reposit.Head.FriendlyName;
-                            Console.WriteLine(Name + " : " + Branch + " - " + Tag);
                         }
                     }
                     repo = new Repo()
@@ -717,7 +715,7 @@ public class Functions
     public List<Repo> GetSubBitBucket(string branch, string rep, Repo proj)
     {
         List<Repo> repos = new List<Repo>();
-        string result;
+        string result = "";
         try
         {
             result = Query("bitbucket", proj.Url + "/raw/" + branch + "/.gitmodules", proj.ServerName);
@@ -727,7 +725,6 @@ public class Functions
             Console.WriteLine("GetSubmodError : " + ex.Message);
             if (branch != "master")
                 return GetSubmodList("master", rep, proj);
-            result = "null";
         }
         if (result.Length == 0 && branch != "master")
             return GetSubmodList("master", rep, proj);
@@ -754,18 +751,13 @@ public class Functions
                         try
                         {
                             string tags = Query("bitbucket", "https://api.bitbucket.org/2.0/repositories/" + config.GetUserName() + "/" + repo.Name + "/refs/tags", config.GetCurrentSource());
-                            Console.WriteLine("https://api.bitbucket.org/2.0/repositories/" + config.GetUserName() + "/" + repo.Name + "/refs/tags", config.GetCurrentSource());
-                            Console.WriteLine(tags);
                             JObject json = JObject.Parse(tags);
                             JArray values = (JArray)json["values"];
                             foreach (JObject ob in values)
                             {
-                                Console.WriteLine(ob["target"]["hash"] + " - " + commit);
                                 if (ob["target"]["hash"].ToString() == commit)
                                 {
-                                    Console.WriteLine(ob["name"]);
-                                    string tag = ob["name"].ToString();
-                                    repo.Tag = tag;
+                                    repo.Tag = ob["name"].ToString();
                                     break;
                                 }
                             }
@@ -774,7 +766,6 @@ public class Functions
                         repo.Id = Guid.NewGuid();
                         repos.Add(repo);
                     }
-
                     repo = new Repo();
                     repo.ReadmeIndex = 0;
                     repo.Type = "module";
@@ -797,11 +788,9 @@ public class Functions
                 {
                     try
                     {
-                        Console.WriteLine(proj.Url + "/raw/" + branch + "/" + ligne.Replace("path = ", "").Trim());
-                        commit = Query("bitbucket", proj.Url.Replace("bitbucket.org", "api.bitbucket.org/2.0/repositories") + "/src/" + branch + "/" + ligne.Replace("path = ","").Trim(), proj.ServerName);
-                        Console.WriteLine("Commit - " + commit);
+                        commit = Query("bitbucket", proj.Url.Replace("bitbucket.org", "api.bitbucket.org/2.0/repositories") + "/src/" + branch + "/" + ligne.Replace("path = ", "").Trim(), proj.ServerName);
                     }
-                    catch (Exception) { Console.WriteLine("Error : " + proj.Url + "/raw/" + branch + "/" + ligne.Replace("path = ", "").Trim()); }
+                    catch (Exception) { }
                 }
             }
         }
@@ -811,17 +800,13 @@ public class Functions
             try
             {
                 string tags = Query("bitbucket", "https://api.bitbucket.org/2.0/repositories/" + config.GetUserName() + "/" + repo.Name + "/refs/tags", config.GetCurrentSource());
-                Console.WriteLine("https://api.bitbucket.org/2.0/repositories/" + config.GetUserName() + "/" + repo.Name + "/refs/tags", config.GetCurrentSource());
                 JObject json = JObject.Parse(tags);
                 JArray values = (JArray)json["values"];
                 foreach (JObject ob in values)
                 {
-                    Console.WriteLine(ob["target"]["hash"] + " - " + commit);
                     if (ob["target"]["hash"].ToString() == commit)
                     {
-                        Console.WriteLine(ob["name"]);
-                        string tag = ob["name"].ToString();
-                        repo.Tag = tag;
+                        repo.Tag = ob["name"].ToString();
                         break;
                     }
                 }
@@ -926,14 +911,21 @@ public class Functions
                     JArray values = (JArray)json["value"];
                     foreach (JObject ob in values)
                     {
-                        if (ob["peeledObjectId"].ToString() == commit)
+                        if (ob["objectId"].ToString() == commit)
+                        {
+                            string tag = ob["name"].ToString();
+                            repo.Tag = tag.Substring(tag.LastIndexOf("/") + 1, tag.Length - tag.LastIndexOf("/") - 1);
+                            break;
+                        }
+                        else if (ob["peeledObjectId"] != null && ob["peeledObjectId"].ToString() == commit)
                         {
                             string tag = ob["name"].ToString();
                             repo.Tag = tag.Substring(tag.LastIndexOf("/") + 1, tag.Length - tag.LastIndexOf("/") - 1);
                             break;
                         }
                     }
-                } catch (Exception) { }
+                }
+                catch (Exception) { }
                 repo.Id = Guid.NewGuid();
                 repos.Add(repo);
             }

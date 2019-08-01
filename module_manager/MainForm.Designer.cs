@@ -42,6 +42,12 @@
             this.metroTextBox1 = new MetroFramework.Controls.MetroTextBox();
             this.metroLabel4 = new MetroFramework.Controls.MetroLabel();
             this.dataGridView1 = new System.Windows.Forms.DataGridView();
+            this.Nom = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.Version = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.tag = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.Actions = new System.Windows.Forms.DataGridViewButtonColumn();
+            this.url = new System.Windows.Forms.DataGridViewLinkColumn();
+            this.identifier = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.treeView1 = new System.Windows.Forms.TreeView();
             this.metroLabel2 = new MetroFramework.Controls.MetroLabel();
             this.panel1 = new System.Windows.Forms.Panel();
@@ -79,12 +85,6 @@
             this.paramètresToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.backgroundWorker3 = new System.ComponentModel.BackgroundWorker();
             this.backgroundWorker4 = new System.ComponentModel.BackgroundWorker();
-            this.Nom = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.Version = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.tag = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.Actions = new System.Windows.Forms.DataGridViewButtonColumn();
-            this.url = new System.Windows.Forms.DataGridViewLinkColumn();
-            this.identifier = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.metroTabControl1.SuspendLayout();
             this.metroTabPage1.SuspendLayout();
             this.tableLayoutPanel1.SuspendLayout();
@@ -309,6 +309,37 @@
             this.dataGridView1.Size = new System.Drawing.Size(471, 249);
             this.dataGridView1.TabIndex = 2;
             this.dataGridView1.CellContentClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.DataGridView1_CellContentClick);
+            // 
+            // Nom
+            // 
+            this.Nom.HeaderText = "Nom";
+            this.Nom.Name = "Nom";
+            // 
+            // Version
+            // 
+            this.Version.HeaderText = "Emplacement";
+            this.Version.Name = "Version";
+            // 
+            // tag
+            // 
+            this.tag.HeaderText = "Version du module";
+            this.tag.Name = "tag";
+            // 
+            // Actions
+            // 
+            this.Actions.HeaderText = "Action";
+            this.Actions.Name = "Actions";
+            // 
+            // url
+            // 
+            this.url.HeaderText = "URL";
+            this.url.Name = "url";
+            // 
+            // identifier
+            // 
+            this.identifier.HeaderText = "ID";
+            this.identifier.Name = "identifier";
+            this.identifier.Visible = false;
             // 
             // treeView1
             // 
@@ -586,7 +617,7 @@
             this.dossierLocalToolStripMenuItem,
             this.uRLServeurToolStripMenuItem});
             this.ouvrirToolStripMenuItem.Name = "ouvrirToolStripMenuItem";
-            this.ouvrirToolStripMenuItem.Size = new System.Drawing.Size(129, 22);
+            this.ouvrirToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.ouvrirToolStripMenuItem.Text = "Ouvrir";
             // 
             // dossierLocalToolStripMenuItem
@@ -606,14 +637,14 @@
             // déplacerToolStripMenuItem
             // 
             this.déplacerToolStripMenuItem.Name = "déplacerToolStripMenuItem";
-            this.déplacerToolStripMenuItem.Size = new System.Drawing.Size(129, 22);
+            this.déplacerToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.déplacerToolStripMenuItem.Text = "Déplacer";
             this.déplacerToolStripMenuItem.Click += new System.EventHandler(this.DéplacerToolStripMenuItem_Click);
             // 
             // supprimerToolStripMenuItem
             // 
             this.supprimerToolStripMenuItem.Name = "supprimerToolStripMenuItem";
-            this.supprimerToolStripMenuItem.Size = new System.Drawing.Size(129, 22);
+            this.supprimerToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.supprimerToolStripMenuItem.Text = "Supprimer";
             this.supprimerToolStripMenuItem.Click += new System.EventHandler(this.SupprimerToolStripMenuItem_Click);
             // 
@@ -639,6 +670,7 @@
             this.comptesEtConnexionsToolStripMenuItem.Name = "comptesEtConnexionsToolStripMenuItem";
             this.comptesEtConnexionsToolStripMenuItem.Size = new System.Drawing.Size(198, 22);
             this.comptesEtConnexionsToolStripMenuItem.Text = "Comptes et connexions";
+            this.comptesEtConnexionsToolStripMenuItem.Visible = false;
             this.comptesEtConnexionsToolStripMenuItem.Click += new System.EventHandler(this.ComptesEtConnexionsToolStripMenuItem_ClickAsync);
             // 
             // paramètresToolStripMenuItem
@@ -660,37 +692,6 @@
             this.backgroundWorker4.DoWork += new System.ComponentModel.DoWorkEventHandler(this.BackgroundWorker4_DoWork);
             this.backgroundWorker4.ProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.BackgroundWorker4_ProgressChanged);
             this.backgroundWorker4.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.BackgroundWorker4_RunWorkerCompleted);
-            // 
-            // Nom
-            // 
-            this.Nom.HeaderText = "Nom";
-            this.Nom.Name = "Nom";
-            // 
-            // Version
-            // 
-            this.Version.HeaderText = "Emplacement";
-            this.Version.Name = "Version";
-            // 
-            // tag
-            // 
-            this.tag.HeaderText = "Version du module";
-            this.tag.Name = "tag";
-            // 
-            // Actions
-            // 
-            this.Actions.HeaderText = "Action";
-            this.Actions.Name = "Actions";
-            // 
-            // url
-            // 
-            this.url.HeaderText = "URL";
-            this.url.Name = "url";
-            // 
-            // identifier
-            // 
-            this.identifier.HeaderText = "ID";
-            this.identifier.Name = "identifier";
-            this.identifier.Visible = false;
             // 
             // MainForm
             // 

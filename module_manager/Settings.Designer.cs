@@ -45,13 +45,13 @@
             this.openFileDialog1 = new System.Windows.Forms.OpenFileDialog();
             this.label8 = new System.Windows.Forms.Label();
             this.panel3 = new System.Windows.Forms.Panel();
+            this.radioButton3 = new System.Windows.Forms.RadioButton();
             this.radioButton2 = new System.Windows.Forms.RadioButton();
             this.radioButton1 = new System.Windows.Forms.RadioButton();
             this.label2 = new System.Windows.Forms.Label();
             this.textBox1 = new System.Windows.Forms.TextBox();
             this.metroButton2 = new MetroFramework.Controls.MetroButton();
             this.folderBrowserDialog1 = new System.Windows.Forms.FolderBrowserDialog();
-            this.radioButton3 = new System.Windows.Forms.RadioButton();
             this.statusStrip1.SuspendLayout();
             this.panel3.SuspendLayout();
             this.SuspendLayout();
@@ -61,7 +61,7 @@
             this.statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.toolStripStatusLabel1,
             this.toolStripProgressBar1});
-            this.statusStrip1.Location = new System.Drawing.Point(0, 387);
+            this.statusStrip1.Location = new System.Drawing.Point(0, 348);
             this.statusStrip1.Name = "statusStrip1";
             this.statusStrip1.Size = new System.Drawing.Size(785, 22);
             this.statusStrip1.TabIndex = 0;
@@ -139,7 +139,7 @@
             // metroButton3
             // 
             this.metroButton3.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.metroButton3.Location = new System.Drawing.Point(588, 346);
+            this.metroButton3.Location = new System.Drawing.Point(591, 307);
             this.metroButton3.Name = "metroButton3";
             this.metroButton3.Size = new System.Drawing.Size(75, 23);
             this.metroButton3.TabIndex = 34;
@@ -150,7 +150,7 @@
             // metroButton4
             // 
             this.metroButton4.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.metroButton4.Location = new System.Drawing.Point(672, 346);
+            this.metroButton4.Location = new System.Drawing.Point(672, 307);
             this.metroButton4.Name = "metroButton4";
             this.metroButton4.Size = new System.Drawing.Size(72, 23);
             this.metroButton4.TabIndex = 35;
@@ -212,6 +212,19 @@
             this.panel3.Size = new System.Drawing.Size(347, 36);
             this.panel3.TabIndex = 46;
             // 
+            // radioButton3
+            // 
+            this.radioButton3.AutoSize = true;
+            this.radioButton3.Font = new System.Drawing.Font("Century Gothic", 9.75F);
+            this.radioButton3.Location = new System.Drawing.Point(210, 8);
+            this.radioButton3.Name = "radioButton3";
+            this.radioButton3.Size = new System.Drawing.Size(106, 21);
+            this.radioButton3.TabIndex = 2;
+            this.radioButton3.TabStop = true;
+            this.radioButton3.Text = "Dossier local";
+            this.radioButton3.UseVisualStyleBackColor = true;
+            this.radioButton3.CheckedChanged += new System.EventHandler(this.RadioButton3_CheckedChanged);
+            // 
             // radioButton2
             // 
             this.radioButton2.AutoSize = true;
@@ -241,7 +254,7 @@
             // 
             this.label2.AutoSize = true;
             this.label2.Font = new System.Drawing.Font("Century Gothic", 9.75F);
-            this.label2.Location = new System.Drawing.Point(32, 276);
+            this.label2.Location = new System.Drawing.Point(56, 255);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(174, 17);
             this.label2.TabIndex = 47;
@@ -249,14 +262,14 @@
             // 
             // textBox1
             // 
-            this.textBox1.Location = new System.Drawing.Point(222, 275);
+            this.textBox1.Location = new System.Drawing.Point(285, 254);
             this.textBox1.Name = "textBox1";
-            this.textBox1.Size = new System.Drawing.Size(444, 20);
+            this.textBox1.Size = new System.Drawing.Size(381, 20);
             this.textBox1.TabIndex = 48;
             // 
             // metroButton2
             // 
-            this.metroButton2.Location = new System.Drawing.Point(672, 275);
+            this.metroButton2.Location = new System.Drawing.Point(672, 254);
             this.metroButton2.Name = "metroButton2";
             this.metroButton2.Size = new System.Drawing.Size(72, 20);
             this.metroButton2.TabIndex = 49;
@@ -264,26 +277,13 @@
             this.metroButton2.UseSelectable = true;
             this.metroButton2.Click += new System.EventHandler(this.MetroButton2_Click);
             // 
-            // radioButton3
-            // 
-            this.radioButton3.AutoSize = true;
-            this.radioButton3.Font = new System.Drawing.Font("Century Gothic", 9.75F);
-            this.radioButton3.Location = new System.Drawing.Point(210, 8);
-            this.radioButton3.Name = "radioButton3";
-            this.radioButton3.Size = new System.Drawing.Size(106, 21);
-            this.radioButton3.TabIndex = 2;
-            this.radioButton3.TabStop = true;
-            this.radioButton3.Text = "Dossier local";
-            this.radioButton3.UseVisualStyleBackColor = true;
-            this.radioButton3.CheckedChanged += new System.EventHandler(this.RadioButton3_CheckedChanged);
-            // 
             // Settings
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.AutoScroll = true;
             this.BackColor = System.Drawing.SystemColors.Window;
-            this.ClientSize = new System.Drawing.Size(785, 409);
+            this.ClientSize = new System.Drawing.Size(785, 370);
             this.Controls.Add(this.metroButton2);
             this.Controls.Add(this.textBox1);
             this.Controls.Add(this.label2);

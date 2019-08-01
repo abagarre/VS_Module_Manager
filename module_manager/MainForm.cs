@@ -46,7 +46,7 @@ namespace module_manager
         ///</summary>
         private void LoadForm()
         {
-           repoList = new List<Repo>();
+            repoList = new List<Repo>();
             projList = new List<List<string>>();
             repositories = new List<Repo>();
             toolStripStatusLabel2.Text = "";
