@@ -1,4 +1,5 @@
-﻿using System;
+﻿using LibGit2Sharp;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -26,9 +27,7 @@ namespace module_manager
         
         public bool Equal(Repo repo)
         {
-            //if (Server == "gitblit" && repo.Server == Server && Name.ToLower().Contains(repo.Name.ToLower()))
-                //return true;
-            if (repo.Name.ToLower() == Name.ToLower() && repo.Server == Server)
+            if (repo.Name.ToLower() == Name.ToLower() && repo.ServerName == ServerName)
                 return true;
             return false;
         }
@@ -79,17 +78,16 @@ namespace module_manager
             }
             conf.Close();
 
-            string head = "";
-            StreamReader headFile = new StreamReader(System.IO.Path.Combine(path, @".git\HEAD"));
-            while ((line = headFile.ReadLine()) != null)
+            using (var reposit = new Repository(path))
             {
-                head = line;
+                foreach (var tags in reposit.Tags)
+                {
+                    if (tags.PeeledTarget.Id == reposit.Head.Tip.Id)
+                        Tag = tags.FriendlyName;
+                }
+                Branch = reposit.Head.FriendlyName;
+                Console.WriteLine(Name + " : " + Branch + " - " + Tag);
             }
-            headFile.Close();
-
-            Functions functions = new Functions();
-            Branch = functions.GetBranch(System.IO.Path.Combine(path,@".git\"), head);
-            Tag = functions.GetTag(System.IO.Path.Combine(path, @".git\"), head);
 
             int i = 0;
             foreach (string unique in alluniques)

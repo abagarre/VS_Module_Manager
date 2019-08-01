@@ -56,7 +56,7 @@ namespace module_manager
                 treeView1.Invoke(new Action(() => treeView1.Nodes.Add(treeNode))); // Ajoute le module comme noeud du TreeView
                 try
                 {
-                    List<string> dep = functions.GetModuleDep(repo.Name, config.GetBranchDev()); // Liste des #include du module
+                    List<string> dep = functions.GetModuleDep(repo, config.GetBranchDev()); // Liste des #include du module
                     List<string> allFiles = Directory.GetFiles(AddSubForm.path, "*.*", SearchOption.AllDirectories).ToList(); // Liste de tous les fichiers (locaux)
                     foreach (string dependency in dep)
                     {

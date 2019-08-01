@@ -10,7 +10,7 @@ namespace module_manager
         internal string path = "";
         List<Repo> repoList = new List<Repo>();
         Functions functions;
-        internal string id;
+        internal string id = "";
 
         public LoadProjForm()
         {
@@ -34,10 +34,6 @@ namespace module_manager
             if(textBox1.Text.Length !=0)
             {
                 path = textBox1.Text;
-                path = path.Replace(".git", "");
-                //============================== PATH DELIMITER ===========================//
-                path = path.Substring(path.IndexOf(@"_"), path.Length - path.IndexOf(@"_"));
-                //=========================================================================//
                 this.Close();
             }
         }
@@ -51,8 +47,6 @@ namespace module_manager
         {
             if (e.RowIndex >= 0 && e.ColumnIndex == 0)
             {
-                path = dataGridView1[e.ColumnIndex, e.RowIndex].Value.ToString();
-                path = path.Replace(".git", "");
                 id = dataGridView1[e.ColumnIndex + 2, e.RowIndex].Value.ToString();
                 this.Close();
             }

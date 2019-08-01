@@ -11,6 +11,8 @@ using HtmlAgilityPack;
 using System.Xml.Linq;
 using System.Linq;
 using System.Web;
+using System.Diagnostics;
+using LibGit2Sharp;
 
 public class Functions
 {
@@ -49,7 +51,7 @@ public class Functions
             {
                 myReq.Headers["Authorization"] = "Basic " + Convert.ToBase64String(
                     Encoding.ASCII.GetBytes(
-                        config.GetUserName() + ":" + Encoding.UTF8.GetString(ProtectedData.Unprotect(ciphertext, Encoding.Default.GetBytes(entropy), DataProtectionScope.CurrentUser))));
+                        config.GetUserName(source) + ":" + Encoding.UTF8.GetString(ProtectedData.Unprotect(ciphertext, Encoding.Default.GetBytes(entropy), DataProtectionScope.CurrentUser))));
 
             } else if(type == "devops")
             {
@@ -79,7 +81,6 @@ public class Functions
      */
     public List<Repo> GetGitmodulesLoc(string path)
     {
-        //================================ /!\ DECALAGE DES BRANCHES ET TAGS ===============================//
         List<Repo> repos = new List<Repo>();
         try
         {
@@ -98,16 +99,17 @@ public class Functions
                         {
                             if (Branch == null || Tag == null)
                             {
-                                StreamReader headFile = new StreamReader(System.IO.Path.Combine(path, @".git\modules\", subpath, "HEAD"));
-                                string subline;
-                                string head = "";
-                                while ((subline = headFile.ReadLine()) != null)
+                                using (var reposit = new Repository(Path))
                                 {
-                                    head = subline;
+                                    foreach (var tags in reposit.Tags)
+                                    {
+                                        if (tags.PeeledTarget.Id == reposit.Head.Tip.Id)
+                                            Tag = tags.FriendlyName;
+                                    }
+                                    Branch = reposit.Head.FriendlyName;
+                                    Console.WriteLine(Name + " : " + Branch + " - " + Tag);
                                 }
-                                headFile.Close();
-                                Branch = GetBranch(System.IO.Path.Combine(path, @".git\modules\", subpath), head);
-                                Tag = GetTag(System.IO.Path.Combine(path, @".git\modules\", subpath), head);
+
                             }
                             repo = new Repo()
                             {
@@ -145,10 +147,6 @@ public class Functions
                         else
                             Server = "gitblit";
                     }
-                    if(line.Contains("branch"))
-                    {
-                        Branch = line.Replace("branch = ", "");
-                    }
                 }
                 file.Close();
 
@@ -156,16 +154,16 @@ public class Functions
                 {
                     if (Branch == null || Tag == null)
                     {
-                        StreamReader headFile = new StreamReader(System.IO.Path.Combine(path, @".git\modules\", subpath, "HEAD"));
-                        string subline;
-                        string head = "";
-                        while ((subline = headFile.ReadLine()) != null)
+                        using (var reposit = new Repository(Path))
                         {
-                            head = subline;
+                            foreach (var tags in reposit.Tags)
+                            {
+                                if (tags.PeeledTarget.Id == reposit.Head.Tip.Id)
+                                    Tag = tags.FriendlyName;
+                            }
+                            Branch = reposit.Head.FriendlyName;
+                            Console.WriteLine(Name + " : " + Branch + " - " + Tag);
                         }
-                        headFile.Close();
-                        Branch = GetBranch(System.IO.Path.Combine(path, @".git\modules\", subpath), head);
-                        Tag = GetTag(System.IO.Path.Combine(path, @".git\modules\", subpath), head);
                     }
                     repo = new Repo()
                     {
@@ -435,13 +433,13 @@ public class Functions
     /**
      * Liste les fichiers distants du dépôt d'un module et récupère la liste des #include
      */
-    public List<string> GetModuleDep(string moduleText, string branch)
+    public List<string> GetModuleDep(Repo repo, string branch)
     {
         List<string> dep = new List<string>();
-        string currentType = config.GetCurrentType();
+        string currentType = repo.Server;
         if(currentType == "gitblit")
         {
-            string url = config.GetServerUrl() + "raw/" + moduleText + "/" + branch;
+            string url = repo.Url.Remove(repo.Url.LastIndexOf("/"),1).Insert(repo.Url.LastIndexOf("/"),"%2f").Replace("/r/","/raw/") + "/" + branch;
             try {
                 string html;
                 using (var client = new WebClient())
@@ -452,7 +450,7 @@ public class Functions
                 document.LoadHtml(html);
                 if (html.Contains("branch!") && branch != "master")
                 {
-                    return GetModuleDep(moduleText, "master");
+                    return GetModuleDep(repo, "master");
                 }
                 HtmlNodeCollection collection = document.DocumentNode.SelectNodes("//a");
                 foreach (HtmlNode link in collection)
@@ -461,7 +459,7 @@ public class Functions
                     if (target.Contains(".c") || target.Contains(".h"))
                     {
                         string serverUrl = config.GetServerUrl().TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-                        dep.AddRange(GetIncludes(serverUrl + target));
+                        dep.AddRange(GetIncludes(serverUrl + target, currentType, repo.ServerName));
                     }
                 }
             } catch (Exception) { }
@@ -469,16 +467,16 @@ public class Functions
         }
         else if(currentType == "bitbucket")
         {
-            string url = "https://api.bitbucket.org/2.0/repositories/" + config.GetUserName() + "/" + moduleText + "/src/" + branch + "/";
+            string url = "https://api.bitbucket.org/2.0/repositories/" + config.GetUserName(repo.ServerName) + "/" + repo.Name + "/src/" + branch + "/";
             string json = "";
             try
             {
-                json = Query("bitbucket",url, config.GetCurrentSource());
+                json = Query("bitbucket",url, repo.ServerName);
             }
             catch (Exception)
             {
                 if(branch != "master")
-                    return GetModuleDep(moduleText, "master");
+                    return GetModuleDep(repo, "master");
             }
             if(json != "")
             {
@@ -488,39 +486,54 @@ public class Functions
                 {
                     if (((string)ob["path"]).Contains(".c") || ((string)ob["path"]).Contains(".h"))
                     {
-                        dep.AddRange(GetIncludes("https://bitbucket.org/" + config.GetUserName() + "/" + moduleText + "/raw/" + branch + "/" + (string)ob["path"]));
+                        string biturl = "https://bitbucket.org/" + config.GetUserName(repo.ServerName) + "/" + repo.Name + "/raw/" + branch + "/" + (string)ob["path"];
+                        dep.AddRange(GetIncludes(biturl, currentType, repo.ServerName));
                     }
                 }
             }
             else if(branch != "master")
             {
-                return GetModuleDep(moduleText, "master");
+                return GetModuleDep(repo, "master");
             }
             
         }
         else if(currentType == "devops")
         {
-            string res = Query("devops", config.GetServerUrl() + "_apis/git/repositories/" + moduleText + "/items?recursionLevel=OneLevel&api-version=5.0", config.GetCurrentSource());
-            JObject obj = JObject.Parse(res);
-            JArray list = (JArray)obj["value"];
-            foreach(JObject ob in list)
+            string url = config.GetServerUrl(repo.ServerName) + "_apis/git/repositories/" + repo.Name + "/items?recursionLevel=OneLevel&api-version=5.0";
+            try
             {
-                if(ob["path"].ToString().Contains(".c") || ob["path"].ToString().Contains(".h"))
+                string res = Query("devops", url, repo.ServerName);
+                JObject obj = JObject.Parse(res);
+                JArray list = (JArray)obj["value"];
+                foreach (JObject ob in list)
                 {
-                    string url = config.GetServerUrl() + "_apis/git/repositories/" + moduleText + "/items?path=" + ob["path"].ToString() + "&versionType=Branch&version=" + branch + "&includeContent=true&api-version=5.0";
-                    try
+                    if (ob["path"].ToString().Contains(".c") || ob["path"].ToString().Contains(".h"))
                     {
-                        Query("devops",url, config.GetCurrentSource());
+                        string devurl = config.GetServerUrl(repo.ServerName) + "_apis/git/repositories/" + repo.Name + "/items?path=" + ob["path"].ToString() + "&versionType=Branch&version=" + branch + "&includeContent=true&api-version=5.0";
+                        try
+                        {
+                            if(Query("devops", devurl, repo.ServerName).Length == 0 && branch != "master")
+                            {
+                                return GetModuleDep(repo, "master");
+                            }
+                        }
+                        catch (Exception)
+                        {
+                            if (branch != "master")
+                                return GetModuleDep(repo, "master");
+                        }
+                        dep.AddRange(GetIncludes(devurl, currentType, repo.ServerName));
                     }
-                    catch (Exception)
-                    {
-                        if (branch != "master")
-                            return GetModuleDep(moduleText, "master");
-                    }
-                    dep.AddRange(GetIncludes(url));
                 }
             }
+            catch (Exception)
+            {
+                return GetModuleDep(repo, "master");
+            }
+            
+            
         }
+        /*
         else if (currentType == "github")
         {
             string res;
@@ -538,17 +551,17 @@ public class Functions
                 }
             }
         }
+        */
         return dep;
     }
 
     /**
      * Retourne la liste des #include d'un fichier distant
      */
-    public List<string> GetIncludes(string url)
+    public List<string> GetIncludes(string url, string currentType, string serverName)
     {
         List<string> dep = new List<string>();
         string result = "";
-        string currentType = config.GetCurrentType();
         if (currentType == "gitblit")
         {
             using (var wc = new WebClient())
@@ -556,12 +569,13 @@ public class Functions
         }
         else if (currentType == "bitbucket")
         {
-            result = Query("bitbucket",url, config.GetCurrentSource());
+            result = Query("bitbucket",url, serverName);
         }
         else if (currentType == "devops")
         {
-            result = Query("devops",url, config.GetCurrentSource());
+            result = Query("devops",url, serverName);
         }
+        /*
         else if(currentType == "github")
         {
             using (var client = new WebClient())
@@ -569,6 +583,7 @@ public class Functions
                 result = client.DownloadString(url);
             }
         }
+        */
         using (StringReader reader = new StringReader(result))
         {
             string ligne;
@@ -674,11 +689,6 @@ public class Functions
                         else
                             Server = "gitblit";
                     }
-                    if (ligne.Contains("branch"))
-                    {
-                        string branche = ligne.Replace("branch = ", "");
-                        Branch = branche;
-                    }
                 }
                 if (Name != null)
                 {
@@ -722,10 +732,10 @@ public class Functions
         if (result.Length == 0 && branch != "master")
             return GetSubmodList("master", rep, proj);
         Repo repo = new Repo();
+        string commit = "";
         using (StringReader reader = new StringReader(result))
         {
             string ligne;
-            string commit = "";
             while ((ligne = reader.ReadLine()) != null)
             {
                 if (ligne.Contains("dashboard") && branch != "master")
@@ -743,22 +753,24 @@ public class Functions
                         repo.ServerName = GetServerName(repo);
                         try
                         {
-                            Console.WriteLine("https://api.bitbucket.org/2.0/repositories/" + config.GetUserName() + "/" + repo.Name + "/refs/tags");
                             string tags = Query("bitbucket", "https://api.bitbucket.org/2.0/repositories/" + config.GetUserName() + "/" + repo.Name + "/refs/tags", config.GetCurrentSource());
+                            Console.WriteLine("https://api.bitbucket.org/2.0/repositories/" + config.GetUserName() + "/" + repo.Name + "/refs/tags", config.GetCurrentSource());
                             Console.WriteLine(tags);
-                            JObject json = JObject.Parse(result);
+                            JObject json = JObject.Parse(tags);
                             JArray values = (JArray)json["values"];
                             foreach (JObject ob in values)
                             {
-                                if (ob["objectId"].ToString() == commit)
+                                Console.WriteLine(ob["target"]["hash"] + " - " + commit);
+                                if (ob["target"]["hash"].ToString() == commit)
                                 {
+                                    Console.WriteLine(ob["name"]);
                                     string tag = ob["name"].ToString();
-                                    repo.Tag = tag.Substring(tag.LastIndexOf("/") + 1, tag.Length - tag.LastIndexOf("/") - 1);
+                                    repo.Tag = tag;
                                     break;
                                 }
                             }
                         }
-                        catch (Exception) { }
+                        catch (Exception) { Console.WriteLine("Can't get BitBucket Tags"); }
                         repo.Id = Guid.NewGuid();
                         repos.Add(repo);
                     }
@@ -781,24 +793,40 @@ public class Functions
                     else
                         repo.Server = "gitblit";
                 }
-                if (ligne.Contains("branch"))
-                {
-                    string branche = ligne.Replace("branch = ", "");
-                    repo.Branch = branche;
-                }
                 if(ligne.Contains("path"))
                 {
                     try
                     {
-                        commit = Query("bitbucket", proj.Url + "/raw/" + branch + "/" + ligne.Replace("path = ",""), proj.ServerName);
+                        Console.WriteLine(proj.Url + "/raw/" + branch + "/" + ligne.Replace("path = ", "").Trim());
+                        commit = Query("bitbucket", proj.Url.Replace("bitbucket.org", "api.bitbucket.org/2.0/repositories") + "/src/" + branch + "/" + ligne.Replace("path = ","").Trim(), proj.ServerName);
+                        Console.WriteLine("Commit - " + commit);
                     }
-                    catch (Exception) { }
+                    catch (Exception) { Console.WriteLine("Error : " + proj.Url + "/raw/" + branch + "/" + ligne.Replace("path = ", "").Trim()); }
                 }
             }
         }
         if (repo.Name != null)
         {
             repo.ServerName = GetServerName(repo);
+            try
+            {
+                string tags = Query("bitbucket", "https://api.bitbucket.org/2.0/repositories/" + config.GetUserName() + "/" + repo.Name + "/refs/tags", config.GetCurrentSource());
+                Console.WriteLine("https://api.bitbucket.org/2.0/repositories/" + config.GetUserName() + "/" + repo.Name + "/refs/tags", config.GetCurrentSource());
+                JObject json = JObject.Parse(tags);
+                JArray values = (JArray)json["values"];
+                foreach (JObject ob in values)
+                {
+                    Console.WriteLine(ob["target"]["hash"] + " - " + commit);
+                    if (ob["target"]["hash"].ToString() == commit)
+                    {
+                        Console.WriteLine(ob["name"]);
+                        string tag = ob["name"].ToString();
+                        repo.Tag = tag;
+                        break;
+                    }
+                }
+            }
+            catch (Exception) { Console.WriteLine("Can't get BitBucket Tags"); }
             repo.Id = Guid.NewGuid();
             repos.Add(repo);
         }
@@ -876,11 +904,6 @@ public class Functions
                         repo.Server = "bitbucket";
                     else
                         repo.Server = "gitblit";
-                }
-                if (ligne.Contains("branch"))
-                {
-                    string branche = ligne.Replace("branch = ", "");
-                    repo.Branch = branche;
                 }
                 if(ligne.Contains("path"))
                 {
@@ -1135,7 +1158,6 @@ public class Functions
             {
                 int place = repo.Url.LastIndexOf("/");
                 string url = repo.Url.Remove(place, 1).Insert(place, "%2F");
-                Console.WriteLine(url.Replace("/r/", "/raw/") + "/" + branch + "/README.md");
                 using (var wc = new WebClient())
                     md = wc.DownloadString(url.Replace("/r/","/raw/") + "/" + branch + "/README.md");
             }
@@ -1155,12 +1177,10 @@ public class Functions
         else if(currentType == "bitbucket")
         {
             string url = "https://bitbucket.org/" + config.GetUserName(repo.ServerName) + "/" + repo.Name + "/raw/" + branch + "/README.md";
-            Console.WriteLine(url);
             string query = "";
             try
             {
                 query = Query("bitbucket", url, repo.ServerName);
-                Console.WriteLine(query);
             } catch (Exception)
             {
                 if(branch != "master")
@@ -1178,7 +1198,6 @@ public class Functions
         }
         else if(currentType == "devops")
         {
-            Console.WriteLine(config.GetServerUrl(repo.ServerName) + "_apis/git/repositories/" + repo.Name + "/items?path=README.md&includeContent=true&api-version=5.0");
             string result = Query("devops", config.GetServerUrl(repo.ServerName) + "_apis/git/repositories/" + repo.Name + "/items?path=README.md&includeContent=true&api-version=5.0", repo.ServerName);
             /*
             JObject obj = JObject.Parse(result);
@@ -1447,17 +1466,21 @@ public class Functions
         return null;
     }
 
-
-    public string GetTag(Repo repo)
+    public string GetSubmodGitPath(Repo repo, string parentPath)
     {
-        if(repo.Server == "devops")
+        string line;
+        StreamReader file = new StreamReader(Path.Combine(parentPath,".gitmodules"));
+        while ((line = file.ReadLine()) != null)
         {
-
+            if (line.Contains("submodule ") && line.Contains(repo.Name))
+            {
+                string result = line.Replace("[submodule \"", "").Replace("\"]","");
+                Console.WriteLine("res : " + result);
+                file.Close();
+                return result;
+            }
         }
-        else if(repo.Server == "bitbucket")
-        {
-
-        }
+        file.Close();
         return null;
     }
 
