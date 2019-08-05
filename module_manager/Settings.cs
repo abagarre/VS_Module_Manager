@@ -1,4 +1,10 @@
-﻿using Newtonsoft.Json.Linq;
+﻿//============================================================================//
+//                              SETTINGS FORM                                 //
+//                                                                            //
+// - Settings form                                                            //
+//============================================================================//
+
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -18,6 +24,7 @@ namespace module_manager
         public Settings()
         {
             InitializeComponent();
+            Icon = Icon.ExtractAssociatedIcon("logo.ico");
         }
 
         private void Settings_Load(object sender, EventArgs e)
@@ -111,6 +118,11 @@ namespace module_manager
         }
 
         private void TextBox4_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void RadioButton2_CheckedChanged(object sender, EventArgs e)
         {
 
         }

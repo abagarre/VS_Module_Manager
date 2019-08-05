@@ -1,4 +1,10 @@
-﻿using System;
+﻿//============================================================================//
+//                              CREATE PASSWORD                               //
+//                                                                            //
+// - Create application password                                              //
+//============================================================================//
+
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -17,6 +23,7 @@ namespace module_manager
         public NewPassword()
         {
             InitializeComponent();
+            Icon = Icon.ExtractAssociatedIcon("logo.ico");
         }
 
         private void MetroButton1_Click(object sender, EventArgs e)
@@ -35,7 +42,6 @@ namespace module_manager
 
         private void NewPassword_Load(object sender, EventArgs e)
         {
-
         }
     }
 }

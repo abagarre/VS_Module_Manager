@@ -21,10 +21,14 @@ public class Functions
     Config config = new Config();
     string entropy = "";
 
+    /// <summary>
+    /// Effectue une requête sur l'API (bitbucket ou devops) et retourne le contenue sous forme de chaîne de caractère.
+    /// </summary>
     public string Query(string type, string url, string source)
     {
         if (entropy == "")
         {
+            // Si le mot de passe n'a pas encore été rentré, le demande
             using (Password formOptions = new Password())
             {
                 formOptions.ShowDialog();
@@ -42,6 +46,7 @@ public class Functions
         }
         try
         {
+            // Effectue la requête
             byte[] ciphertext = File.ReadAllBytes(config.GetAppData() + @".cred" + source);
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
             WebRequest myReq = WebRequest.Create(url);
@@ -76,9 +81,9 @@ public class Functions
 
     }
 
-    /**
-     * Retourne la liste des modules présents dans le fichier .gitmodules d'un projet local
-     */
+    /// <summary>
+    /// Retourne la liste des modules présents dans le fichier .gitmodules d'un projet local
+    /// </summary>
     public List<Repo> GetGitmodulesLoc(string path)
     {
         List<Repo> repos = new List<Repo>();
@@ -93,22 +98,23 @@ public class Functions
                 Repo repo = new Repo();
                 while ((line = file.ReadLine()) != null)
                 {
+                    // Parcours le fichier ligne par ligne
                     if (line.Contains("submodule"))
                     {
                         if (Name != null)
                         {
-                            if (Branch == null || Tag == null)
+                            using (var reposit = new Repository(Path))
                             {
-                                using (var reposit = new Repository(Path))
+                                foreach (var tags in reposit.Tags)
                                 {
-                                    foreach (var tags in reposit.Tags)
+                                    if (tags.PeeledTarget.Id == reposit.Head.Tip.Id)
                                     {
-                                        if (tags.PeeledTarget.Id == reposit.Head.Tip.Id)
-                                            Tag = tags.FriendlyName;
+                                        Tag = tags.FriendlyName;
+                                        break;
                                     }
-                                    Branch = reposit.Head.FriendlyName;
-                                    Console.WriteLine(Name + " : " + Branch + " - " + Tag);
+                                        
                                 }
+                                Branch = reposit.Head.FriendlyName;
                             }
                             repo = new Repo()
                             {
@@ -151,17 +157,17 @@ public class Functions
 
                 if (Name != null)
                 {
-                    if (Branch == null || Tag == null)
+                    using (var reposit = new Repository(Path))
                     {
-                        using (var reposit = new Repository(Path))
+                        foreach (var tags in reposit.Tags)
                         {
-                            foreach (var tags in reposit.Tags)
+                            if (tags.PeeledTarget.Id == reposit.Head.Tip.Id)
                             {
-                                if (tags.PeeledTarget.Id == reposit.Head.Tip.Id)
-                                    Tag = tags.FriendlyName;
+                                Tag = tags.FriendlyName;
+                                break;
                             }
-                            Branch = reposit.Head.FriendlyName;
                         }
+                        Branch = reposit.Head.FriendlyName;
                     }
                     repo = new Repo()
                     {
@@ -189,6 +195,9 @@ public class Functions
         return repos;
     }
 
+    /// <summary>
+    /// Retourne la liste des dépôts Git contenus dans le dossier donné
+    /// </summary>
     internal List<string> GetLocalList(string path)
     {
         List<string> localList = new List<string>();
@@ -203,6 +212,7 @@ public class Functions
         return localList; 
     }
 
+    /*
     public List<string> GetGitmodulesLocPath(string path)
     {
         List<string> submodules = new List<string>();
@@ -235,7 +245,11 @@ public class Functions
 
         return submodules;
     }
+    */
 
+    /// <summary>
+    /// Retourne la liste des dépôt BitBucket distants
+    /// </summary>
     public List<Repo> BitBucketRepoList()
     {
         List<Repo> repos = new List<Repo>();
@@ -264,43 +278,52 @@ public class Functions
         return repos;
     }
 
+    /// <summary>
+    /// Retourne la liste des dépôts GitBlit distants
+    /// </summary>
     public List<Repo> GitBlitRepoList()
     {
         List<Repo> repos = new List<Repo>();
-        
-        string json;
-        using (var client = new WebClient())
-            json = client.DownloadString(config.GetServerUrl() + "rpc/?req=LIST_REPOSITORIES");
-
-        byte[] bytes = Encoding.Default.GetBytes(json);
-        json = Encoding.UTF8.GetString(bytes);
-
-        JObject list = JObject.Parse(json);
-        var properties = list.Properties();
-        foreach (var prop in properties)
+        string json = "";
+        try
         {
-            JObject infos = JObject.FromObject(list[prop.Name]);
-            if (!((string)infos["name"]).Contains("~"))
+            using (var client = new WebClient())
+                json = client.DownloadString(config.GetServerUrl() + "rpc/?req=LIST_REPOSITORIES");
+
+            byte[] bytes = Encoding.Default.GetBytes(json);
+            json = Encoding.UTF8.GetString(bytes);
+
+            JObject list = JObject.Parse(json);
+            var properties = list.Properties();
+            foreach (var prop in properties)
             {
-                string repoName = infos["name"].ToString().Replace(".git", "");
-                string head = infos["HEAD"].ToString();
-                Repo repo = new Repo
+                JObject infos = JObject.FromObject(list[prop.Name]);
+                if (!((string)infos["name"]).Contains("~"))
                 {
-                    Id = Guid.NewGuid(),
-                    Url = prop.Name,
-                    ReadmeIndex = 1,
-                    Localisation = Repo.Loc.distant,
-                    Name = repoName.Substring(repoName.LastIndexOf("/") + 1, repoName.Length - repoName.LastIndexOf("/") - 1),
-                    Server = "gitblit",
-                    ServerName = config.GetCurrentSource(),
-                    Branch = head.Substring(head.LastIndexOf("/") + 1, head.Length - head.LastIndexOf("/") - 1)
-                };
-                repos.Add(repo);
+                    string repoName = infos["name"].ToString().Replace(".git", "");
+                    string head = infos["HEAD"].ToString();
+                    Repo repo = new Repo
+                    {
+                        Id = Guid.NewGuid(),
+                        Url = prop.Name,
+                        ReadmeIndex = 1,
+                        Localisation = Repo.Loc.distant,
+                        Name = repoName.Substring(repoName.LastIndexOf("/") + 1, repoName.Length - repoName.LastIndexOf("/") - 1),
+                        Server = "gitblit",
+                        ServerName = config.GetCurrentSource(),
+                        Branch = head.Substring(head.LastIndexOf("/") + 1, head.Length - head.LastIndexOf("/") - 1)
+                    };
+                    repos.Add(repo);
+                }
             }
         }
+        catch (Exception) { }
         return repos;
     }
 
+    /// <summary>
+    /// Retourne la liste des dépôts DevOps distants
+    /// </summary>
     public List<Repo> DevOpsRepoList()
     {
         List<Repo> repos = new List<Repo>();
@@ -318,11 +341,11 @@ public class Functions
                     {
                         Id = Guid.NewGuid(),
                         Name = ob["name"].ToString(),
-                        Url = ob["webUrl"].ToString(),
-                        Localisation = Repo.Loc.distant,
-                        ReadmeIndex = 1,
                         Server = "devops",
-                        ServerName = config.GetCurrentSource()
+                        ServerName = config.GetCurrentSource(),
+                        Url = ob["webUrl"].ToString(),
+                        ReadmeIndex = 1,
+                        Localisation = Repo.Loc.distant
                     };
                     try
                     {
@@ -331,7 +354,8 @@ public class Functions
                     } catch (Exception) { }
                     try
                     {
-                        string result = Query("devops", config.GetServerUrl(repo.ServerName) + "_apis/git/repositories/" + repo.Name + "/commits?api-version=5.0", repo.ServerName);
+                        string repoUrl = config.GetServerUrl(repo.ServerName) + @"_apis/git/repositories/" + repo.Name + @"/commits?api-version=5.0";
+                        string result = Query("devops", repoUrl, repo.ServerName);
                         JObject jsonCommit = JObject.Parse(result);
                         JArray valuesCommit = (JArray)jsonCommit["value"];
                         string commit = valuesCommit[0]["commitId"].ToString();
@@ -355,7 +379,10 @@ public class Functions
                             }
                         }
                     }
-                    catch (Exception) { }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                    }
                     repos.Add(repo);
                 }
             }
@@ -400,9 +427,9 @@ public class Functions
     }
     */
 
-    /**
-     * Retourne la liste des dépôts du serveur
-     */
+    /// <summary>
+    /// Retourne la liste des dépôts du serveur en cours
+    /// </summary>
     public List<Repo> GetRepoList()
     {
         List<Repo> repos = new List<Repo>();
@@ -428,9 +455,9 @@ public class Functions
         return repos;
     }
 
-    /**
-     * Liste les fichiers distants du dépôt d'un module et récupère la liste des #include
-     */
+    /// <summary>
+    /// Liste les fichiers distants du dépôt d'un module et récupère la liste des #include
+    /// </summary>
     public List<string> GetModuleDep(Repo repo, string branch)
     {
         List<string> dep = new List<string>();
@@ -461,7 +488,6 @@ public class Functions
                     }
                 }
             } catch (Exception) { }
-            
         }
         else if(currentType == "bitbucket")
         {
@@ -493,7 +519,6 @@ public class Functions
             {
                 return GetModuleDep(repo, "master");
             }
-            
         }
         else if(currentType == "devops")
         {
@@ -526,10 +551,9 @@ public class Functions
             }
             catch (Exception)
             {
-                return GetModuleDep(repo, "master");
+                if(branch != "master")
+                    return GetModuleDep(repo, "master");
             }
-            
-            
         }
         /*
         else if (currentType == "github")
@@ -553,9 +577,9 @@ public class Functions
         return dep;
     }
 
-    /**
-     * Retourne la liste des #include d'un fichier distant
-     */
+    /// <summary>
+    /// Retourne la liste des #include d'un fichier distant
+    /// </summary>
     public List<string> GetIncludes(string url, string currentType, string serverName)
     {
         List<string> dep = new List<string>();
@@ -599,9 +623,9 @@ public class Functions
         return dep;
     }
 
-    /**
-     * Ouvre une fenêtre lorsqu'un dépôt n'a pas de branche _DEV_
-     */
+    /// <summary>
+    /// Ouvre une fenêtre lorsqu'un dépôt n'a pas de branche DEV
+    /// </summary>
     public static bool ShowDialog(string text, string caption)
     {
         Form prompt = new Form
@@ -629,6 +653,9 @@ public class Functions
         return chk.Checked;
     }
 
+    /// <summary>
+    /// Retourne la liste des modules d'un projet GitBlit distant
+    /// </summary>
     public List<Repo> GetSubGitblit(string branch, string rep, Repo proj)
     {
         List<Repo> repos = new List<Repo>();
@@ -712,6 +739,9 @@ public class Functions
         return repos;
     }
 
+    /// <summary>
+    /// Retourne la liste des modules d'un projet BitBucket distant
+    /// </summary>
     public List<Repo> GetSubBitBucket(string branch, string rep, Repo proj)
     {
         List<Repo> repos = new List<Repo>();
@@ -818,24 +848,25 @@ public class Functions
         return repos;
     }
 
+    /// <summary>
+    /// Retourne la liste des modules d'un projet DevOps distant
+    /// </summary>
     public List<Repo> GetSubDevOps(string branch, string rep, Repo proj)
     {
         List<Repo> repos = new List<Repo>();
-        string result;
+        string result = "";
         try
         {
-            result = Query("devops", config.GetServerUrl() + "_apis/git/repositories/" + rep + "/items?path=.gitmodules&includeContent=true&api-version=5.0", config.GetCurrentSource());
+            result = Query("devops", config.GetServerUrl() + "_apis/git/repositories/" + rep + "/items?path=.gitmodules&includeContent=true&versionType=Branch&version=" + branch + "&api-version=5.0", config.GetCurrentSource());
         }
         catch (Exception ex)
         {
             Console.WriteLine("GetSubmodError : " + ex.Message);
-            //if (branch != "master")
-                //return GetSubmodList("master", rep, proj);
-            result = "null";
+            if (branch != "master")
+                return GetSubmodList("master", rep, proj);
         }
-        //if (result.Length == 0 && branch != "master")
-            //return GetSubmodList("master", rep, proj);
-
+        if (branch != "master" && result == "")
+            return GetSubmodList("master", rep, proj);
         using (StringReader reader = new StringReader(result))
         {
             string ligne;
@@ -855,13 +886,7 @@ public class Functions
                             JArray values = (JArray)json["value"];
                             foreach (JObject ob in values)
                             {
-                                if(ob["objectId"].ToString() == commit)
-                                {
-                                    string tag = ob["name"].ToString();
-                                    repo.Tag = tag.Substring(tag.LastIndexOf("/") + 1, tag.Length - tag.LastIndexOf("/") - 1);
-                                    break;
-                                }
-                                else if (ob["peeledObjectId"] != null && ob["peeledObjectId"].ToString() == commit)
+                                if((ob["objectId"].ToString() == commit) || (ob["peeledObjectId"] != null && ob["peeledObjectId"].ToString() == commit))
                                 {
                                     string tag = ob["name"].ToString();
                                     repo.Tag = tag.Substring(tag.LastIndexOf("/") + 1, tag.Length - tag.LastIndexOf("/") - 1);
@@ -898,7 +923,6 @@ public class Functions
                         commit = Query("devops", config.GetServerUrl() + "_apis/git/repositories/" + rep + "/items?path=" + modPath + "&includeContent=true&api-version=5.0", config.GetCurrentSource());
                     }
                     catch (Exception) { }
-                    
                 }
             }
             if (repo.Name != null)
@@ -911,13 +935,7 @@ public class Functions
                     JArray values = (JArray)json["value"];
                     foreach (JObject ob in values)
                     {
-                        if (ob["objectId"].ToString() == commit)
-                        {
-                            string tag = ob["name"].ToString();
-                            repo.Tag = tag.Substring(tag.LastIndexOf("/") + 1, tag.Length - tag.LastIndexOf("/") - 1);
-                            break;
-                        }
-                        else if (ob["peeledObjectId"] != null && ob["peeledObjectId"].ToString() == commit)
+                        if ((ob["objectId"].ToString() == commit) || (ob["peeledObjectId"] != null && ob["peeledObjectId"].ToString() == commit))
                         {
                             string tag = ob["name"].ToString();
                             repo.Tag = tag.Substring(tag.LastIndexOf("/") + 1, tag.Length - tag.LastIndexOf("/") - 1);
@@ -998,9 +1016,9 @@ public class Functions
     }
     */
 
-    /**
-     * Retourne la liste des modules présents dans le fichier .gitmodules d'un projet distant
-     */
+    /// <summary>
+    /// Retourne la liste des modules présents dans le fichier .gitmodules d'un projet distant
+    /// </summary>
     public List<Repo> GetSubmodList(string branch, string rep, Repo repo)
     {
         List<Repo> repos = new List<Repo>();
@@ -1026,106 +1044,31 @@ public class Functions
         return repos;
     }
 
-    /**
-     * Retourne le nom du projet avec le dossier qui le contient
-     */
-    public string GetProjFullName(string path)
-    {
-        string line;
-        string prev = "";
-        string fullName = "";
-        StreamReader file = new StreamReader(path + @"\.git\config");
-        while ((line = file.ReadLine()) != null)
-        {
-            if (line.Contains("remote"))
-            {
-                prev = line;
-            }
-            if(prev.Contains("remote") && line.Contains("url"))
-            {
-                fullName = line.Replace("url = ","");
-                break;
-            }
-        }
-        file.Close();
-        string currentType = config.GetCurrentType();
-        if(currentType == "gitblit")
-        {
-            //========================================= GITBLIT PATH =================================================//
-            fullName = fullName.Substring(fullName.IndexOf(@"/_") + 1, fullName.Length - fullName.IndexOf(@"/_") - 1);
-            //========================================================================================================//
-        }
-        else
-        {
-            fullName = fullName.Substring(fullName.LastIndexOf(@"/") + 1, fullName.Length - fullName.LastIndexOf(@"/") - 1);
-        }
-        return fullName;
-
-    }
-
-    public string GetProjURL(string path, string name, string type)
-    {
-        string line;
-        string prev = "";
-        string url = "";
-        StreamReader file;
-        try
-        {
-            file = new StreamReader(path + @"\.git\config");
-        }
-        catch (Exception) { return ""; }
-        
-        while ((line = file.ReadLine()) != null)
-        {
-            if(type == "module")
-            {
-                if (line.Contains("submodule") && line.Contains(name))
-                    prev = line;
-                if (prev.Contains("submodule") && line.Contains("url"))
-                    return line.Replace("url = ", "");
-            }
-            else
-            {
-                if (line.Contains("remote"))
-                    prev = line;
-                if (prev.Contains("remote") && line.Contains("url"))
-                    return line.Replace("url = ", "");
-            }
-            
-        }
-        return url;
-    }
-
-    /**
-     * Retourne la liste des neouds cochés dans un TreeView
-     */
+    /// <summary>
+    /// Retourne la liste des noeuds cochés dans un TreeView
+    /// </summary>
     public List<string> GetCheckedNodes(TreeNodeCollection treeNode)
     {
         List<string> checkedList = new List<string>();
-
         foreach (TreeNode node in treeNode)
         {
             if (node.Checked)
             {
                 checkedList.Add(node.Text);
             }
-
             if(node.Nodes.Count != 0)
             {
                 checkedList.AddRange(GetCheckedNodes(node.Nodes));
             }
         }
-
         return checkedList;
     }
 
     public List<string> GetNodes(TreeNodeCollection treeNode)
     {
         List<string> checkedList = new List<string>();
-
         foreach (TreeNode node in treeNode)
         {
-            
             checkedList.Add(node.Text);
 
             if (node.Nodes.Count != 0)
@@ -1133,13 +1076,12 @@ public class Functions
                 checkedList.AddRange(GetNodes(node.Nodes));
             }
         }
-
         return checkedList;
     }
 
-    /**
-     * Retourne le contenu d'un fichier README dans une chaîne de caractères
-     */
+    /// <summary>
+    /// Retourne le contenu d'un fichier README dans une chaîne de caractères
+    /// </summary>
     public string GetMarkdown(Repo repo, string branch)
     {
         string md = "";
@@ -1200,6 +1142,7 @@ public class Functions
             else
                 return result;
         }
+        /*
         else if(currentType == "github")
         {
             try
@@ -1214,9 +1157,13 @@ public class Functions
                 Console.WriteLine(ex.Message);
             }
         }
+        */
         return md;
     }
 
+    /// <summary>
+    /// Retourne le contenu du fichier README local
+    /// </summary>
     public string GetMarkdownLoc(string projPath)
     {
         string md = "";
@@ -1231,9 +1178,9 @@ public class Functions
         return md;
     }
 
-    /**
-     * 
-     */
+    /// <summary>
+    /// Crypte un mot de passe pour une nouvelle source (créé un mot de passe pour l'application s'il n'existe pas)
+    /// </summary>
     public bool SavePassword(string token, string name)
     {
         byte[] plaintext = Encoding.Default.GetBytes(token);
@@ -1247,14 +1194,30 @@ public class Functions
                 try
                 {
                     string result = formOptions.pass;
+                    
                     if (result.Length != 0)
                     {
+                        foreach (string f in Directory.GetFiles(config.GetAppData()))
+                        {
+                            if (f.Contains(".cred"))
+                            {
+                                try
+                                {
+                                    byte[] cipher = File.ReadAllBytes(f);
+                                    Encoding.UTF8.GetString(ProtectedData.Unprotect(cipher, Encoding.Default.GetBytes(result), DataProtectionScope.CurrentUser));
+                                }
+                                catch (Exception)
+                                {
+                                    return false;
+                                }
+                                break;
+                            }
+                        }
                         entropy = Encoding.Default.GetBytes(result);
                         ciphertext = ProtectedData.Protect(plaintext, entropy, DataProtectionScope.CurrentUser);
                         File.WriteAllBytes(config.GetAppData() + ".cred" + name, ciphertext);
                         return true;
                     }
-
                 }
                 catch (Exception ex)
                 {
@@ -1277,7 +1240,6 @@ public class Functions
                         config.SetPass("true");
                         return true;
                     }
-
                 }
                 catch (Exception ex)
                 {
@@ -1285,65 +1247,16 @@ public class Functions
                 }
             }
         }
-        
         return false;
     }
 
-    public int GetIndex(TreeNode node)
-    {
-        /// source : David Fletcher
-
-        int returnValue = 0;
-
-        // Always make a way to exit the recursion.
-        if (node.Index == 0 && node.Parent == null)
-            return returnValue;
-
-        // Now, count every node.
-        returnValue = 1;
-
-        // If I have siblings higher in the index, then count them and their decendants.
-        if (node.Index > 0)
-        {
-            TreeNode previousSibling = node.PrevNode;
-            while (previousSibling != null)
-            {
-                returnValue += GetDecendantCount(previousSibling);
-                previousSibling = previousSibling.PrevNode;
-            }
-        }
-
-        if (node.Parent == null)
-            return returnValue;
-        else
-            return returnValue + GetIndex(node.Parent);
-    }
-
-    public int GetDecendantCount(TreeNode node)
-    {
-        int returnValue = 0;
-
-        // If the node is not the root node, then we want to count it.
-        if (node.Index != 0 || node.Parent != null)
-            returnValue = 1;
-
-        // Always make a way to exit a recursive function.
-        if (node.Nodes.Count == 0)
-            return returnValue;
-
-        foreach (TreeNode childNode in node.Nodes)
-        {
-            returnValue += GetDecendantCount(childNode);
-        }
-        return returnValue;
-    }
-
+    /// <summary>
+    /// Retourne la liste des dépôts locaux enregistrés dans SmartGit
+    /// </summary>
     public List<string> GetSmartGitList()
     {
         List<string> smartList = new List<string>();
-
         XDocument xml = XDocument.Load(config.GetSmartGitRepo());
-
         IEnumerable<XElement> ob = xml.Root.Elements();
         IEnumerable<XElement> coll = ob.ElementAt(0).Elements();
         for (int i = 0; i < coll.Count(); i++)
@@ -1361,82 +1274,26 @@ public class Functions
                 smartList.Add(chemin);
             }
         }
-
         return smartList;
     }
 
+    /// <summary>
+    /// Retourne la liste des dépôts locaux enregistrés dans SourceTree
+    /// </summary>
     public List<string> GetSourceTreetList()
     {
         List<string> sourceList = new List<string>();
-
         XDocument xml = XDocument.Load(config.GetSourceTreeRepo());
-
         foreach(XElement elem in xml.Root.Elements())
         {
             sourceList.Add(elem.Value.ToString());
         }
-
         return sourceList;
     }
 
-    public string GetBranch(string path, string head)
-    {
-        if (head.Contains("ref"))
-        {
-            return head.Substring(head.LastIndexOf("/") + 1, head.Length - head.LastIndexOf("/") - 1);
-        }
-        else
-        {
-            foreach (var file in new DirectoryInfo(Path.Combine(path,@"refs\heads")).GetFiles())
-            {
-                string ligne;
-                StreamReader pack = new StreamReader(file.FullName);
-                while ((ligne = pack.ReadLine()) != null)
-                {
-                    if (ligne.Contains(head))
-                    {
-                        return file.Name;
-                    }
-                }
-                pack.Close();
-            }
-        }
-        return null;
-    }
-
-    public string GetTag(string path, string head)
-    {
-        foreach (var file in new DirectoryInfo(Path.Combine(path, @"refs\tags")).GetFiles())
-        {
-            string ligne;
-            StreamReader pack = new StreamReader(file.FullName);
-            while ((ligne = pack.ReadLine()) != null)
-            {
-                if (ligne.Contains(head))
-                {
-                    return file.Name;
-                }
-            }
-            pack.Close();
-        }
-
-        if(File.Exists(Path.Combine(path,"packed-refs")))
-        {
-            string ligne;
-            StreamReader pack = new StreamReader(Path.Combine(path, "packed-refs"));
-            while ((ligne = pack.ReadLine()) != null)
-            {
-                if (ligne.Contains(head) && ligne.Contains("tags"))
-                {
-                    return ligne.Substring(ligne.LastIndexOf("/") + 1, ligne.Length - ligne.LastIndexOf("/") - 1);
-                }
-            }
-            pack.Close();
-        }
-
-        return null;
-    }
-
+    /// <summary>
+    /// Retourne le nom de la source du Repo donné
+    /// </summary>
     public string GetServerName(Repo repo)
     {
         if (repo.Name != null)
@@ -1451,13 +1308,15 @@ public class Functions
                 {
                     return allNames.ElementAt(i);
                 }
-
                 i++;
             }
         }
         return null;
     }
 
+    /// <summary>
+    /// Retourne le chemin d'un module dans le dossier .git
+    /// </summary>
     public string GetSubmodGitPath(Repo repo, string parentPath)
     {
         string line;
@@ -1467,7 +1326,6 @@ public class Functions
             if (line.Contains("submodule ") && line.Contains(repo.Name))
             {
                 string result = line.Replace("[submodule \"", "").Replace("\"]","");
-                Console.WriteLine("res : " + result);
                 file.Close();
                 return result;
             }

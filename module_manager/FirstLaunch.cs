@@ -1,14 +1,14 @@
-﻿using Newtonsoft.Json.Linq;
+﻿//============================================================================//
+//                              FIRST LAUNCH FORM                             //
+//                                                                            //
+// - Ask for all basic informations to make the programm work                 //
+//============================================================================//
+
+using Newtonsoft.Json.Linq;
 using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Diagnostics;
-using System.Drawing;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace module_manager
@@ -23,8 +23,10 @@ namespace module_manager
             InitializeComponent();
             config = new Config();
             functions = new Functions();
+            Icon = Icon.ExtractAssociatedIcon("logo.ico");
         }
 
+        // Copie les fichiers nécessaires dans le dossier %appdata%/ModuleManager
         private void FirstLaunch_Load(object sender, EventArgs e)
         {
             string[] files = Directory.GetFiles("data", "*.*", SearchOption.TopDirectoryOnly);
@@ -59,11 +61,15 @@ namespace module_manager
             metroButton2.Enabled = true;
         }
 
+        /// <summary>
+        /// Ajoute le client au fichier des paramètres, ajoute un nouveau serveur
+        /// </summary>
         private void MetroButton2_Click(object sender, EventArgs e)
         {
             if(panel1.Visible)
             {
-                if(((checkedItem == "smartgit" || checkedItem == "sourcetree") && File.Exists(textBox1.Text)) || (checkedItem == "local" && Directory.Exists(textBox1.Text)))
+                if(((checkedItem == "smartgit" || checkedItem == "sourcetree") && File.Exists(textBox1.Text))
+                    || (checkedItem == "local" && Directory.Exists(textBox1.Text)))
                 {
                     string json = File.ReadAllText(config.GetSettingsPath());
                     JObject conf = JObject.Parse(json);
@@ -85,26 +91,22 @@ namespace module_manager
                     label6.Visible = true;
                 }
             }
-            if(panel3.Visible)
+            if(panel3.Visible && textBox5.Text != "" && textBox2.Text != "" && textBox3.Text != "")
             {
-                if (textBox5.Text != "" && textBox2.Text != "" && textBox3.Text != "")
-                {
-                    if ((textBox4.Text != "" && functions.SavePassword(textBox4.Text, textBox5.Text)) ||
+                if ((textBox4.Text != "" && functions.SavePassword(textBox4.Text, textBox5.Text)) ||
                         (textBox4.Text == "" && MessageBox.Show("Vous êtes sur le point d'ajouter un serveur ne nécessitant pas de mot de passe. \nContinuer ?", "", MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.Yes))
+                {
+                    var checkedButton = panel5.Controls.OfType<RadioButton>().FirstOrDefault(r => r.Checked);
+                    if (config.AddServer(checkedButton.Text.ToLower(), textBox5.Text, textBox2.Text, textBox3.Text))
                     {
-                        var checkedButton = panel5.Controls.OfType<RadioButton>().FirstOrDefault(r => r.Checked);
-                        if(config.AddServer(checkedButton.Text.ToLower(), textBox5.Text, textBox2.Text, textBox3.Text))
-                        {
-                            config.ChangeServer(textBox5.Text);
-                            Process.Start("module_manager.exe");
-                            this.Close();
-                        }
-                        else
-                        {
-                            MessageBox.Show("Un serveur de ce nom existe déjà", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        }
-                        
-                    }                    
+                        config.ChangeServer(textBox5.Text);
+                        Process.Start("module_manager.exe");
+                        this.Close();
+                    }
+                    else
+                    {
+                        MessageBox.Show("Un serveur de ce nom existe déjà", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
                 }
             }
         }

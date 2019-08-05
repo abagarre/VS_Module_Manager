@@ -1,4 +1,10 @@
-﻿using System;
+﻿//============================================================================//
+//                              PASSWORD FORM                                 //
+//                                                                            //
+// - Display a form to enter a password                                       //
+//============================================================================//
+
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -17,22 +23,23 @@ namespace module_manager
         public Password()
         {
             InitializeComponent();
+            Icon = Icon.ExtractAssociatedIcon("logo.ico");
         }
 
         private void MetroButton2_Click(object sender, EventArgs e)
         {
-            this.Close();
+            Close();
         }
 
         private void MetroButton1_Click(object sender, EventArgs e)
         {
             pass = textBox1.Text;
-            this.Close();
+            Close();
         }
 
         private void Password_Load(object sender, EventArgs e)
         {
-            this.textBox1.KeyPress += new KeyPressEventHandler(CheckEnterKeyPress);
+            textBox1.KeyPress += new KeyPressEventHandler(CheckEnterKeyPress);
         }
 
         private void CheckEnterKeyPress(object sender, KeyPressEventArgs e)

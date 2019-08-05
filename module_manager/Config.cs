@@ -41,7 +41,15 @@ namespace module_manager
             byte[] bytes = Encoding.Default.GetBytes(json);
             json = Encoding.UTF8.GetString(bytes);
             JObject sett = JObject.Parse(json);
-            return (string)sett["smartgit"];
+            try
+            {
+                return (string)sett["smartgit"];
+            }
+            catch (Exception)
+            {
+                return "";
+            }
+            
         }
 
         public string GetSourceTreeRepo()
@@ -50,7 +58,14 @@ namespace module_manager
             byte[] bytes = Encoding.Default.GetBytes(json);
             json = Encoding.UTF8.GetString(bytes);
             JObject sett = JObject.Parse(json);
-            return (string)sett["sourcetree"];
+            try
+            {
+                return (string)sett["sourcetree"];
+            }
+            catch (Exception)
+            {
+                return "";
+            }
         }
 
         public string GetLocalRepo()
@@ -59,26 +74,31 @@ namespace module_manager
             byte[] bytes = Encoding.Default.GetBytes(json);
             json = Encoding.UTF8.GetString(bytes);
             JObject sett = JObject.Parse(json);
-            return (string)sett["local"];
+            try
+            {
+                return (string)sett["local"];
+            }
+            catch (Exception)
+            {
+                return "";
+            }
         }
 
-        /**
-         * Retoure la string du fichier des serveurs enregistrés
-         */
+        /// <summary>
+        /// Retourne le contenu du fichier des serveurs enregistrés
+        /// </summary>
         public string DispServerList()
         {
             string json;
             json = File.ReadAllText(GetServersPath());
-
             byte[] bytes = Encoding.Default.GetBytes(json);
             json = Encoding.UTF8.GetString(bytes);
-
             return json;
         }
 
-        /**
-         * Retourne le type de serveur en cours (gitblit, bitbucket...)
-         */
+        /// <summary>
+        /// Retourne le type de serveur (source) en cours (gitblit, bitbucket...)
+        /// </summary>
         public string GetCurrentType()
         {
             string json = File.ReadAllText(GetConfigPath());
@@ -88,9 +108,9 @@ namespace module_manager
             return (string)serv["type"];
         }
 
-        /**
-         * Retourne le nom de la source en cours
-         */
+        /// <summary>
+        ///  Retourne le nom de la source en cours
+        /// </summary>
         public string GetCurrentSource()
         {
             string json = File.ReadAllText(GetConfigPath());
@@ -100,9 +120,9 @@ namespace module_manager
             return (string)serv["source"];
         }
 
-        /**
-         * Retourne l'URL du serveur en cours
-         */
+        /// <summary>
+        ///  Retourne l'URL du serveur en cours
+        /// </summary>
         public string GetServerUrl()
         {
             string json = File.ReadAllText(GetConfigPath());
@@ -112,6 +132,9 @@ namespace module_manager
             return (string)serv["url"];
         }
 
+        /// <summary>
+        /// Retourne l'URL du serveur correspondant au nom donné
+        /// </summary>
         public string GetServerUrl(string name)
         {
             string json = File.ReadAllText(GetServersPath());
@@ -127,6 +150,9 @@ namespace module_manager
             return "";
         }
 
+        /// <summary>
+        /// Retourne le nom d'utilisateur du serveur en cours
+        /// </summary>
         public string GetUserName()
         {
             string json = File.ReadAllText(GetConfigPath());
@@ -136,6 +162,9 @@ namespace module_manager
             return (string)serv["username"];
         }
 
+        /// <summary>
+        /// Retourne le nom d'utilisateur du serveur correspondant au nom donné
+        /// </summary>
         public string GetUserName(string name)
         {
             string json = File.ReadAllText(GetServersPath());
@@ -151,6 +180,9 @@ namespace module_manager
             return "";
         }
 
+        /// <summary>
+        /// Retourne le nom de tous les serveurs enregistrés
+        /// </summary>
         public List<string> GetAllNames()
         {
             List<string> allNames = new List<string>();
@@ -164,6 +196,9 @@ namespace module_manager
             return allNames;
         }
 
+        /// <summary>
+        /// Retourne l'identifiant unique de tous les serveurs enregistrés
+        /// </summary>
         public List<string> GetAllUniques()
         {
             List<string> allUniques = new List<string>();
@@ -177,6 +212,9 @@ namespace module_manager
             return allUniques;
         }
 
+        /// <summary>
+        /// Retourne le type de tous les serveurs enregistrés
+        /// </summary>
         public List<string> GetAllTypes()
         {
             List<string> allTypes = new List<string>();
@@ -190,6 +228,9 @@ namespace module_manager
             return allTypes;
         }
 
+        /// <summary>
+        /// Retourne le client (smartgit, sourcetree ou local)
+        /// </summary>
         public string GetClient()
         {
             string json = File.ReadAllText(GetConfigPath());
@@ -199,6 +240,9 @@ namespace module_manager
             return (string)serv["client"];
         }
 
+        /// <summary>
+        /// Retourne "true" si un mot de passe a déjà été enregistré, "false" sinon
+        /// </summary>
         public string GetPass()
         {
             string json = File.ReadAllText(GetConfigPath());
@@ -208,6 +252,9 @@ namespace module_manager
             return (string)serv["password"];
         }
 
+        /// <summary>
+        /// Change la configuration "password" à "true" si un mot de passe vient d'être enregistré
+        /// </summary>
         public void SetPass(string pass)
         {
             string json;
@@ -217,9 +264,9 @@ namespace module_manager
             File.WriteAllText(GetConfigPath(), conf.ToString());
         }
 
-        /**
-         * Modifie le fichier config.json avec les valeurs du serveur choisi
-         */
+        /// <summary>
+        /// Modifie le fichier config.json avec les valeurs du serveur choisi
+        /// </summary>
         public void ChangeServer(string name)
         {
             Console.WriteLine("change to " + name);
@@ -242,6 +289,9 @@ namespace module_manager
             File.WriteAllText(GetConfigPath(), conf.ToString());
         }
 
+        /// <summary>
+        /// Ajoute un nouveau serveur
+        /// </summary>
         public bool AddServer(string type, string name, string url, string username)
         {
             List<string> allNames = GetAllNames();
@@ -271,6 +321,9 @@ namespace module_manager
             return true;
         }
 
+        /// <summary>
+        /// Modifie un serveur existant
+        /// </summary>
         public void EditServer(string oldName, string newName, string URL, string username)
         {
             string json;
@@ -291,6 +344,9 @@ namespace module_manager
             File.WriteAllText(GetServersPath(), conf.ToString());
         }
 
+        /// <summary>
+        /// Supprime un serveur
+        /// </summary>
         public void DeleteServer(string name)
         {
             string json;
@@ -313,29 +369,19 @@ namespace module_manager
 
         public string GetBranchDev()
         {
-            return "_DEV_";
-        }
-
-        public string GetToken()
-        {
-            using (Password formOptions = new Password())
+            string json = File.ReadAllText(GetSettingsPath());
+            byte[] bytes = Encoding.Default.GetBytes(json);
+            json = Encoding.UTF8.GetString(bytes);
+            JObject sett = JObject.Parse(json);
+            try
             {
-                formOptions.ShowDialog();
-                try
-                {
-                    string result = formOptions.pass;
-                    if (result.Length != 0)
-                    {
-                        return result;
-                    }
-
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex.Message);
-                }
+                return (string)sett["dev"];
             }
-            return "";
+            catch (Exception)
+            {
+                return "_DEV_";
+            }
         }
+
     }
 }

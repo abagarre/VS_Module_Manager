@@ -1,4 +1,11 @@
-﻿using Newtonsoft.Json.Linq;
+﻿//============================================================================//
+//                              MANAGE SOURCES                                //
+//                                                                            //
+// - List all sources                                                         //
+// - Possibility to edit and add sources                                      //
+//============================================================================//
+
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -21,6 +28,7 @@ namespace module_manager
             InitializeComponent();
             functions = new Functions();
             config = new Config();
+            Icon = Icon.ExtractAssociatedIcon("logo.ico");
         }
 
         private void Form6_Load(object sender, EventArgs e)
@@ -32,8 +40,6 @@ namespace module_manager
                 FlowLayoutPanel panel = new FlowLayoutPanel();
                 panel.FlowDirection = FlowDirection.TopDown;
                 panel.BackColor = SystemColors.MenuBar;
-                if ((string) obj["name"] == config.GetCurrentSource())
-                    panel.BorderStyle = BorderStyle.FixedSingle;
                 PictureBox picture = new PictureBox()
                 {
                     ImageLocation = config.GetAppData() + (string)obj["type"] + ".png",
@@ -53,17 +59,7 @@ namespace module_manager
                     Width = picture.Width
                 };
                 buttonDetails.Click += EditSourceClick;
-                buttonDetails.Click += GetDetailsServer;
                 panel.Controls.Add(buttonDetails);
-                MetroFramework.Controls.MetroButton buttonSwitch = new MetroFramework.Controls.MetroButton()
-                {
-                    Text = "Basculer",
-                    Name = (string)obj["name"],
-                    Anchor = AnchorStyles.None,
-                    Width = picture.Width
-                };
-                buttonSwitch.Click += SwitchServer;
-                panel.Controls.Add(buttonSwitch);
                 flowLayoutPanel1.Controls.Add(panel);
             }
         }
@@ -77,25 +73,6 @@ namespace module_manager
             frm.StartPosition = FormStartPosition.Manual;
             frm.Show();
             frm.FormClosed += RefreshForm;
-        }
-
-        private void SwitchServer(object sender, EventArgs e)
-        {
-            config.ChangeServer((sender as Button).Name);
-            foreach(Control control in flowLayoutPanel1.Controls)
-            {
-                if(control is FlowLayoutPanel)
-                {
-                    (control as FlowLayoutPanel).BorderStyle = BorderStyle.None;
-                }
-            }
-            Control ctrl = (sender as Button).Parent;
-            (ctrl as FlowLayoutPanel).BorderStyle = BorderStyle.FixedSingle;
-        }
-
-        private void GetDetailsServer(object sender, EventArgs e)
-        {
-            Console.WriteLine("details");
         }
 
         private void MetroButton2_Click(object sender, EventArgs e)

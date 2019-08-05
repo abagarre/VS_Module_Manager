@@ -1,4 +1,11 @@
-﻿using System;
+﻿//============================================================================//
+//                              SOURCE DETAILS                                //
+//                                                                            //
+// - Load source informations                                                 //
+// - Allow edit and delete source                                             //
+//============================================================================//
+
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -19,6 +26,7 @@ namespace module_manager
             InitializeComponent();
             name = args[0];
             config = new Config();
+            Icon = Icon.ExtractAssociatedIcon("logo.ico");
         }
 
         private void DetailsSrc_Load(object sender, EventArgs e)
@@ -45,8 +53,7 @@ namespace module_manager
             {
                 config.DeleteServer(name);
                 this.Close();
-            }
-                
+            }  
         }
     }
 }

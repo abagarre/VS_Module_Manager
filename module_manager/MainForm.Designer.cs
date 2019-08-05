@@ -57,7 +57,6 @@
             this.toolStripSplitButton1 = new System.Windows.Forms.ToolStripSplitButton();
             this.toolStripSplitButton2 = new System.Windows.Forms.ToolStripSplitButton();
             this.toolStripStatusLabel2 = new System.Windows.Forms.ToolStripStatusLabel();
-            this.toolStripStatusLabel3 = new System.Windows.Forms.ToolStripStatusLabel();
             this.toolStripSplitButton3 = new System.Windows.Forms.ToolStripSplitButton();
             this.backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
             this.metroLabel5 = new MetroFramework.Controls.MetroLabel();
@@ -332,6 +331,7 @@
             // 
             // url
             // 
+            this.url.ActiveLinkColor = System.Drawing.SystemColors.Control;
             this.url.HeaderText = "URL";
             this.url.Name = "url";
             // 
@@ -382,7 +382,6 @@
             this.toolStripSplitButton1,
             this.toolStripSplitButton2,
             this.toolStripStatusLabel2,
-            this.toolStripStatusLabel3,
             this.toolStripSplitButton3});
             this.statusStrip1.Location = new System.Drawing.Point(0, 426);
             this.statusStrip1.Name = "statusStrip1";
@@ -429,26 +428,17 @@
             // 
             this.toolStripStatusLabel2.ActiveLinkColor = System.Drawing.Color.Black;
             this.toolStripStatusLabel2.BackColor = System.Drawing.Color.Transparent;
-            this.toolStripStatusLabel2.BorderSides = System.Windows.Forms.ToolStripStatusLabelBorderSides.Left;
+            this.toolStripStatusLabel2.BorderSides = ((System.Windows.Forms.ToolStripStatusLabelBorderSides)((System.Windows.Forms.ToolStripStatusLabelBorderSides.Left | System.Windows.Forms.ToolStripStatusLabelBorderSides.Right)));
             this.toolStripStatusLabel2.ForeColor = System.Drawing.SystemColors.GrayText;
             this.toolStripStatusLabel2.IsLink = true;
             this.toolStripStatusLabel2.LinkColor = System.Drawing.SystemColors.GrayText;
             this.toolStripStatusLabel2.Margin = new System.Windows.Forms.Padding(10, 3, 0, 2);
             this.toolStripStatusLabel2.Name = "toolStripStatusLabel2";
-            this.toolStripStatusLabel2.Size = new System.Drawing.Size(356, 19);
+            this.toolStripStatusLabel2.Size = new System.Drawing.Size(403, 19);
             this.toolStripStatusLabel2.Spring = true;
             this.toolStripStatusLabel2.Text = "                       ";
             this.toolStripStatusLabel2.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             this.toolStripStatusLabel2.Click += new System.EventHandler(this.ToolStripStatusLabel2_Click);
-            // 
-            // toolStripStatusLabel3
-            // 
-            this.toolStripStatusLabel3.BackColor = System.Drawing.Color.Transparent;
-            this.toolStripStatusLabel3.BorderSides = ((System.Windows.Forms.ToolStripStatusLabelBorderSides)((System.Windows.Forms.ToolStripStatusLabelBorderSides.Left | System.Windows.Forms.ToolStripStatusLabelBorderSides.Right)));
-            this.toolStripStatusLabel3.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
-            this.toolStripStatusLabel3.Name = "toolStripStatusLabel3";
-            this.toolStripStatusLabel3.Size = new System.Drawing.Size(47, 19);
-            this.toolStripStatusLabel3.Text = "Source";
             // 
             // toolStripSplitButton3
             // 
@@ -617,7 +607,7 @@
             this.dossierLocalToolStripMenuItem,
             this.uRLServeurToolStripMenuItem});
             this.ouvrirToolStripMenuItem.Name = "ouvrirToolStripMenuItem";
-            this.ouvrirToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.ouvrirToolStripMenuItem.Size = new System.Drawing.Size(129, 22);
             this.ouvrirToolStripMenuItem.Text = "Ouvrir";
             // 
             // dossierLocalToolStripMenuItem
@@ -637,14 +627,14 @@
             // déplacerToolStripMenuItem
             // 
             this.déplacerToolStripMenuItem.Name = "déplacerToolStripMenuItem";
-            this.déplacerToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.déplacerToolStripMenuItem.Size = new System.Drawing.Size(129, 22);
             this.déplacerToolStripMenuItem.Text = "Déplacer";
             this.déplacerToolStripMenuItem.Click += new System.EventHandler(this.DéplacerToolStripMenuItem_Click);
             // 
             // supprimerToolStripMenuItem
             // 
             this.supprimerToolStripMenuItem.Name = "supprimerToolStripMenuItem";
-            this.supprimerToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.supprimerToolStripMenuItem.Size = new System.Drawing.Size(129, 22);
             this.supprimerToolStripMenuItem.Text = "Supprimer";
             this.supprimerToolStripMenuItem.Click += new System.EventHandler(this.SupprimerToolStripMenuItem_Click);
             // 
@@ -671,7 +661,6 @@
             this.comptesEtConnexionsToolStripMenuItem.Size = new System.Drawing.Size(198, 22);
             this.comptesEtConnexionsToolStripMenuItem.Text = "Comptes et connexions";
             this.comptesEtConnexionsToolStripMenuItem.Visible = false;
-            this.comptesEtConnexionsToolStripMenuItem.Click += new System.EventHandler(this.ComptesEtConnexionsToolStripMenuItem_ClickAsync);
             // 
             // paramètresToolStripMenuItem
             // 
@@ -706,6 +695,7 @@
             this.Controls.Add(this.panel1);
             this.Controls.Add(this.metroLabel2);
             this.Controls.Add(this.metroTabControl1);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MainMenuStrip = this.menuStrip1;
             this.Name = "MainForm";
             this.Text = "Module Manager";
@@ -776,7 +766,6 @@
         private System.Windows.Forms.ToolStripMenuItem uRLServeurToolStripMenuItem;
         private System.Windows.Forms.ComboBox comboBox1;
         private System.Windows.Forms.Label label1;
-        private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabel3;
         private System.ComponentModel.BackgroundWorker backgroundWorker4;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Label label3;

@@ -1,4 +1,10 @@
-﻿using System;
+﻿//============================================================================//
+//                              LOAD PROJECT                                  //
+//                                                                            //
+// - Load project from distant repositories or from URL                       //
+//============================================================================//
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
@@ -16,6 +22,7 @@ namespace module_manager
         {
             InitializeComponent();
             functions = new Functions();
+            Icon = Icon.ExtractAssociatedIcon("logo.ico");
         }
 
         private void Form5_Load(object sender, EventArgs e)
@@ -36,11 +43,6 @@ namespace module_manager
                 path = textBox1.Text;
                 this.Close();
             }
-        }
-
-        private void Label1_Click(object sender, EventArgs e)
-        {
-
         }
 
         private void DataGridView1_CellDoubleClick(object sender, DataGridViewCellEventArgs e)

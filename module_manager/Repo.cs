@@ -1,4 +1,10 @@
-﻿using LibGit2Sharp;
+﻿//============================================================================//
+//                              REPO CLASS                                    //
+//                                                                            //
+// - Class to store informations of a repository                              //
+//============================================================================//
+
+using LibGit2Sharp;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -25,6 +31,9 @@ namespace module_manager
         public int ReadmeIndex { get; set; }    // 0 : local ; 1 : distant
         public Loc Localisation { get; set; }   // 0 : local ; 1 : distant ; -1 : both
         
+        /// <summary>
+        /// Verifie si 2 Repo pointent sur le même dépôt (indépendamment de l'emplacement local ou distant)
+        /// </summary>
         public bool Equal(Repo repo)
         {
             if (repo.Name.ToLower() == Name.ToLower() && repo.ServerName == ServerName)
@@ -37,6 +46,9 @@ namespace module_manager
             return repos.Any(mod => mod.Equal(this));
         }
 
+        /// <summary>
+        /// Initialise un Repo local depuis son chemin d'acces
+        /// </summary>
         public Repo Init(string path)
         {
             Id = Guid.NewGuid();
@@ -49,7 +61,6 @@ namespace module_manager
                 Type = "project";
             else
                 Type = "module";
-
             Path = path;
             ReadmeIndex = 0;
             Localisation = Loc.local;
@@ -77,7 +88,6 @@ namespace module_manager
                 Name = path.Substring(path.LastIndexOf(@"\") + 1, path.Length - path.LastIndexOf(@"\") - 1);
             }
             conf.Close();
-
             using (var reposit = new Repository(path))
             {
                 foreach (var tags in reposit.Tags)
@@ -86,9 +96,7 @@ namespace module_manager
                         Tag = tags.FriendlyName;
                 }
                 Branch = reposit.Head.FriendlyName;
-                Console.WriteLine(Name + " : " + Branch + " - " + Tag);
             }
-
             int i = 0;
             foreach (string unique in alluniques)
             {

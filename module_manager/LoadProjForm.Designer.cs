@@ -48,7 +48,6 @@
             this.label1.TabIndex = 0;
             this.label1.Text = "Entrer l\'URL du projet :";
             this.label1.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.label1.Click += new System.EventHandler(this.Label1_Click);
             // 
             // textBox1
             // 

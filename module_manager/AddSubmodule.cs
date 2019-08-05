@@ -1,4 +1,12 @@
-﻿using System;
+﻿//============================================================================//
+//                              ADD SUBMODULE                                 //
+//                                                                            //
+// - Load module list                                                         //
+// - Check #includes for selected modules                                     //
+// - Clone submodules                                                         //
+//============================================================================//
+
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -20,11 +28,13 @@ namespace module_manager
         string selectedPath = "";
         Functions functions;
         Config config;
+
         public AddSubmodule(Repo repository)
         {
             InitializeComponent();
             rep = repository;
             selectedPath = MainForm.selectedPath;
+            Icon = Icon.ExtractAssociatedIcon("logo.ico");
         }
 
         private void AddSubmodule_Load(object sender, EventArgs e)
@@ -53,7 +63,9 @@ namespace module_manager
             this.Close();
         }
 
-
+        /// <summary>
+        /// Charge les modules dans le DataGridView et désactive ceux qui appartiennent déjà au projet
+        /// </summary>
         private void BackgroundWorker1_DoWork(object sender, DoWorkEventArgs e)
         {
             BackgroundWorker worker = sender as BackgroundWorker;
@@ -102,6 +114,9 @@ namespace module_manager
             toolStripProgressBar1.Visible = false;
         }
 
+        /// <summary>
+        /// Bouton "Suivant" : soit lance le bgWorker2, soit lance le bgWorker3 suivant le control visible
+        /// </summary>
         private void MetroButton1_Click(object sender, EventArgs e)
         {
             if(!treeView1.Visible)
@@ -121,7 +136,7 @@ namespace module_manager
 
                 if (idList.Count() == 0)
                 {
-                    MessageBox.Show("Veuillez sélectionner un module", "Aucun module séléctionné", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MessageBox.Show("Veuillez sélectionner un module", "Aucun module séléctionné", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     return;
                 }
 
@@ -146,7 +161,7 @@ namespace module_manager
             if(treeView1.Visible)
             {
                 treeView1.Visible = false;
-                metroTabControl1.Visible = true;
+                panel2.Visible = true;
                 metroButton2.Visible = false;
             }
         }
@@ -156,6 +171,9 @@ namespace module_manager
             Close();
         }
 
+        /// <summary>
+        /// Ajoute les modules séléctionnés au TreeView et affiche les #includes
+        /// </summary>
         private void BackgroundWorker2_DoWork(object sender, DoWorkEventArgs e)
         {
             BackgroundWorker worker = sender as BackgroundWorker;
@@ -195,7 +213,7 @@ namespace module_manager
         {
             toolStripProgressBar1.Value = 0;
             toolStripProgressBar1.Visible = false;
-            metroTabControl1.Visible = false;
+            panel2.Visible = false;
             treeView1.Visible = true;
             metroButton2.Visible = true;
         }
@@ -206,6 +224,9 @@ namespace module_manager
             e.DrawDefault = true;
         }
 
+        /// <summary>
+        /// Clone les modules sélectionnés
+        /// </summary>
         private void BackgroundWorker3_DoWork(object sender, DoWorkEventArgs e)
         {
             BackgroundWorker worker = sender as BackgroundWorker;
@@ -283,6 +304,19 @@ namespace module_manager
             if (e.Result.ToString().Contains("fatal"))
                 MessageBox.Show(e.Result.ToString(), "Attention", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             Close();
+        }
+
+        private void DataGridView1_RowPostPaint(object sender, DataGridViewRowPostPaintEventArgs e)
+        {
+            if (dataGridView1.Rows[e.RowIndex].Cells[1].Value.ToString().Contains("(✓)"))
+            {
+                DataGridViewCell cell = dataGridView1.Rows[e.RowIndex].Cells[0];
+                DataGridViewCheckBoxCell chkCell = cell as DataGridViewCheckBoxCell;
+                chkCell.FlatStyle = FlatStyle.Flat;
+                chkCell.Style.ForeColor = Color.DarkGray;
+                cell.ReadOnly = true;
+
+            }
         }
     }
 }

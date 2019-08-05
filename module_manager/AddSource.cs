@@ -1,4 +1,12 @@
-﻿using System;
+﻿//============================================================================//
+//                              ADD SOURCE                                    //
+//                                                                            //
+// - Choose between Gitblit, Bitbucket and Azure DevOps                       //
+// - Fill in name, url, username and password/token                           //
+// - Add source to list                                                       //
+//============================================================================//
+
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -20,8 +28,12 @@ namespace module_manager
             InitializeComponent();
             config = new Config();
             functions = new Functions();
+            Icon = Icon.ExtractAssociatedIcon("logo.ico");
         }
 
+        /// <summary>
+        /// Validate and add source
+        /// </summary>
         private void MetroButton1_Click(object sender, EventArgs e)
         {
             var checkedButton = panel1.Controls.OfType<RadioButton>().FirstOrDefault(r => r.Checked);
@@ -46,6 +58,7 @@ namespace module_manager
             }
         }
 
+        // GitBlit radio button
         private void RadioButton1_CheckedChanged(object sender, EventArgs e)
         {
             panel2.Enabled = true;
@@ -60,6 +73,7 @@ namespace module_manager
             this.Close();
         }
 
+        // BitBucket radio button
         private void RadioButton2_CheckedChanged(object sender, EventArgs e)
         {
             panel2.Enabled = true;
@@ -69,6 +83,7 @@ namespace module_manager
             textBox2.Text = "https://bitbucket.org/{organization}/";
         }
 
+        // Devops radio button
         private void RadioButton3_CheckedChanged(object sender, EventArgs e)
         {
             panel2.Enabled = true;
@@ -78,6 +93,7 @@ namespace module_manager
             textBox2.Text = "https://dev.azure.com/{organization}/{project}/";
         }
 
+        // Details on devops token
         private void Button1_Click(object sender, EventArgs e)
         {
             Process.Start("https://docs.microsoft.com/en-us/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate?view=azure-devops");
@@ -88,6 +104,7 @@ namespace module_manager
 
         }
 
+        /*
         private void RadioButton4_CheckedChanged(object sender, EventArgs e)
         {
             panel2.Enabled = true;
@@ -96,5 +113,6 @@ namespace module_manager
             metroLabel5.Text = "Mot de passe";
             textBox2.Text = "https://github.com/{username}/";
         }
+        */
     }
 }
