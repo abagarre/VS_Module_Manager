@@ -101,6 +101,8 @@
             // 
             // panel2
             // 
+            this.panel2.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.panel2.BackColor = System.Drawing.SystemColors.Control;
             this.panel2.Location = new System.Drawing.Point(35, 94);
             this.panel2.Name = "panel2";
@@ -109,13 +111,14 @@
             // 
             // textBox4
             // 
+            this.textBox4.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.textBox4.Font = new System.Drawing.Font("Verdana", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.textBox4.Location = new System.Drawing.Point(285, 175);
             this.textBox4.Name = "textBox4";
             this.textBox4.Size = new System.Drawing.Size(381, 21);
             this.textBox4.TabIndex = 15;
             this.textBox4.Text = "C:\\Users\\STBE\\Downloads\\SmartGit\\.settings\\repositories.xml";
-            this.textBox4.TextChanged += new System.EventHandler(this.TextBox4_TextChanged);
             // 
             // label7
             // 
@@ -129,6 +132,7 @@
             // 
             // metroButton1
             // 
+            this.metroButton1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.metroButton1.Location = new System.Drawing.Point(672, 175);
             this.metroButton1.Name = "metroButton1";
             this.metroButton1.Size = new System.Drawing.Size(72, 21);
@@ -161,6 +165,7 @@
             // 
             // metroButton5
             // 
+            this.metroButton5.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.metroButton5.Location = new System.Drawing.Point(672, 213);
             this.metroButton5.Name = "metroButton5";
             this.metroButton5.Size = new System.Drawing.Size(72, 21);
@@ -171,6 +176,8 @@
             // 
             // textBox3
             // 
+            this.textBox3.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.textBox3.Font = new System.Drawing.Font("Verdana", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.textBox3.Location = new System.Drawing.Point(285, 213);
             this.textBox3.Name = "textBox3";
@@ -224,7 +231,6 @@
             this.radioButton3.TabStop = true;
             this.radioButton3.Text = "Dossier local";
             this.radioButton3.UseVisualStyleBackColor = true;
-            this.radioButton3.CheckedChanged += new System.EventHandler(this.RadioButton3_CheckedChanged);
             // 
             // radioButton2
             // 
@@ -237,7 +243,6 @@
             this.radioButton2.TabStop = true;
             this.radioButton2.Text = "Sourcetree";
             this.radioButton2.UseVisualStyleBackColor = true;
-            this.radioButton2.CheckedChanged += new System.EventHandler(this.RadioButton2_CheckedChanged);
             // 
             // radioButton1
             // 
@@ -250,7 +255,6 @@
             this.radioButton1.TabStop = true;
             this.radioButton1.Text = "SmartGit";
             this.radioButton1.UseVisualStyleBackColor = true;
-            this.radioButton1.CheckedChanged += new System.EventHandler(this.RadioButton1_CheckedChanged);
             // 
             // label2
             // 
@@ -264,6 +268,8 @@
             // 
             // textBox1
             // 
+            this.textBox1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.textBox1.Location = new System.Drawing.Point(285, 254);
             this.textBox1.Name = "textBox1";
             this.textBox1.Size = new System.Drawing.Size(381, 20);
@@ -271,6 +277,7 @@
             // 
             // metroButton2
             // 
+            this.metroButton2.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.metroButton2.Location = new System.Drawing.Point(672, 254);
             this.metroButton2.Name = "metroButton2";
             this.metroButton2.Size = new System.Drawing.Size(72, 20);

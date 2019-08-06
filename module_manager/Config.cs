@@ -337,7 +337,18 @@ namespace module_manager
                     serv["name"] = newName;
                     serv["url"] = URL;
                     serv["username"] = username;
-                    File.Move(Path.Combine(GetAppData(), ".cred" + oldName), Path.Combine(GetAppData(), ".cred" + newName));
+                    if (serv["type"].ToString() == "gitblit")
+                    {
+                        Uri myUri = new Uri(URL);
+                        serv["unique"] = myUri.Host;
+                    }
+                    else
+                    {
+                        URL = URL.Remove(URL.Length - 1);
+                        serv["unique"] = URL.Substring(URL.LastIndexOf("/") + 1, URL.Length - URL.LastIndexOf("/") - 1);
+                    }
+                    if (File.Exists(Path.Combine(GetAppData(), ".cred" + oldName)))
+                        File.Move(Path.Combine(GetAppData(), ".cred" + oldName), Path.Combine(GetAppData(), ".cred" + newName));
                     break;
                 }
             }

@@ -1,7 +1,6 @@
 ﻿//============================================================================//
 //                              MAIN FORM                                     //
 //                                                                            //
-// - Load project from distant repositories or from URL                       //
 //============================================================================//
 
 using Microsoft.WindowsAPICodePack.Taskbar;

@@ -98,11 +98,6 @@ namespace module_manager
             this.Close();
         }
 
-        private void RadioButton1_CheckedChanged(object sender, EventArgs e)
-        {
-
-        }
-
         private void MetroButton2_Click(object sender, EventArgs e)
         {
             if (folderBrowserDialog1.ShowDialog() == DialogResult.OK)
@@ -112,19 +107,5 @@ namespace module_manager
             }
         }
 
-        private void RadioButton3_CheckedChanged(object sender, EventArgs e)
-        {
-
-        }
-
-        private void TextBox4_TextChanged(object sender, EventArgs e)
-        {
-
-        }
-
-        private void RadioButton2_CheckedChanged(object sender, EventArgs e)
-        {
-
-        }
     }
 }

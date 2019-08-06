@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -93,6 +94,29 @@ namespace module_manager
         {
             flowLayoutPanel1.Controls.Clear();
             Form6_Load(sender, e);
+        }
+
+        private void MetroButton3_Click(object sender, EventArgs e)
+        {
+            if(MessageBox.Show("Êtes-vous sûr de vouloir réinitialiser les sources enregistrées ? Vous devrez les ajouter manuellement pour les retrouver.", "Réinitialisation",MessageBoxButtons.YesNo,MessageBoxIcon.Question) == DialogResult.Yes)
+            {
+                string json;
+                json = File.ReadAllText(config.GetServersPath());
+                JObject conf = JObject.Parse(json);
+                JArray list = (JArray)conf["servers"];
+                foreach (JObject serv in list)
+                {
+                    if (File.Exists(Path.Combine(config.GetAppData(), ".cred" + serv["name"])))
+                        File.Delete(Path.Combine(config.GetAppData(), ".cred" + serv["name"]));
+                }
+                int counter = list.Count();
+                for(int i = 0; i<counter; i++)
+                {
+                    list[0].Remove();
+                }
+                File.WriteAllText(config.GetServersPath(), conf.ToString());
+                Close();
+            }
         }
     }
 }
