@@ -19,13 +19,13 @@ namespace module_manager
     public partial class MainForm : Form
     {
         public static List<Repo> repoList;          // Liste des dépots distants
-        private List<string> clientList;            // Liste des projets ouverts dans SmartGit
+        private List<string> clientList;            // Liste des projets ouverts dans <SmartGit|SourceTree|Local>
         public static Functions functions;
         Config config;
         bool bg3IsWorking = false;                  // Etat du worker3 (charge le README)
         public static string selectedPath = "";     // Chemin du noeud sélectionné
-        List<Repo> repositories = new List<Repo>();
-        List<Repo> modules = new List<Repo>();
+        List<Repo> repositories = new List<Repo>(); // Liste des dépots locaux
+        List<Repo> modules = new List<Repo>();      // Liste des modules
 
         public MainForm()
         {
@@ -73,17 +73,17 @@ namespace module_manager
             webBrowser1.Navigate("about:blank");
             try
             {
-                if(config.GetClient() == "smartgit")
+                switch(config.GetClient())
                 {
-                    clientList = functions.GetSmartGitList();
-                }
-                else if(config.GetClient() == "sourcetree")
-                {
-                    clientList = functions.GetSourceTreetList();
-                }
-                else if(config.GetClient() == "dossierlocal")
-                {
-                    clientList = functions.GetLocalList(config.GetLocalRepo());
+                    case "smartgit":
+                        clientList = functions.GetSmartGitList();
+                        break;
+                    case "sourcetree":
+                        clientList = functions.GetSourceTreetList();
+                        break;
+                    case "dossierlocal":
+                        clientList = functions.GetLocalList(config.GetLocalRepo());
+                        break;
                 }
                 foreach (string chemin in clientList)
                 {
@@ -164,9 +164,7 @@ namespace module_manager
         private void BackgroundWorker1_DoWork(object sender, DoWorkEventArgs e)
         {
             BackgroundWorker worker = sender as BackgroundWorker;
-
             string currentServ = config.GetCurrentSource();
-
             List<string> allNames = config.GetAllNames();
             int servNb = allNames.Count();
             int j = 0;
@@ -197,9 +195,8 @@ namespace module_manager
                         treeView2.Invoke(new Action(() => treeView2.Nodes.Add(new TreeNode(repo.Name) { Tag = repo }))) ;
                     }
                     else
-                    {
                         repo.Type = "project";
-                    }
+
                     repoList.Add(repo);
                     worker.ReportProgress(i * 100 / (servNb * repos.Count()) + j * 100 / servNb);
                     i++;
@@ -239,9 +236,7 @@ namespace module_manager
         }
 
         ///<summary>
-        ///Au clic sur un noeud du TreeView1 (projets) :<para />
-        /// - Affiche le README<para />
-        /// - Charge les dépendances
+        ///Au clic sur un noeud du TreeView1 (projets) : affiche le README, charge les dépendances
         ///</summary>
         private void TreeView1_AfterSelect(object sender, TreeViewEventArgs e)
         {
@@ -279,10 +274,8 @@ namespace module_manager
             try
             {
                 if (!bg3IsWorking)
-                {
                     // Si la tache n'est pas déjà en cours, charge le README dans le WebBrowser
                     backgroundWorker3.RunWorkerAsync(argument: ((Repo)e.Node.Tag).Id);
-                }
             } catch (Exception) { }
             dataGridView1.Rows.Clear();
             dataGridView1.Refresh();
@@ -296,10 +289,8 @@ namespace module_manager
                     foreach(Repo module in repo.Modules)
                     {
                         if(module.Equal((Repo)e.Node.Tag))
-                        {
                             // Si le module sélectionné apparait dans les dépendances d'un projet, affiche ce projet dans le DataGridView
-                            dataGridView1.Rows.Add(repo.Name, "", module.Tag ?? (((Repo)e.Node.Tag).Tag ?? module.Branch), "Détails", repo.Url, repo.Id);
-                        }
+                            dataGridView1.Rows.Add(repo.Name, "", module.Tag ?? ((Repo)e.Node.Tag).Tag ?? module.Branch, "Détails", repo.Url, repo.Id);
                     }
                     i++;
                 }
@@ -309,9 +300,7 @@ namespace module_manager
                 List<Repo> submods = new List<Repo>();
                 // Si le noeud sélectionné est un projet
                 if (((Repo)e.Node.Tag).Localisation == Repo.Loc.local)
-                {
                     submods = ((Repo)e.Node.Tag).Modules; // Récupère la liste des sous-modules locaux
-                }
                 List<Repo> distantModules = new List<Repo>();
                 metroLabel4.Text = "Modules présents dans le projet";
                 int i = 0;
@@ -337,21 +326,17 @@ namespace module_manager
                             if (!added)
                                 // Si il n'est présent que sur le serveur (autorise l'affichage des dépendances)
                                 dataGridView1.Rows.Add(module.Name, "Distant", module.Tag ?? module.Branch, "Dépendances", module.Url, module.Id);
-
                             distantModules.Add(module);
                         }
                         break;
                     }
                     i++;
                 }
-
                 foreach (Repo submodule in submods)
                 {
                     if(!submodule.IsInList(distantModules))
-                    {
                         // Si le module n'est présent que localement (autorise la suppression locale)
                         dataGridView1.Rows.Add(submodule.Name, "Local", submodule.Tag ?? submodule.Branch, "Dépendances", submodule.Url, submodule.Id);
-                    }
                 }
             }
         }
@@ -420,9 +405,7 @@ namespace module_manager
                     foreach (Repo proj in modules)
                     {
                         if(proj.Id.ToString() == id)
-                        {
                             repo = proj;
-                        }
                     }
                     if(repo.Name == null)
                     {
@@ -433,9 +416,7 @@ namespace module_manager
                         foreach (Repo module in proj.Modules)
                         {
                             if (module.Equal(repo))
-                            {
                                 dataGridView1.Rows.Add(proj.Name, "", module.Tag ?? module.Branch, "Détails", proj.Url, proj.Id);
-                            }
                         }
                         i++;
                     }
@@ -473,7 +454,7 @@ namespace module_manager
         /// </summary>
         private void MetroButton1_Click(object sender, EventArgs e)
         {
-            var frm = new AddSubmodule((Repo)treeView1.SelectedNode.Tag);
+            AddSubmodule frm = new AddSubmodule((Repo)treeView1.SelectedNode.Tag);
             frm.Location = this.Location;
             frm.StartPosition = FormStartPosition.Manual;
             frm.FormClosed += AddModuleFormClosed; // Recharge la liste des modules quand la fenêtre est fermée
@@ -495,7 +476,6 @@ namespace module_manager
             {
                 TreeNode childNode = new TreeNode(submodule.Name);
                 childNode.Tag = submodule;
-
                 ContextMenuStrip contextMenuStrip = new ContextMenuStrip();
                 contextMenuStrip.Items.Add("Ouvrir (local)");
                 contextMenuStrip.Items.Add("Ouvrir (URL)");
@@ -506,15 +486,12 @@ namespace module_manager
                 contextMenuStrip.Name = submodule.Path;
                 contextMenuStrip.Tag = submodule;
                 childNode.ContextMenuStrip = contextMenuStrip;
-
                 selectedNode.Nodes.Add(childNode);
-                
                 ((Repo)selectedNode.Tag).Modules.Add(submodule);
                 if (!submodule.IsInList(modules))
                     modules.Add(submodule);
                 j++;
             }
-
             treeView1.SelectedNode = selectedNode;
         }
 
@@ -550,21 +527,20 @@ namespace module_manager
                 string line = process.StandardOutput.ReadLine();
                 // del_sub.bat effectue 4 opérations et affiche un status entre chaque
                 Console.WriteLine(line);
-                if (line == "\"status 25\"")
+                switch(line)
                 {
-                    worker.ReportProgress(25);
-                }
-                else if (line == "\"status 50\"")
-                {
-                    worker.ReportProgress(50);
-                }
-                else if (line == "\"status 75\"")
-                {
-                    worker.ReportProgress(75);
-                }
-                else if (line == "\"status 100\"")
-                {
-                    worker.ReportProgress(100);
+                    case "\"status 25\"":
+                        worker.ReportProgress(25);
+                        break;
+                    case "\"status 50\"":
+                        worker.ReportProgress(50);
+                        break;
+                    case "\"status 75\"":
+                        worker.ReportProgress(75);
+                        break;
+                    case "\"status 100\"":
+                        worker.ReportProgress(100);
+                        break;
                 }
             }
         }
@@ -576,7 +552,6 @@ namespace module_manager
 
         private void BackgroundWorker2_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
-            
             TreeNode selectedNode = treeView1.SelectedNode;
             treeView1.SelectedNode = null;
             treeView1.SelectedNode = selectedNode;
@@ -589,12 +564,9 @@ namespace module_manager
             TreeNode node = treeView1.SelectedNode;
             treeView1.SelectedNode = null;
             node.Remove();
-            
             if(e.Result.ToString().Length != 0)
-            {
                 // Affiche erreurs et warning dans une MessageBox
                 MessageBox.Show(e.Result.ToString(), "Message", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            }
         }
 
         private void ToolStripSplitButton2_ButtonClick(object sender, EventArgs e)
@@ -653,9 +625,7 @@ namespace module_manager
                 foreach (Repo mod in proj.Modules)
                 {
                     if (((Repo)e.Node.Tag).Equal(mod))
-                    {
                         dataGridView1.Rows.Add(proj.Name, "", mod.Tag, "Détails", proj.Url, proj.Id);
-                    }
                 }
                 i++;
             }
@@ -673,9 +643,7 @@ namespace module_manager
             {
                 var directories = Directory.GetDirectories(path, ".git");
                 if (directories.Length == 0) // Si le dossier n'est pas un repo git
-                {
                     MessageBox.Show("Le répertoire sélectionné n'est pas un dépôt Git", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
                 else
                 {
                     string chemin = path;
@@ -683,8 +651,6 @@ namespace module_manager
                     repo = repo.Init(chemin);
                     string name = chemin.Substring(chemin.LastIndexOf("\\") + 1, chemin.Length - chemin.LastIndexOf("\\") - 1).Replace(".git", "");
                     TreeNode treeNode = new TreeNode(name);
-                    //treeNode.Name = chemin;      // Précise le chemin du projet dans le paramètre Name du noeud
-
                     GenerateNode(repo, chemin, treeNode);
                     treeView1.Nodes.Add(treeNode);  // Ajout du projet au TreeView
                     if (!repo.IsInList(repositories))
@@ -805,9 +771,7 @@ namespace module_manager
             try
             {
                 if (webBrowser1.Document != null)
-                {
                     webBrowser1.Document.Write(string.Empty);
-                }
                 webBrowser1.DocumentText = e.Result.ToString();
             }
             catch (Exception ex)
@@ -827,7 +791,7 @@ namespace module_manager
         /// </summary>
         private void GérerLesSourcesToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            var frm = new ManageSrcForm();
+            ManageSrcForm frm = new ManageSrcForm();
             frm.Location = this.Location;
             frm.StartPosition = FormStartPosition.Manual;
             frm.Show();
@@ -838,7 +802,7 @@ namespace module_manager
         /// </summary>
         private void ParamètresToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            var frm = new Settings();
+            Settings frm = new Settings();
             frm.Location = this.Location;
             frm.StartPosition = FormStartPosition.Manual;
             frm.Show();
@@ -860,8 +824,6 @@ namespace module_manager
         /// <summary>
         /// Ouvre dans le navigateur le dépot sélectionné
         /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
         private void URLServeurToolStripMenuItem_Click(object sender, EventArgs e)
         {
             if (treeView1.SelectedNode != null)
@@ -940,7 +902,6 @@ namespace module_manager
                     ((Repo)treeView1.SelectedNode.Tag).ReadmeIndex = 1;
             }
             catch (Exception) { }
-
             TreeNode treeNode = treeView1.SelectedNode;
             treeView1.SelectedNode = null;
             treeView1.SelectedNode = treeNode;
@@ -983,7 +944,6 @@ namespace module_manager
             string projPath = "";
             treeView1.Invoke(new Action(() => modPath = ((Repo)treeView1.SelectedNode.Tag).Path));
             treeView1.Invoke(new Action(() => projPath = ((Repo)treeView1.SelectedNode.Parent.Tag).Path));
-            
             Process process = new Process();
             process.StartInfo.FileName = config.GetAppData() + "mv.bat";
             process.StartInfo.UseShellExecute = false;
@@ -995,7 +955,6 @@ namespace module_manager
             process.StartInfo.Arguments ="\"" + modPath + "\" \"" + e.Argument.ToString() + "\"";
             process.Start();
             e.Result = process.StandardError.ReadToEnd(); // Récupère les erreurs et warning du process
-            
         }
 
         private void BackgroundWorker4_ProgressChanged(object sender, ProgressChangedEventArgs e)

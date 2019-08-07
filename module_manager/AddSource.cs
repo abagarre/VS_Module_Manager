@@ -7,14 +7,9 @@
 //============================================================================//
 
 using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace module_manager
@@ -42,7 +37,7 @@ namespace module_manager
                 if (functions.SavePassword(textBox4.Text,textBox1.Text))
                 {
                     if(config.AddServer(checkedButton.Text.ToLower(), textBox1.Text, textBox2.Text, textBox3.Text))
-                        this.Close();
+                        Close();
                     else
                         MessageBox.Show("Un serveur de ce nom existe déjà", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
@@ -52,7 +47,7 @@ namespace module_manager
             else if(textBox4.Text == "")
             {
                 if (config.AddServer(checkedButton.Text.ToLower(), textBox1.Text, textBox2.Text, textBox3.Text))
-                    this.Close();
+                    Close();
                 else
                     MessageBox.Show("Un serveur de ce nom existe déjà", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
@@ -70,7 +65,7 @@ namespace module_manager
 
         private void MetroButton2_Click(object sender, EventArgs e)
         {
-            this.Close();
+            Close();
         }
 
         // BitBucket radio button
@@ -101,18 +96,6 @@ namespace module_manager
 
         private void AddSource_Load(object sender, EventArgs e)
         {
-
         }
-
-        /*
-        private void RadioButton4_CheckedChanged(object sender, EventArgs e)
-        {
-            panel2.Enabled = true;
-            metroButton1.Enabled = true;
-            button1.Visible = false;
-            metroLabel5.Text = "Mot de passe";
-            textBox2.Text = "https://github.com/{username}/";
-        }
-        */
     }
 }

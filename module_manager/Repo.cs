@@ -9,8 +9,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace module_manager
 {
@@ -18,7 +16,7 @@ namespace module_manager
     {
         public enum Loc : int { local = 0, distant = 1, both = -1 };
 
-        public Guid Id { get; set; }
+        public Guid Id { get; set; }        // unique id
         public string Name { get; set; }    // last part of the URL
         public string Server { get; set; }  // <gitblit|bitbucket|devops>
         public string ServerName { get; set; }
@@ -41,6 +39,9 @@ namespace module_manager
             return false;
         }
 
+        /// <summary>
+        /// Verifie si un Repo est présent dans une liste de Repo
+        /// </summary>
         public bool IsInList(List<Repo> repos)
         {
             return repos.Any(mod => mod.Equal(this));
@@ -84,9 +85,7 @@ namespace module_manager
                 prev = line;
             }
             if(Name == null)
-            {
                 Name = path.Substring(path.LastIndexOf(@"\") + 1, path.Length - path.LastIndexOf(@"\") - 1);
-            }
             conf.Close();
             using (var reposit = new Repository(path))
             {
@@ -109,5 +108,23 @@ namespace module_manager
             }
             return this;
         }
+
+        public Repo Init(string Name, string Server, string Url, string Path, string Type, string Tag, string Branch, int ReadmeIndex, Loc Localisation)
+        {
+            return new Repo
+            {
+                Id = Guid.NewGuid(),
+                Name = Name,
+                Server = Server,
+                Url = Url,
+                Path = Path,
+                Type = Type,
+                Tag = Tag,
+                Branch = Branch,
+                ReadmeIndex = ReadmeIndex,
+                Localisation = Localisation
+            };
+        }
+
     }
 }

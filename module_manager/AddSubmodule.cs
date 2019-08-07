@@ -13,8 +13,6 @@ using System.Data;
 using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace module_manager
@@ -24,7 +22,7 @@ namespace module_manager
         List<Repo> moduleList = new List<Repo>();
         List<Repo> checkedList = new List<Repo>();
         List<Repo> repoList = new List<Repo>();
-        Repo rep;
+        Repo rep = new Repo();
         string selectedPath = "";
         Functions functions;
         Config config;
@@ -44,23 +42,11 @@ namespace module_manager
             config = new Config();
             try { functions = MainForm.functions; }
             catch (Exception) { functions = new Functions(); }
-
             try { repoList = MainForm.repoList.ToList(); }
-            catch (Exception)
-            {
-                Console.WriteLine("Can't retreive repoList from MainForm");
-                repoList = functions.GetRepoList();
-            }
-
+            catch (Exception) { repoList = functions.GetRepoList(); }
             treeView1.DrawMode = TreeViewDrawMode.OwnerDrawText;
             treeView1.DrawNode += new DrawTreeNodeEventHandler(TreeView1_DrawNode);
             backgroundWorker1.RunWorkerAsync();
-        }
-
-
-        private void CloseForm(object sender, FormClosedEventArgs e)
-        {
-            this.Close();
         }
 
         /// <summary>

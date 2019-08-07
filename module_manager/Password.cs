@@ -45,10 +45,7 @@ namespace module_manager
         private void CheckEnterKeyPress(object sender, KeyPressEventArgs e)
         {
             if (e.KeyChar == (char)Keys.Return)
-
-            {
                 MetroButton1_Click(sender, e);
-            }
         }
     }
 }

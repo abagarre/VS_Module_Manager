@@ -6,14 +6,10 @@
 
 using Newtonsoft.Json.Linq;
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data;
 using System.Drawing;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace module_manager
@@ -21,6 +17,7 @@ namespace module_manager
     public partial class Settings : Form
     {
         Config config;
+
         public Settings()
         {
             InitializeComponent();
@@ -34,18 +31,11 @@ namespace module_manager
             json = File.ReadAllText(config.GetConfigPath());
             JObject conf = JObject.Parse(json);
             if((string) conf["client"] == "smartgit")
-            {
                 radioButton1.Checked = true;
-            }
             else if((string)conf["client"] == "sourcetree")
-            {
                 radioButton2.Checked = true;
-            }
             else if ((string)conf["client"] == "dossierlocal")
-            {
                 radioButton3.Checked = true;
-            }
-
             textBox4.Text = config.GetSmartGitRepo();
             textBox3.Text = config.GetSourceTreeRepo();
             textBox1.Text = config.GetLocalRepo();
@@ -60,11 +50,6 @@ namespace module_manager
             }
         }
 
-        private void OpenFileDialog1_FileOk(object sender, CancelEventArgs e)
-        {
-
-        }
-
         private void MetroButton5_Click(object sender, EventArgs e)
         {
             if (openFileDialog1.ShowDialog() == DialogResult.OK)
@@ -76,7 +61,7 @@ namespace module_manager
 
         private void MetroButton4_Click(object sender, EventArgs e)
         {
-            this.Close();
+            Close();
         }
 
         private void MetroButton3_Click(object sender, EventArgs e)
@@ -88,14 +73,12 @@ namespace module_manager
             conf["sourcetree"] = textBox3.Text;
             conf["local"] = textBox1.Text;
             File.WriteAllText(config.GetSettingsPath(), conf.ToString());
-
             var checkedButton = panel3.Controls.OfType<RadioButton>().FirstOrDefault(r => r.Checked);
             json = File.ReadAllText(config.GetConfigPath());
             JObject confg = JObject.Parse(json);
             confg["client"] = checkedButton.Text.ToLower().Replace(" ","");
             File.WriteAllText(config.GetConfigPath(), confg.ToString());
-
-            this.Close();
+            Close();
         }
 
         private void MetroButton2_Click(object sender, EventArgs e)
@@ -106,6 +89,5 @@ namespace module_manager
                 textBox1.Text = path;
             }
         }
-
     }
 }

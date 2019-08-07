@@ -76,21 +76,17 @@ namespace module_manager
                     JObject conf = JObject.Parse(json);
                     conf[checkedItem] = textBox1.Text;
                     File.WriteAllText(config.GetSettingsPath(), conf.ToString());
-
                     var checkedButton = panel2.Controls.OfType<RadioButton>().FirstOrDefault(r => r.Checked);
                     json = File.ReadAllText(config.GetConfigPath());
                     JObject confg = JObject.Parse(json);
                     confg["client"] = checkedButton.Text.ToLower().Replace(" ", "");
                     File.WriteAllText(config.GetConfigPath(), confg.ToString());
-
                     panel1.Visible = false;
                     panel3.Visible = true;
                     metroButton2.Enabled = false;
                 }
                 else
-                {
                     label6.Visible = true;
-                }
             }
             if(panel3.Visible && textBox5.Text != "" && textBox2.Text != "" && textBox3.Text != "")
             {
@@ -105,9 +101,7 @@ namespace module_manager
                         this.Close();
                     }
                     else
-                    {
                         MessageBox.Show("Un serveur de ce nom existe déjà", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    }
                 }
             }
         }
@@ -159,15 +153,6 @@ namespace module_manager
             button1.Visible = true;
             metroLabel5.Text = "Token";
             textBox2.Text = "https://dev.azure.com/{organization}/{project}/";
-        }
-
-        private void RadioButton4_CheckedChanged(object sender, EventArgs e)
-        {
-            panel4.Enabled = true;
-            metroButton2.Enabled = true;
-            button1.Visible = false;
-            metroLabel5.Text = "Mot de passe";
-            textBox2.Text = "https://github.com/{username}/";
         }
 
         private void Button1_Click(object sender, EventArgs e)

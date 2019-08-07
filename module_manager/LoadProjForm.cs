@@ -16,13 +16,11 @@ namespace module_manager
     {
         internal string path = "";
         List<Repo> repoList = new List<Repo>();
-        Functions functions;
         internal string id = "";
 
         public LoadProjForm()
         {
             InitializeComponent();
-            functions = new Functions();
             Icon = Icon.ExtractAssociatedIcon("logo.ico");
         }
 
@@ -39,10 +37,10 @@ namespace module_manager
 
         private void MetroButton1_Click(object sender, EventArgs e)
         {
-            if(textBox1.Text.Length !=0)
+            if(textBox1.Text.Length != 0)
             {
                 path = textBox1.Text;
-                this.Close();
+                Close();
             }
         }
 
@@ -51,7 +49,7 @@ namespace module_manager
             if (e.RowIndex >= 0 && e.ColumnIndex == 0)
             {
                 id = dataGridView1[e.ColumnIndex + 2, e.RowIndex].Value.ToString();
-                this.Close();
+                Close();
             }
         }
     }

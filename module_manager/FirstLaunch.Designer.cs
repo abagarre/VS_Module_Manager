@@ -54,7 +54,6 @@
             this.metroLabel3 = new MetroFramework.Controls.MetroLabel();
             this.metroLabel2 = new MetroFramework.Controls.MetroLabel();
             this.panel5 = new System.Windows.Forms.Panel();
-            this.radioButton4 = new System.Windows.Forms.RadioButton();
             this.radioButton5 = new System.Windows.Forms.RadioButton();
             this.radioButton6 = new System.Windows.Forms.RadioButton();
             this.radioButton7 = new System.Windows.Forms.RadioButton();
@@ -343,7 +342,6 @@
             // 
             // panel5
             // 
-            this.panel5.Controls.Add(this.radioButton4);
             this.panel5.Controls.Add(this.radioButton5);
             this.panel5.Controls.Add(this.radioButton6);
             this.panel5.Controls.Add(this.radioButton7);
@@ -351,20 +349,6 @@
             this.panel5.Name = "panel5";
             this.panel5.Size = new System.Drawing.Size(320, 33);
             this.panel5.TabIndex = 13;
-            // 
-            // radioButton4
-            // 
-            this.radioButton4.AutoSize = true;
-            this.radioButton4.Font = new System.Drawing.Font("Century Gothic", 9F);
-            this.radioButton4.Location = new System.Drawing.Point(240, 3);
-            this.radioButton4.Name = "radioButton4";
-            this.radioButton4.Size = new System.Drawing.Size(67, 21);
-            this.radioButton4.TabIndex = 3;
-            this.radioButton4.TabStop = true;
-            this.radioButton4.Text = "GitHub";
-            this.radioButton4.UseVisualStyleBackColor = true;
-            this.radioButton4.Visible = false;
-            this.radioButton4.CheckedChanged += new System.EventHandler(this.RadioButton4_CheckedChanged);
             // 
             // radioButton5
             // 
@@ -473,7 +457,6 @@
         private MetroFramework.Controls.MetroLabel metroLabel3;
         private MetroFramework.Controls.MetroLabel metroLabel2;
         private System.Windows.Forms.Panel panel5;
-        private System.Windows.Forms.RadioButton radioButton4;
         private System.Windows.Forms.RadioButton radioButton5;
         private System.Windows.Forms.RadioButton radioButton6;
         private System.Windows.Forms.RadioButton radioButton7;

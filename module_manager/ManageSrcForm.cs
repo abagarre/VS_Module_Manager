@@ -7,27 +7,19 @@
 
 using Newtonsoft.Json.Linq;
 using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace module_manager
 {
     public partial class ManageSrcForm : Form
     {
-
-        Functions functions;
         Config config;
         public ManageSrcForm()
         {
             InitializeComponent();
-            functions = new Functions();
             config = new Config();
             Icon = Icon.ExtractAssociatedIcon("logo.ico");
         }
@@ -69,7 +61,7 @@ namespace module_manager
         {
             string name = (sender as Button).Name;
             string[] args = { name };
-            var frm = new DetailsSrc(args);
+            DetailsSrc frm = new DetailsSrc(args);
             frm.Location = this.Location;
             frm.StartPosition = FormStartPosition.Manual;
             frm.Show();

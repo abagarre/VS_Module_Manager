@@ -2,9 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace module_manager
 {
@@ -49,7 +47,6 @@ namespace module_manager
             {
                 return "";
             }
-            
         }
 
         public string GetSourceTreeRepo()
@@ -143,9 +140,7 @@ namespace module_manager
             foreach (JObject serv in list)
             {
                 if (serv["name"].ToString() == name)
-                {
                     return serv["url"].ToString();
-                }
             }
             return "";
         }
@@ -173,9 +168,7 @@ namespace module_manager
             foreach (JObject serv in list)
             {
                 if (serv["name"].ToString() == name)
-                {
                     return serv["username"].ToString();
-                }
             }
             return "";
         }
@@ -274,7 +267,6 @@ namespace module_manager
             json = File.ReadAllText(GetConfigPath());
             JObject conf = JObject.Parse(json);
             conf["source"] = name;
-
             string servs = File.ReadAllText(GetServersPath());
             JObject servlist = JObject.Parse(servs);
             foreach (JObject obj in servlist["servers"])
