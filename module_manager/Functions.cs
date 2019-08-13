@@ -11,6 +11,7 @@ using HtmlAgilityPack;
 using System.Xml.Linq;
 using System.Linq;
 using LibGit2Sharp;
+using System.Diagnostics;
 
 public class Functions
 {
@@ -74,7 +75,7 @@ public class Functions
                 Query(type,url, source);
             Console.WriteLine(type + " query error : " + ex.Message);
         }
-        catch (WebException) { }
+        catch (WebException) { Console.WriteLine(source + " web error : " + url); }
         return "";
 
     }
@@ -189,14 +190,21 @@ public class Functions
     public List<Repo> BitBucketRepoList()
     {
         List<Repo> repos = new List<Repo>();
-        string url = "https://api.bitbucket.org/2.0/repositories/" + config.GetUserName();
-        string json = Query("bitbucket",url, config.GetCurrentSource());
+        string url = "https://api.bitbucket.org/2.0/repositories/" + config.GetUserName() + "?pagelen=100";
+        string json = "";
+        try
+        {
+            json = Query("bitbucket", url, config.GetCurrentSource());
+        }
+        catch (Exception ex) { Console.WriteLine("BitBucketRepoList error : " + ex.Message); };
+        
         if(json != "")
         {
             JObject obj = JObject.Parse(json);
             JArray list = (JArray)obj["values"];
             foreach (JObject ob in list)
             {
+                Console.WriteLine(ob["name"].ToString());
                 Repo repo = new Repo
                 {
                     Id = Guid.NewGuid(),
@@ -265,12 +273,14 @@ public class Functions
         try
         {
             json = Query("devops", config.GetServerUrl() + "_apis/git/repositories?api-version=5.0", config.GetCurrentSource());
+            Console.WriteLine(json);
             if (json != "")
             {
                 JObject obj = JObject.Parse(json);
                 JArray list = (JArray)obj["value"];
                 foreach (JObject ob in list)
                 {
+                    Console.WriteLine(ob["name"].ToString());
                     Repo repo = new Repo
                     {
                         Id = Guid.NewGuid(),
@@ -288,12 +298,12 @@ public class Functions
                     } catch (Exception) { }
                     try
                     {
-                        string repoUrl = config.GetServerUrl(repo.ServerName) + @"_apis/git/repositories/" + repo.Name + @"/commits?api-version=5.0";
+                        string repoUrl = config.GetServerUrl() + @"_apis/git/repositories/" + repo.Name + @"/commits?api-version=5.0";
                         string result = Query("devops", repoUrl, repo.ServerName);
                         JObject jsonCommit = JObject.Parse(result);
                         JArray valuesCommit = (JArray)jsonCommit["value"];
                         string commit = valuesCommit[0]["commitId"].ToString();
-                        result = Query("devops", config.GetServerUrl(repo.ServerName) + "_apis/git/repositories/" + repo.Name + "/refs?filter=tags/&peelTags=true&api-version=5.0", repo.ServerName);
+                        result = Query("devops", config.GetServerUrl() + "_apis/git/repositories/" + repo.Name + "/refs?filter=tags/&peelTags=true&api-version=5.0", config.GetCurrentSource());
                         JObject jsonTag = JObject.Parse(result);
                         JArray values = (JArray)jsonTag["value"];
                         foreach (JObject obTag in values)
@@ -595,10 +605,19 @@ public class Functions
             if (branch != "master")
                 return GetSubmodList("master", rep, proj);
         }
-        if (result.Length == 0 && branch != "master")
-            return GetSubmodList("master", rep, proj);
+        Console.WriteLine(result);
+        if (result.Length == 0)
+        {
+            if (branch != "master")
+                return GetSubmodList("master", rep, proj);
+            else
+                return repos;
+        }
         Repo repo = new Repo();
         string commit = "";
+
+        Console.WriteLine("okokok");
+
         using (StringReader reader = new StringReader(result))
         {
             string ligne;
@@ -615,21 +634,13 @@ public class Functions
                     if (repo.Name != null)
                     {
                         repo.ServerName = GetServerName(repo);
-                        try
+                        if (repo.Server == "devops")
                         {
-                            string tags = Query("bitbucket", "https://api.bitbucket.org/2.0/repositories/" + config.GetUserName() + "/" + repo.Name + "/refs/tags", config.GetCurrentSource());
-                            JObject json = JObject.Parse(tags);
-                            JArray values = (JArray)json["values"];
-                            foreach (JObject ob in values)
-                            {
-                                if (ob["target"]["hash"].ToString() == commit)
-                                {
-                                    repo.Tag = ob["name"].ToString();
-                                    break;
-                                }
-                            }
+                            repo.Tag = GetDevOpsTag(repo, commit);
+                            repo.Branch = GetDevOpsBranch(repo, commit);
                         }
-                        catch (Exception) { Console.WriteLine("Can't get BitBucket Tags"); }
+                        else if (repo.Server == "bitbucket")
+                            repo.Tag = GetBitBucketTag(repo, commit);
                         repo.Id = Guid.NewGuid();
                         repos.Add(repo);
                     }
@@ -664,21 +675,13 @@ public class Functions
         if (repo.Name != null)
         {
             repo.ServerName = GetServerName(repo);
-            try
+            if (repo.Server == "devops")
             {
-                string tags = Query("bitbucket", "https://api.bitbucket.org/2.0/repositories/" + config.GetUserName() + "/" + repo.Name + "/refs/tags", config.GetCurrentSource());
-                JObject json = JObject.Parse(tags);
-                JArray values = (JArray)json["values"];
-                foreach (JObject ob in values)
-                {
-                    if (ob["target"]["hash"].ToString() == commit)
-                    {
-                        repo.Tag = ob["name"].ToString();
-                        break;
-                    }
-                }
+                repo.Tag = GetDevOpsTag(repo, commit);
+                repo.Branch = GetDevOpsBranch(repo, commit);
             }
-            catch (Exception) { Console.WriteLine("Can't get BitBucket Tags"); }
+            else if (repo.Server == "bitbucket")
+                repo.Tag = GetBitBucketTag(repo, commit);
             repo.Id = Guid.NewGuid();
             repos.Add(repo);
         }
@@ -690,6 +693,7 @@ public class Functions
     /// </summary>
     public List<Repo> GetSubDevOps(string branch, string rep, Repo proj)
     {
+        Console.WriteLine("subdevops " + rep);
         List<Repo> repos = new List<Repo>();
         string result = "";
         try
@@ -698,12 +702,15 @@ public class Functions
         }
         catch (Exception ex)
         {
-            Console.WriteLine("GetSubmodError : " + ex.Message);
+            Console.WriteLine("DevOps GetSubmodError : " + ex.Message);
             if (branch != "master")
                 return GetSubmodList("master", rep, proj);
         }
         if (branch != "master" && result == "")
+        {
+            Console.WriteLine("DevOps GetSubmodError");
             return GetSubmodList("master", rep, proj);
+        }
         using (StringReader reader = new StringReader(result))
         {
             string ligne;
@@ -716,21 +723,12 @@ public class Functions
                     if (repo.Name != null)
                     {
                         repo.ServerName = GetServerName(repo);
-                        try
+                        if(repo.Server == "devops")
                         {
-                            result = Query("devops", config.GetServerUrl(repo.ServerName) + "_apis/git/repositories/" + repo.Name + "/refs?filter=tags/&peelTags=true&api-version=5.0", repo.ServerName);
-                            JObject json = JObject.Parse(result);
-                            JArray values = (JArray)json["value"];
-                            foreach (JObject ob in values)
-                            {
-                                if((ob["objectId"].ToString() == commit) || (ob["peeledObjectId"] != null && ob["peeledObjectId"].ToString() == commit))
-                                {
-                                    string tag = ob["name"].ToString();
-                                    repo.Tag = tag.Substring(tag.LastIndexOf("/") + 1, tag.Length - tag.LastIndexOf("/") - 1);
-                                    break;
-                                }
-                            }
-                        } catch (Exception) { }
+                            repo.Tag = GetDevOpsTag(repo, commit);
+                            repo.Branch = GetDevOpsBranch(repo, commit);
+                        } else if(repo.Server == "bitbucket")
+                            repo.Tag = GetBitBucketTag(repo, commit);
                         repo.Id = Guid.NewGuid();
                         repos.Add(repo);
                     }
@@ -765,22 +763,13 @@ public class Functions
             if (repo.Name != null)
             {
                 repo.ServerName = GetServerName(repo);
-                try
+                if (repo.Server == "devops")
                 {
-                    result = Query("devops", config.GetServerUrl(repo.ServerName) + "_apis/git/repositories/" + repo.Name + "/refs?filter=tags/&peelTags=true&api-version=5.0", repo.ServerName);
-                    JObject json = JObject.Parse(result);
-                    JArray values = (JArray)json["value"];
-                    foreach (JObject ob in values)
-                    {
-                        if ((ob["objectId"].ToString() == commit) || (ob["peeledObjectId"] != null && ob["peeledObjectId"].ToString() == commit))
-                        {
-                            string tag = ob["name"].ToString();
-                            repo.Tag = tag.Substring(tag.LastIndexOf("/") + 1, tag.Length - tag.LastIndexOf("/") - 1);
-                            break;
-                        }
-                    }
+                    repo.Tag = GetDevOpsTag(repo, commit);
+                    repo.Branch = GetDevOpsBranch(repo, commit);
                 }
-                catch (Exception) { }
+                else if (repo.Server == "bitbucket")
+                    repo.Tag = GetBitBucketTag(repo, commit);
                 repo.Id = Guid.NewGuid();
                 repos.Add(repo);
             }
@@ -1057,6 +1046,88 @@ public class Functions
         }
         file.Close();
         return null;
+    }
+
+    public bool CheckGitCredential()
+    {
+        Process process = new Process();
+        process.StartInfo.FileName = config.GetAppData() + @"check.bat";
+        process.StartInfo.UseShellExecute = false;
+        process.StartInfo.CreateNoWindow = true;
+        process.StartInfo.RedirectStandardOutput = true;
+        process.StartInfo.RedirectStandardError = true;
+        process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+        process.Start();
+        string result = process.StandardOutput.ReadToEnd(); // Récupère les erreurs et warning du process
+
+        Console.WriteLine(result);
+
+        Console.WriteLine(result.Substring(result.LastIndexOf("=") + 1, result.Length - result.LastIndexOf("=") - 1));
+
+        if (result.Contains("cache") && (result.Contains("=") && Int32.Parse(result.Substring(result.LastIndexOf("=") + 1, result.Length - result.LastIndexOf("=") - 1)) > 500)) {
+            Console.WriteLine(Int32.Parse(result.Substring(result.LastIndexOf("=") + 1, result.Length - result.LastIndexOf("=") - 1)));
+            return true;
+        }
+        return false;
+    }
+
+    public string GetBitBucketTag(Repo repo, string commit)
+    {
+        try
+        {
+            string tags = Query("bitbucket", "https://api.bitbucket.org/2.0/repositories/" + config.GetUserName(repo.ServerName) + "/" + repo.Name + "/refs/tags", repo.ServerName);
+            JObject json = JObject.Parse(tags);
+            JArray values = (JArray)json["values"];
+            foreach (JObject ob in values)
+            {
+                if (ob["target"]["hash"].ToString() == commit)
+                {
+                    return ob["name"].ToString();
+                }
+            }
+        }
+        catch (Exception) { Console.WriteLine("Can't get BitBucket Tags"); }
+        return "";
+    }
+
+    public string GetDevOpsTag(Repo repo, string commit)
+    {
+        try
+        {
+            string result = Query("devops", config.GetServerUrl(repo.ServerName) + "_apis/git/repositories/" + repo.Name + "/refs?filter=tags/&peelTags=true&api-version=5.0", repo.ServerName);
+            JObject json = JObject.Parse(result);
+            JArray values = (JArray)json["value"];
+            foreach (JObject ob in values)
+            {
+                if ((ob["objectId"].ToString() == commit) || (ob["peeledObjectId"] != null && ob["peeledObjectId"].ToString() == commit))
+                {
+                    string tag = ob["name"].ToString();
+                    return tag.Substring(tag.LastIndexOf("/") + 1, tag.Length - tag.LastIndexOf("/") - 1);
+                }
+            }
+        }
+        catch (Exception) { }
+        return "";
+    }
+
+    public string GetDevOpsBranch(Repo repo, string commit)
+    {
+        try
+        {
+            string result = Query("devops", config.GetServerUrl(repo.ServerName) + "_apis/git/repositories/" + repo.Name + "/refs?filter=heads/&peelTags=true&api-version=5.0", repo.ServerName);
+            JObject json = JObject.Parse(result);
+            JArray values = (JArray)json["value"];
+            foreach (JObject ob in values)
+            {
+                if ((ob["objectId"].ToString() == commit) || (ob["peeledObjectId"] != null && ob["peeledObjectId"].ToString() == commit))
+                {
+                    string branche = ob["name"].ToString();
+                    return branche.Substring(branche.LastIndexOf("/") + 1, branche.Length - branche.LastIndexOf("/") - 1);
+                }
+            }
+        }
+        catch (Exception) { }
+        return "";
     }
 
 }

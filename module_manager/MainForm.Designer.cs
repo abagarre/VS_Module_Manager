@@ -434,7 +434,7 @@
             this.toolStripStatusLabel2.LinkColor = System.Drawing.SystemColors.GrayText;
             this.toolStripStatusLabel2.Margin = new System.Windows.Forms.Padding(10, 3, 0, 2);
             this.toolStripStatusLabel2.Name = "toolStripStatusLabel2";
-            this.toolStripStatusLabel2.Size = new System.Drawing.Size(403, 19);
+            this.toolStripStatusLabel2.Size = new System.Drawing.Size(372, 19);
             this.toolStripStatusLabel2.Spring = true;
             this.toolStripStatusLabel2.Text = "                       ";
             this.toolStripStatusLabel2.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
@@ -490,7 +490,7 @@
             this.metroTabControl2.FontSize = MetroFramework.MetroTabControlSize.Tall;
             this.metroTabControl2.Location = new System.Drawing.Point(12, 27);
             this.metroTabControl2.Name = "metroTabControl2";
-            this.metroTabControl2.SelectedIndex = 0;
+            this.metroTabControl2.SelectedIndex = 1;
             this.metroTabControl2.Size = new System.Drawing.Size(275, 391);
             this.metroTabControl2.TabIndex = 8;
             this.metroTabControl2.UseSelectable = true;

@@ -48,6 +48,7 @@ namespace module_manager
         ///</summary>
         private void LoadForm()
         {
+            toolStripSplitButton3.Enabled = false;
             repoList = new List<Repo>();
             repositories = new List<Repo>();
             toolStripStatusLabel2.Text = "";
@@ -221,6 +222,7 @@ namespace module_manager
             treeView2.Enabled = true;
             TaskbarManager.Instance.SetProgressValue(0, 100, Handle);
             TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.NoProgress);
+            toolStripSplitButton3.Enabled = true;
             Activate();
         }
 
@@ -395,7 +397,7 @@ namespace module_manager
                     try
                     {
                         if (!bg3IsWorking)
-                            backgroundWorker3.RunWorkerAsync(argument: dataGridView1.Rows[e.RowIndex].Cells[5].Value.ToString());
+                            backgroundWorker3.RunWorkerAsync(argument: id);
                     }
                     catch (Exception) { }
                     dataGridView1.Rows.Clear();
@@ -579,7 +581,8 @@ namespace module_manager
         /// </summary>
         private void ToolStripSplitButton3_ButtonClick(object sender, EventArgs e)
         {
-            LoadForm();
+            toolStripSplitButton3.Enabled = false;
+            LoadForm();           
         }
 
         /// <summary>
@@ -741,7 +744,7 @@ namespace module_manager
                 if (repo == null)
                     return;
             }
-            string html = repo.Name; // Par défaut, affiche le nom du projet
+            string html = ""; // Par défaut, affiche le nom du projet
             int readmeIndex = repo.ReadmeIndex;
             if (readmeIndex == 1)
                 md = functions.GetMarkdown(repo, config.GetBranchDev()); // Récupère le markdown dans une string

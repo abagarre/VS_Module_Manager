@@ -26,6 +26,7 @@ namespace module_manager
         string selectedPath = "";
         Functions functions;
         Config config;
+        string currentRepoName = "";
 
         public AddSubmodule(Repo repository)
         {
@@ -138,6 +139,7 @@ namespace module_manager
                         checkedList.Add((Repo)treeNode.Tag);
                     }
                 }
+                toolStripStatusLabel1.Text = "Chargement...";
                 backgroundWorker3.RunWorkerAsync();
             }
         }
@@ -216,54 +218,54 @@ namespace module_manager
         private void BackgroundWorker3_DoWork(object sender, DoWorkEventArgs e)
         {
             BackgroundWorker worker = sender as BackgroundWorker;
-            int counter = 1;
             int size = checkedList.Count();
+            int counter = (100 / size) / 3;
+            bool first = true;
             foreach (Repo repo in checkedList)
             {
                 try
                 {
+                    string currentType = repo.Server;
+                    
                     Process process = new Process();
                     process.StartInfo.FileName = config.GetAppData() + @"clone.bat";
                     process.StartInfo.UseShellExecute = false;
-                    process.StartInfo.CreateNoWindow = true;
+                    process.StartInfo.CreateNoWindow = !first;
                     process.StartInfo.RedirectStandardOutput = true;
                     process.StartInfo.RedirectStandardError = true;
                     process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
                     process.StartInfo.WorkingDirectory = selectedPath;
-                    string currentType = repo.Server;
-                    
-                    if (currentType == "devops")
+                    process.StartInfo.Arguments = repo.Url + " " + "MODULES/" + repo.Name;
+
+                    statusStrip1.Invoke(new Action(() => toolStripStatusLabel2.Text = repo.Name));
+
+                    /*
+                    if (first && functions.CheckGitCredential())
                     {
-                        process.StartInfo.CreateNoWindow = false;
-                        process.StartInfo.Arguments = repo.Url + " " + "MODULES/" + repo.Name;
+                        first = false;
                     }
-                    else
-                        process.StartInfo.Arguments = repo.Url + " " + "MODULES/" + repo.Name;
+                    */
 
                     process.Start();
                     e.Result = process.StandardError.ReadToEnd(); // Récupère les erreurs et warning du process
                     while (!process.StandardOutput.EndOfStream)
                     {
                         string line = process.StandardOutput.ReadLine();
+                        Console.WriteLine(line);
                         if (line == "\"status 25\"")
                         {
                             worker.ReportProgress(counter);
-                            counter += (100 / size) / 4;
+                            counter += (100 / size) / 3;
                         }
                         else if (line == "\"status 50\"")
                         {
                             worker.ReportProgress(counter);
-                            counter += (100 / size) / 4;
-                        }
-                        else if (line == "\"status 75\"")
-                        {
-                            worker.ReportProgress(counter);
-                            counter += (100 / size) / 4;
+                            counter += (100 / size) / 3;
                         }
                         else if (line == "\"status 100\"")
                         {
                             worker.ReportProgress(counter);
-                            counter += (100 / size) / 4;
+                            counter += (100 / size) / 3;
                         }
                         if (backgroundWorker1.CancellationPending)
                         {
@@ -289,6 +291,7 @@ namespace module_manager
         {
             if (e.Result.ToString().Contains("fatal"))
                 MessageBox.Show(e.Result.ToString(), "Attention", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            toolStripStatusLabel1.Text = "Prêt";
             Close();
         }
 
