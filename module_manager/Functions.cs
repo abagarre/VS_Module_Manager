@@ -12,6 +12,7 @@ using System.Xml.Linq;
 using System.Linq;
 using LibGit2Sharp;
 using System.Diagnostics;
+using System.Threading.Tasks;
 
 public class Functions
 {
@@ -23,7 +24,7 @@ public class Functions
     /// <summary>
     /// Effectue une requête sur l'API (bitbucket ou devops) et retourne le contenue sous forme de chaîne de caractère.
     /// </summary>
-    public string Query(string type, string url, string source)
+    public async Task<string> QueryAsync(string type, string url, string source)
     {
         if (entropy == "")
         {
@@ -63,16 +64,16 @@ public class Functions
                     ASCIIEncoding.ASCII.GetBytes(
                         string.Format("{0}:{1}", "", Encoding.UTF8.GetString(ProtectedData.Unprotect(ciphertext, Encoding.Default.GetBytes(entropy), DataProtectionScope.CurrentUser)))));
             }
-            WebResponse wr = myReq.GetResponse();
+            WebResponse wr = await myReq.GetResponseAsync();
             Stream receiveStream = wr.GetResponseStream();
             StreamReader reader = new StreamReader(receiveStream, Encoding.UTF8);
-            return reader.ReadToEnd();
+            return await reader.ReadToEndAsync();
         }
         catch (CryptographicException ex)
         {
             entropy = "";
             if (MessageBox.Show("Mot de passe incorrect", "Erreur", MessageBoxButtons.RetryCancel, MessageBoxIcon.Error) == DialogResult.Retry)
-                Query(type,url, source);
+                return await QueryAsync(type, url, source);
             Console.WriteLine(type + " query error : " + ex.Message);
         }
         catch (WebException) { Console.WriteLine(source + " web error : " + url); }
@@ -130,7 +131,7 @@ public class Functions
                     if (line.Contains("url"))
                     {
                         Name = line.Substring(line.LastIndexOf("/") + 1, line.Length - line.LastIndexOf("/") - 1).Replace(".git", "");
-                        Url = line.Replace("url = ", "");
+                        Url = line.Replace("url = ", "").Trim();
                         if (Url.Contains("azure") || Url.Contains("visualstudio"))
                             Server = "devops";
                         else if (Url.Contains("bitbucket"))
@@ -187,14 +188,14 @@ public class Functions
     /// <summary>
     /// Retourne la liste des dépôt BitBucket distants
     /// </summary>
-    public List<Repo> BitBucketRepoList()
+    public async System.Threading.Tasks.Task<List<Repo>> BitBucketRepoListAsync()
     {
         List<Repo> repos = new List<Repo>();
         string url = "https://api.bitbucket.org/2.0/repositories/" + config.GetUserName() + "?pagelen=100";
         string json = "";
         try
         {
-            json = Query("bitbucket", url, config.GetCurrentSource());
+            json = await QueryAsync("bitbucket", url, config.GetCurrentSource());
         }
         catch (Exception ex) { Console.WriteLine("BitBucketRepoList error : " + ex.Message); };
         
@@ -204,7 +205,6 @@ public class Functions
             JArray list = (JArray)obj["values"];
             foreach (JObject ob in list)
             {
-                Console.WriteLine(ob["name"].ToString());
                 Repo repo = new Repo
                 {
                     Id = Guid.NewGuid(),
@@ -266,21 +266,19 @@ public class Functions
     /// <summary>
     /// Retourne la liste des dépôts DevOps distants
     /// </summary>
-    public List<Repo> DevOpsRepoList()
+    public async Task<List<Repo>> DevOpsRepoListAsync()
     {
         List<Repo> repos = new List<Repo>();
         string json;
         try
         {
-            json = Query("devops", config.GetServerUrl() + "_apis/git/repositories?api-version=5.0", config.GetCurrentSource());
-            Console.WriteLine(json);
+            json = await QueryAsync("devops", config.GetServerUrl() + "_apis/git/repositories?api-version=5.0", config.GetCurrentSource());
             if (json != "")
             {
                 JObject obj = JObject.Parse(json);
                 JArray list = (JArray)obj["value"];
                 foreach (JObject ob in list)
                 {
-                    Console.WriteLine(ob["name"].ToString());
                     Repo repo = new Repo
                     {
                         Id = Guid.NewGuid(),
@@ -299,11 +297,11 @@ public class Functions
                     try
                     {
                         string repoUrl = config.GetServerUrl() + @"_apis/git/repositories/" + repo.Name + @"/commits?api-version=5.0";
-                        string result = Query("devops", repoUrl, repo.ServerName);
+                        string result = await QueryAsync("devops", repoUrl, repo.ServerName);
                         JObject jsonCommit = JObject.Parse(result);
                         JArray valuesCommit = (JArray)jsonCommit["value"];
                         string commit = valuesCommit[0]["commitId"].ToString();
-                        result = Query("devops", config.GetServerUrl() + "_apis/git/repositories/" + repo.Name + "/refs?filter=tags/&peelTags=true&api-version=5.0", config.GetCurrentSource());
+                        result = await QueryAsync("devops", config.GetServerUrl() + "_apis/git/repositories/" + repo.Name + "/refs?filter=tags/&peelTags=true&api-version=5.0", config.GetCurrentSource());
                         JObject jsonTag = JObject.Parse(result);
                         JArray values = (JArray)jsonTag["value"];
                         foreach (JObject obTag in values)
@@ -340,7 +338,7 @@ public class Functions
     /// <summary>
     /// Retourne la liste des dépôts du serveur en cours
     /// </summary>
-    public List<Repo> GetRepoList()
+    public async Task<List<Repo>> GetRepoListAsync()
     {
         List<Repo> repos = new List<Repo>();
         string currentType = config.GetCurrentType();
@@ -350,11 +348,11 @@ public class Functions
         }
         else if (currentType == "bitbucket")
         {
-            return BitBucketRepoList();
+            return await BitBucketRepoListAsync();
         }
         else if (currentType == "devops")
         {
-            return DevOpsRepoList();
+            return await DevOpsRepoListAsync();
         }
         return repos;
     }
@@ -362,7 +360,7 @@ public class Functions
     /// <summary>
     /// Liste les fichiers distants du dépôt d'un module et récupère la liste des #include
     /// </summary>
-    public List<string> GetModuleDep(Repo repo, string branch)
+    public async System.Threading.Tasks.Task<List<string>> GetModuleDepAsync(Repo repo, string branch)
     {
         List<string> dep = new List<string>();
         string currentType = repo.Server;
@@ -379,7 +377,7 @@ public class Functions
                 document.LoadHtml(html);
                 if (html.Contains("branch!") && branch != "master")
                 {
-                    return GetModuleDep(repo, "master");
+                    return await GetModuleDepAsync(repo, "master");
                 }
                 HtmlNodeCollection collection = document.DocumentNode.SelectNodes("//a");
                 foreach (HtmlNode link in collection)
@@ -388,7 +386,7 @@ public class Functions
                     if (target.Contains(".c") || target.Contains(".h"))
                     {
                         string serverUrl = config.GetServerUrl().TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-                        dep.AddRange(GetIncludes(serverUrl + target, currentType, repo.ServerName));
+                        dep.AddRange(await GetIncludesAsync(serverUrl + target, currentType, repo.ServerName));
                     }
                 }
             } catch (Exception) { }
@@ -399,12 +397,12 @@ public class Functions
             string json = "";
             try
             {
-                json = Query("bitbucket",url, repo.ServerName);
+                json = await QueryAsync("bitbucket",url, repo.ServerName);
             }
             catch (Exception)
             {
                 if(branch != "master")
-                    return GetModuleDep(repo, "master");
+                    return await GetModuleDepAsync(repo, "master");
             }
             if(json != "")
             {
@@ -415,13 +413,13 @@ public class Functions
                     if (((string)ob["path"]).Contains(".c") || ((string)ob["path"]).Contains(".h"))
                     {
                         string biturl = "https://bitbucket.org/" + config.GetUserName(repo.ServerName) + "/" + repo.Name + "/raw/" + branch + "/" + (string)ob["path"];
-                        dep.AddRange(GetIncludes(biturl, currentType, repo.ServerName));
+                        dep.AddRange(await GetIncludesAsync(biturl, currentType, repo.ServerName));
                     }
                 }
             }
             else if(branch != "master")
             {
-                return GetModuleDep(repo, "master");
+                return await GetModuleDepAsync(repo, "master");
             }
         }
         else if(currentType == "devops")
@@ -429,7 +427,7 @@ public class Functions
             string url = config.GetServerUrl(repo.ServerName) + "_apis/git/repositories/" + repo.Name + "/items?recursionLevel=OneLevel&api-version=5.0";
             try
             {
-                string res = Query("devops", url, repo.ServerName);
+                string res = await QueryAsync("devops", url, repo.ServerName);
                 JObject obj = JObject.Parse(res);
                 JArray list = (JArray)obj["value"];
                 foreach (JObject ob in list)
@@ -439,24 +437,24 @@ public class Functions
                         string devurl = config.GetServerUrl(repo.ServerName) + "_apis/git/repositories/" + repo.Name + "/items?path=" + ob["path"].ToString() + "&versionType=Branch&version=" + branch + "&includeContent=true&api-version=5.0";
                         try
                         {
-                            if(Query("devops", devurl, repo.ServerName).Length == 0 && branch != "master")
+                            if(QueryAsync("devops", devurl, repo.ServerName).ToString().Length == 0 && branch != "master")
                             {
-                                return GetModuleDep(repo, "master");
+                                return await GetModuleDepAsync(repo, "master");
                             }
                         }
                         catch (Exception)
                         {
                             if (branch != "master")
-                                return GetModuleDep(repo, "master");
+                                return await GetModuleDepAsync(repo, "master");
                         }
-                        dep.AddRange(GetIncludes(devurl, currentType, repo.ServerName));
+                        dep.AddRange(await GetIncludesAsync(devurl, currentType, repo.ServerName));
                     }
                 }
             }
             catch (Exception)
             {
                 if(branch != "master")
-                    return GetModuleDep(repo, "master");
+                    return await GetModuleDepAsync(repo, "master");
             }
         }
         return dep;
@@ -465,7 +463,7 @@ public class Functions
     /// <summary>
     /// Retourne la liste des #include d'un fichier distant
     /// </summary>
-    public List<string> GetIncludes(string url, string currentType, string serverName)
+    public async System.Threading.Tasks.Task<List<string>> GetIncludesAsync(string url, string currentType, string serverName)
     {
         List<string> dep = new List<string>();
         string result = "";
@@ -476,11 +474,11 @@ public class Functions
         }
         else if (currentType == "bitbucket")
         {
-            result = Query("bitbucket",url, serverName);
+            result = await QueryAsync("bitbucket", url, serverName);
         }
         else if (currentType == "devops")
         {
-            result = Query("devops",url, serverName);
+            result = await QueryAsync("devops",url, serverName);
         }
         using (StringReader reader = new StringReader(result))
         {
@@ -531,7 +529,7 @@ public class Functions
     /// <summary>
     /// Retourne la liste des modules d'un projet GitBlit distant
     /// </summary>
-    public List<Repo> GetSubGitblit(string branch, string rep, Repo proj)
+    public async System.Threading.Tasks.Task<List<Repo>> GetSubGitblitAsync(string branch, string rep, Repo proj)
     {
         List<Repo> repos = new List<Repo>();
         string url = proj.Url.Replace("/r/","/raw/") + "/" + branch + "/.gitmodules";
@@ -550,7 +548,7 @@ public class Functions
                     {
                         if (affiche)
                             affiche = !ShowDialog("Ne plus afficher", "Le projet " + rep + " ne contient pas de branche " + config.GetBranchDev() + " ! \n\nRecherche sur la branche master\n ");
-                        return GetSubmodList("master", rep, proj);
+                        return await GetSubmodListAsync("master", rep, proj);
                     }
                     if (ligne.Contains("submodule"))
                     {
@@ -567,7 +565,7 @@ public class Functions
                     {
                         Name = ligne.Substring(ligne.LastIndexOf("/") + 1, ligne.Length - ligne.LastIndexOf("/") - 1).Replace(".git", "");
                         string URL = ligne.Replace("url = ", "");
-                        Url = URL;
+                        Url = URL.Trim();
                         if (URL.Contains("azure") || URL.Contains("visualstudio"))
                             Server = "devops";
                         else if (URL.Contains("bitbucket"))
@@ -591,33 +589,29 @@ public class Functions
     /// <summary>
     /// Retourne la liste des modules d'un projet BitBucket distant
     /// </summary>
-    public List<Repo> GetSubBitBucket(string branch, string rep, Repo proj)
+    public async Task<List<Repo>> GetSubBitBucketAsync(string branch, string rep, Repo proj)
     {
         List<Repo> repos = new List<Repo>();
         string result = "";
         try
         {
-            result = Query("bitbucket", proj.Url + "/raw/" + branch + "/.gitmodules", proj.ServerName);
+            result = await QueryAsync("bitbucket", proj.Url + "/raw/" + branch + "/.gitmodules", proj.ServerName);
         }
         catch (Exception ex)
         {
             Console.WriteLine("GetSubmodError : " + ex.Message);
             if (branch != "master")
-                return GetSubmodList("master", rep, proj);
+                return await GetSubmodListAsync("master", rep, proj);
         }
-        Console.WriteLine(result);
         if (result.Length == 0)
         {
             if (branch != "master")
-                return GetSubmodList("master", rep, proj);
+                return await GetSubmodListAsync("master", rep, proj);
             else
                 return repos;
         }
         Repo repo = new Repo();
         string commit = "";
-
-        Console.WriteLine("okokok");
-
         using (StringReader reader = new StringReader(result))
         {
             string ligne;
@@ -627,7 +621,7 @@ public class Functions
                 {
                     if (affiche)
                         affiche = !ShowDialog("Ne plus afficher", "Le projet " + rep + " ne contient pas de branche " + config.GetBranchDev() + " ! \n\nRecherche sur la branche master\n ");
-                    return GetSubmodList("master", rep, proj);
+                    return await GetSubmodListAsync("master", rep, proj);
                 }
                 if (ligne.Contains("submodule"))
                 {
@@ -636,11 +630,11 @@ public class Functions
                         repo.ServerName = GetServerName(repo);
                         if (repo.Server == "devops")
                         {
-                            repo.Tag = GetDevOpsTag(repo, commit);
-                            repo.Branch = GetDevOpsBranch(repo, commit);
+                            repo.Tag = await GetDevOpsTagAsync(repo, commit);
+                            repo.Branch = await GetDevOpsBranchAsync(repo, commit);
                         }
                         else if (repo.Server == "bitbucket")
-                            repo.Tag = GetBitBucketTag(repo, commit);
+                            repo.Tag = await GetBitBucketTagAsync(repo, commit);
                         repo.Id = Guid.NewGuid();
                         repos.Add(repo);
                     }
@@ -654,7 +648,7 @@ public class Functions
                     string name = ligne.Substring(ligne.LastIndexOf("/") + 1, ligne.Length - ligne.LastIndexOf("/") - 1).Replace(".git", "");
                     repo.Name = name;
                     string URL = ligne.Replace("url = ", "");
-                    repo.Url = URL;
+                    repo.Url = URL.Trim();
                     if (URL.Contains("azure") || URL.Contains("visualstudio"))
                         repo.Server = "devops";
                     else if (URL.Contains("bitbucket"))
@@ -666,7 +660,7 @@ public class Functions
                 {
                     try
                     {
-                        commit = Query("bitbucket", proj.Url.Replace("bitbucket.org", "api.bitbucket.org/2.0/repositories") + "/src/" + branch + "/" + ligne.Replace("path = ", "").Trim(), proj.ServerName);
+                        commit = await QueryAsync("bitbucket", proj.Url.Replace("bitbucket.org", "api.bitbucket.org/2.0/repositories") + "/src/" + branch + "/" + ligne.Replace("path = ", "").Trim(), proj.ServerName);
                     }
                     catch (Exception) { }
                 }
@@ -677,11 +671,11 @@ public class Functions
             repo.ServerName = GetServerName(repo);
             if (repo.Server == "devops")
             {
-                repo.Tag = GetDevOpsTag(repo, commit);
-                repo.Branch = GetDevOpsBranch(repo, commit);
+                repo.Tag = await GetDevOpsTagAsync(repo, commit);
+                repo.Branch = await GetDevOpsBranchAsync(repo, commit);
             }
             else if (repo.Server == "bitbucket")
-                repo.Tag = GetBitBucketTag(repo, commit);
+                repo.Tag = await GetBitBucketTagAsync(repo, commit);
             repo.Id = Guid.NewGuid();
             repos.Add(repo);
         }
@@ -691,25 +685,24 @@ public class Functions
     /// <summary>
     /// Retourne la liste des modules d'un projet DevOps distant
     /// </summary>
-    public List<Repo> GetSubDevOps(string branch, string rep, Repo proj)
+    public async Task<List<Repo>> GetSubDevOpsAsync(string branch, string rep, Repo proj)
     {
-        Console.WriteLine("subdevops " + rep);
         List<Repo> repos = new List<Repo>();
         string result = "";
         try
         {
-            result = Query("devops", config.GetServerUrl() + "_apis/git/repositories/" + rep + "/items?path=.gitmodules&includeContent=true&versionType=Branch&version=" + branch + "&api-version=5.0", config.GetCurrentSource());
+            result = await QueryAsync("devops", config.GetServerUrl() + "_apis/git/repositories/" + rep + "/items?path=.gitmodules&includeContent=true&versionType=Branch&version=" + branch + "&api-version=5.0", config.GetCurrentSource());
         }
         catch (Exception ex)
         {
             Console.WriteLine("DevOps GetSubmodError : " + ex.Message);
             if (branch != "master")
-                return GetSubmodList("master", rep, proj);
+                return await GetSubmodListAsync("master", rep, proj);
         }
         if (branch != "master" && result == "")
         {
             Console.WriteLine("DevOps GetSubmodError");
-            return GetSubmodList("master", rep, proj);
+            return await GetSubmodListAsync("master", rep, proj);
         }
         using (StringReader reader = new StringReader(result))
         {
@@ -725,10 +718,10 @@ public class Functions
                         repo.ServerName = GetServerName(repo);
                         if(repo.Server == "devops")
                         {
-                            repo.Tag = GetDevOpsTag(repo, commit);
-                            repo.Branch = GetDevOpsBranch(repo, commit);
+                            repo.Tag = await GetDevOpsTagAsync(repo, commit);
+                            repo.Branch = await GetDevOpsBranchAsync(repo, commit);
                         } else if(repo.Server == "bitbucket")
-                            repo.Tag = GetBitBucketTag(repo, commit);
+                            repo.Tag = await GetBitBucketTagAsync(repo, commit);
                         repo.Id = Guid.NewGuid();
                         repos.Add(repo);
                     }
@@ -742,7 +735,7 @@ public class Functions
                     string name = ligne.Substring(ligne.LastIndexOf("/") + 1, ligne.Length - ligne.LastIndexOf("/") - 1).Replace(".git", "");
                     repo.Name = name;
                     string URL = ligne.Replace("url = ", "");
-                    repo.Url = URL;
+                    repo.Url = URL.Trim();
                     if (URL.Contains("azure") || URL.Contains("visualstudio"))
                         repo.Server = "devops";
                     else if (URL.Contains("bitbucket"))
@@ -755,7 +748,7 @@ public class Functions
                     string modPath = ligne.Replace("path = ", "").Trim();
                     try
                     {
-                        commit = Query("devops", config.GetServerUrl() + "_apis/git/repositories/" + rep + "/items?path=" + modPath + "&includeContent=true&api-version=5.0", config.GetCurrentSource());
+                        commit = await QueryAsync("devops", config.GetServerUrl() + "_apis/git/repositories/" + rep + "/items?path=" + modPath + "&includeContent=true&api-version=5.0", config.GetCurrentSource());
                     }
                     catch (Exception) { }
                 }
@@ -765,11 +758,11 @@ public class Functions
                 repo.ServerName = GetServerName(repo);
                 if (repo.Server == "devops")
                 {
-                    repo.Tag = GetDevOpsTag(repo, commit);
-                    repo.Branch = GetDevOpsBranch(repo, commit);
+                    repo.Tag = await GetDevOpsTagAsync(repo, commit);
+                    repo.Branch = await GetDevOpsBranchAsync(repo, commit);
                 }
                 else if (repo.Server == "bitbucket")
-                    repo.Tag = GetBitBucketTag(repo, commit);
+                    repo.Tag = await GetBitBucketTagAsync(repo, commit);
                 repo.Id = Guid.NewGuid();
                 repos.Add(repo);
             }
@@ -780,16 +773,16 @@ public class Functions
     /// <summary>
     /// Retourne la liste des modules présents dans le fichier .gitmodules d'un projet distant
     /// </summary>
-    public List<Repo> GetSubmodList(string branch, string rep, Repo repo)
+    public async Task<List<Repo>> GetSubmodListAsync(string branch, string rep, Repo repo)
     {
         List<Repo> repos = new List<Repo>();
         string currentType = config.GetCurrentType();
         if(currentType == "gitblit")
-            return GetSubGitblit(branch, rep, repo);
+            return await GetSubGitblitAsync(branch, rep, repo);
         else if (currentType == "bitbucket")
-            return GetSubBitBucket(branch, rep, repo);
+            return await GetSubBitBucketAsync(branch, rep, repo);
         else if (currentType == "devops")
-            return GetSubDevOps(branch, rep, repo);
+            return await GetSubDevOpsAsync(branch, rep, repo);
         return repos;
     }
 
@@ -825,7 +818,7 @@ public class Functions
     /// <summary>
     /// Retourne le contenu d'un fichier README dans une chaîne de caractères
     /// </summary>
-    public string GetMarkdown(Repo repo, string branch)
+    public async Task<string> GetMarkdownAsync(Repo repo, string branch)
     {
         string md = "";
         string currentType = repo.Server;
@@ -842,10 +835,10 @@ public class Functions
             {
                 Console.WriteLine("Failed downloading README.md : " + ex.Message);
                 if (branch != "master")
-                    return GetMarkdown(repo, "master");
+                    return await GetMarkdownAsync(repo, "master");
             }
             if (md.Contains("branch") && branch != "master")
-                return GetMarkdown(repo, "master");
+                return await GetMarkdownAsync(repo, "master");
             byte[] bytes = Encoding.Default.GetBytes(md);
             md = Encoding.UTF8.GetString(bytes);
         }
@@ -855,23 +848,24 @@ public class Functions
             string query = "";
             try
             {
-                query = Query("bitbucket", url, repo.ServerName);
-            } catch (Exception)
+                query = await QueryAsync("bitbucket", url, repo.ServerName);
+            }
+            catch (Exception)
             {
                 if(branch != "master")
-                    return GetMarkdown(repo, "master"); ;
+                    return await GetMarkdownAsync(repo, "master"); ;
             }
-            
-            if((query.Length == 0 || query.Contains("<html>")) && branch != "master")
-                return GetMarkdown(repo, "master");
-            else
-                return query;
+
+            if ((query.Length == 0 || query.Contains("<html>")) && branch != "master")
+                return await GetMarkdownAsync(repo, "master");
+
+            return query;
         }
         else if(currentType == "devops")
         {
-            string result = Query("devops", config.GetServerUrl(repo.ServerName) + "_apis/git/repositories/" + repo.Name + "/items?path=README.md&includeContent=true&api-version=5.0", repo.ServerName);
+            string result = await QueryAsync("devops", config.GetServerUrl(repo.ServerName) + "_apis/git/repositories/" + repo.Name + "/items?path=README.md&includeContent=true&api-version=5.0", repo.ServerName);
             if (result.Length == 0 && branch != "master")
-                return GetMarkdown(repo, "master");
+                return await GetMarkdownAsync(repo, "master");
             else
                 return result;
         }
@@ -1012,7 +1006,7 @@ public class Functions
     /// </summary>
     public string GetServerName(Repo repo)
     {
-        if (repo.Name != null)
+        if (repo.Url != null)
         {
             List<string> allNames = config.GetAllNames();
             List<string> allServ = config.GetAllTypes();
@@ -1021,10 +1015,13 @@ public class Functions
             foreach (string unique in alluniques)
             {
                 if (repo.Url.Contains(unique) && repo.Server == allServ.ElementAt(i))
+                {
                     return allNames.ElementAt(i);
+                }
                 i++;
             }
         }
+        Console.WriteLine("server name null : " + repo.Name);
         return null;
     }
 
@@ -1048,34 +1045,11 @@ public class Functions
         return null;
     }
 
-    public bool CheckGitCredential()
-    {
-        Process process = new Process();
-        process.StartInfo.FileName = config.GetAppData() + @"check.bat";
-        process.StartInfo.UseShellExecute = false;
-        process.StartInfo.CreateNoWindow = true;
-        process.StartInfo.RedirectStandardOutput = true;
-        process.StartInfo.RedirectStandardError = true;
-        process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
-        process.Start();
-        string result = process.StandardOutput.ReadToEnd(); // Récupère les erreurs et warning du process
-
-        Console.WriteLine(result);
-
-        Console.WriteLine(result.Substring(result.LastIndexOf("=") + 1, result.Length - result.LastIndexOf("=") - 1));
-
-        if (result.Contains("cache") && (result.Contains("=") && Int32.Parse(result.Substring(result.LastIndexOf("=") + 1, result.Length - result.LastIndexOf("=") - 1)) > 500)) {
-            Console.WriteLine(Int32.Parse(result.Substring(result.LastIndexOf("=") + 1, result.Length - result.LastIndexOf("=") - 1)));
-            return true;
-        }
-        return false;
-    }
-
-    public string GetBitBucketTag(Repo repo, string commit)
+    public async Task<string> GetBitBucketTagAsync(Repo repo, string commit)
     {
         try
         {
-            string tags = Query("bitbucket", "https://api.bitbucket.org/2.0/repositories/" + config.GetUserName(repo.ServerName) + "/" + repo.Name + "/refs/tags", repo.ServerName);
+            string tags = await QueryAsync("bitbucket", "https://api.bitbucket.org/2.0/repositories/" + config.GetUserName(repo.ServerName) + "/" + repo.Name + "/refs/tags", repo.ServerName);
             JObject json = JObject.Parse(tags);
             JArray values = (JArray)json["values"];
             foreach (JObject ob in values)
@@ -1090,11 +1064,11 @@ public class Functions
         return "";
     }
 
-    public string GetDevOpsTag(Repo repo, string commit)
+    public async Task<string> GetDevOpsTagAsync(Repo repo, string commit)
     {
         try
         {
-            string result = Query("devops", config.GetServerUrl(repo.ServerName) + "_apis/git/repositories/" + repo.Name + "/refs?filter=tags/&peelTags=true&api-version=5.0", repo.ServerName);
+            string result = await QueryAsync("devops", config.GetServerUrl(repo.ServerName) + "_apis/git/repositories/" + repo.Name + "/refs?filter=tags/&peelTags=true&api-version=5.0", repo.ServerName);
             JObject json = JObject.Parse(result);
             JArray values = (JArray)json["value"];
             foreach (JObject ob in values)
@@ -1110,11 +1084,11 @@ public class Functions
         return "";
     }
 
-    public string GetDevOpsBranch(Repo repo, string commit)
+    public async Task<string> GetDevOpsBranchAsync(Repo repo, string commit)
     {
         try
         {
-            string result = Query("devops", config.GetServerUrl(repo.ServerName) + "_apis/git/repositories/" + repo.Name + "/refs?filter=heads/&peelTags=true&api-version=5.0", repo.ServerName);
+            string result = await QueryAsync("devops", config.GetServerUrl(repo.ServerName) + "_apis/git/repositories/" + repo.Name + "/refs?filter=heads/&peelTags=true&api-version=5.0", repo.ServerName);
             JObject json = JObject.Parse(result);
             JArray values = (JArray)json["value"];
             foreach (JObject ob in values)

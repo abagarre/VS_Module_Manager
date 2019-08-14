@@ -113,7 +113,7 @@
             this.metroButton1.TabIndex = 16;
             this.metroButton1.Text = "Suivant";
             this.metroButton1.UseSelectable = true;
-            this.metroButton1.Click += new System.EventHandler(this.MetroButton1_Click);
+            this.metroButton1.Click += new System.EventHandler(this.MetroButton1_ClickAsync);
             // 
             // metroLabel3
             // 
@@ -184,7 +184,6 @@
             // 
             this.backgroundWorker2.WorkerReportsProgress = true;
             this.backgroundWorker2.WorkerSupportsCancellation = true;
-            this.backgroundWorker2.DoWork += new System.ComponentModel.DoWorkEventHandler(this.BackgroundWorker2_DoWork);
             this.backgroundWorker2.ProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.BackgroundWorker2_ProgressChanged);
             this.backgroundWorker2.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.BackgroundWorker2_RunWorkerCompleted);
             // 
@@ -293,7 +292,7 @@
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "AddSubmodule";
             this.Text = "AddSubmodule";
-            this.Load += new System.EventHandler(this.AddSubmodule_Load);
+            this.Load += new System.EventHandler(this.AddSubmodule_LoadAsync);
             this.statusStrip1.ResumeLayout(false);
             this.statusStrip1.PerformLayout();
             this.panel1.ResumeLayout(false);

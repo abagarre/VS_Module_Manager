@@ -13,6 +13,7 @@ using System.Data;
 using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace module_manager
@@ -26,7 +27,6 @@ namespace module_manager
         string selectedPath = "";
         Functions functions;
         Config config;
-        string currentRepoName = "";
 
         public AddSubmodule(Repo repository)
         {
@@ -36,7 +36,7 @@ namespace module_manager
             Icon = Icon.ExtractAssociatedIcon("logo.ico");
         }
 
-        private void AddSubmodule_Load(object sender, EventArgs e)
+        private async void AddSubmodule_LoadAsync(object sender, EventArgs e)
         {
             treeView1.Visible = false;
             metroButton2.Visible = false;
@@ -44,7 +44,7 @@ namespace module_manager
             try { functions = MainForm.functions; }
             catch (Exception) { functions = new Functions(); }
             try { repoList = MainForm.repoList.ToList(); }
-            catch (Exception) { repoList = functions.GetRepoList(); }
+            catch (Exception) { repoList = await functions.GetRepoListAsync(); }
             treeView1.DrawMode = TreeViewDrawMode.OwnerDrawText;
             treeView1.DrawNode += new DrawTreeNodeEventHandler(TreeView1_DrawNode);
             backgroundWorker1.RunWorkerAsync();
@@ -104,7 +104,7 @@ namespace module_manager
         /// <summary>
         /// Bouton "Suivant" : soit lance le bgWorker2, soit lance le bgWorker3 suivant le control visible
         /// </summary>
-        private void MetroButton1_Click(object sender, EventArgs e)
+        private async void MetroButton1_ClickAsync(object sender, EventArgs e)
         {
             if(!treeView1.Visible)
             {
@@ -127,7 +127,10 @@ namespace module_manager
                     return;
                 }
 
-                backgroundWorker2.RunWorkerAsync(argument: idList);
+                metroButton1.Enabled = false;
+                metroButton2.Enabled = false;
+                metroButton3.Enabled = false;
+                await LoadDependencies(idList);
             }
             else
             {
@@ -140,6 +143,9 @@ namespace module_manager
                     }
                 }
                 toolStripStatusLabel1.Text = "Chargement...";
+                metroButton1.Enabled = false;
+                metroButton2.Enabled = false;
+                toolStripProgressBar1.Value = 0;
                 backgroundWorker3.RunWorkerAsync();
             }
         }
@@ -156,17 +162,24 @@ namespace module_manager
 
         private void MetroButton3_Click(object sender, EventArgs e)
         {
+            try
+            {
+                backgroundWorker3.CancelAsync();
+            }
+            catch (Exception) { }
             Close();
         }
 
         /// <summary>
         /// Ajoute les modules séléctionnés au TreeView et affiche les #includes
         /// </summary>
-        private void BackgroundWorker2_DoWork(object sender, DoWorkEventArgs e)
+        private async Task LoadDependencies(List<string> idList)
         {
-            BackgroundWorker worker = sender as BackgroundWorker;
+            IProgress<int> progress = new Progress<int>(percentCompleted =>
+            {
+                toolStripProgressBar1.Value = percentCompleted;
+            });
 
-            List<string> idList = (List<string>)e.Argument;
             int i = 0;
             int counter = idList.Count();
             
@@ -180,16 +193,24 @@ namespace module_manager
                         Tag = repo,
                         Checked = true
                     };
-                    List<string> dependencies = functions.GetModuleDep(repo, config.GetBranchDev());
+                    List<string> dependencies = await functions.GetModuleDepAsync(repo, config.GetBranchDev());
                     foreach (string dep in dependencies)
                     {
                         treeNode.Nodes.Add(new TreeNode(dep));
                     }
                     treeView1.Invoke(new Action(() => treeView1.Nodes.Add(treeNode)));
                     i++;
-                    worker.ReportProgress(i * 100 / counter);
+                    progress.Report(i * 100 / counter);
                 }
             }
+            toolStripProgressBar1.Value = 0;
+            toolStripProgressBar1.Visible = false;
+            panel2.Visible = false;
+            treeView1.Visible = true;
+            metroButton2.Visible = true;
+            metroButton1.Enabled = true;
+            metroButton2.Enabled = true;
+            metroButton3.Enabled = true;
         }
 
         private void BackgroundWorker2_ProgressChanged(object sender, ProgressChangedEventArgs e)
@@ -220,7 +241,6 @@ namespace module_manager
             BackgroundWorker worker = sender as BackgroundWorker;
             int size = checkedList.Count();
             int counter = (100 / size) / 3;
-            bool first = true;
             foreach (Repo repo in checkedList)
             {
                 try
@@ -230,7 +250,7 @@ namespace module_manager
                     Process process = new Process();
                     process.StartInfo.FileName = config.GetAppData() + @"clone.bat";
                     process.StartInfo.UseShellExecute = false;
-                    process.StartInfo.CreateNoWindow = !first;
+                    process.StartInfo.CreateNoWindow = false;
                     process.StartInfo.RedirectStandardOutput = true;
                     process.StartInfo.RedirectStandardError = true;
                     process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
@@ -238,13 +258,6 @@ namespace module_manager
                     process.StartInfo.Arguments = repo.Url + " " + "MODULES/" + repo.Name;
 
                     statusStrip1.Invoke(new Action(() => toolStripStatusLabel2.Text = repo.Name));
-
-                    /*
-                    if (first && functions.CheckGitCredential())
-                    {
-                        first = false;
-                    }
-                    */
 
                     process.Start();
                     e.Result = process.StandardError.ReadToEnd(); // Récupère les erreurs et warning du process
@@ -267,7 +280,7 @@ namespace module_manager
                             worker.ReportProgress(counter);
                             counter += (100 / size) / 3;
                         }
-                        if (backgroundWorker1.CancellationPending)
+                        if (backgroundWorker3.CancellationPending)
                         {
                             e.Cancel = true;
                             return;
@@ -307,5 +320,6 @@ namespace module_manager
 
             }
         }
+
     }
 }

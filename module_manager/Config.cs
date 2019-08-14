@@ -26,6 +26,18 @@ namespace module_manager
             return path;
         }
 
+        public string GetRepoPath()
+        {
+            string path = GetAppData() + @"repos.json";
+            return path;
+        }
+
+        public string GetModulePath()
+        {
+            string path = GetAppData() + @"modules.json";
+            return path;
+        }
+
         public string GetAppData()
         {
             string path = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + @"\ModuleManager\";
@@ -219,6 +231,21 @@ namespace module_manager
                 allTypes.Add(serv["type"].ToString());
             }
             return allTypes;
+        }
+
+        public void ResetRepoModules()
+        {
+            string json = File.ReadAllText(GetRepoPath());
+            JObject conf = JObject.Parse(json);
+            JArray list = (JArray)conf["repos"];
+            list.Clear();
+            File.WriteAllText(GetRepoPath(), conf.ToString());
+
+            json = File.ReadAllText(GetModulePath());
+            conf = JObject.Parse(json);
+            list = (JArray)conf["modules"];
+            list.Clear();
+            File.WriteAllText(GetModulePath(), conf.ToString());
         }
 
         /// <summary>

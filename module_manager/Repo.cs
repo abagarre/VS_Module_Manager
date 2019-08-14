@@ -5,6 +5,7 @@
 //============================================================================//
 
 using LibGit2Sharp;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -34,7 +35,7 @@ namespace module_manager
         /// </summary>
         public bool Equal(Repo repo)
         {
-            if (repo.Name.ToLower() == Name.ToLower() && repo.ServerName == ServerName)
+            if (repo.Name.ToLower() == Name.ToLower() && (repo.ServerName == ServerName || repo.Url == Url))
                 return true;
             return false;
         }
@@ -72,7 +73,7 @@ namespace module_manager
                 if (line.Contains("url") && prev.Contains("remote"))
                 {
                     string url = line.Replace("url = ", "").Trim();
-                    Url = url;
+                    Url = url.Trim();
                     if (url.Contains("azure") || url.Contains("visualstudio"))
                         Server = "devops";
                     else if (url.Contains("bitbucket"))
@@ -124,6 +125,66 @@ namespace module_manager
                 ReadmeIndex = ReadmeIndex,
                 Localisation = Localisation
             };
+        }
+
+        public bool WriteRepo(string type)
+        {
+            Config config = new Config();
+            try
+            {
+                string json = "";
+                JObject conf = new JObject();
+                JArray list = new JArray();
+                if (type == "project")
+                {
+                    json = File.ReadAllText(config.GetRepoPath());
+                    conf = JObject.Parse(json);
+                    list = (JArray)conf["repos"];
+                }
+                else if(type == "module")
+                {
+                    json = File.ReadAllText(config.GetModulePath());
+                    conf = JObject.Parse(json);
+                    list = (JArray)conf["modules"];
+                }
+                var itemToAdd = new JObject
+                {
+                    ["Name"] = Name ?? "",
+                    ["Url"] = Url ?? "",
+                    ["Path"] = Path ?? "",
+                    ["Server"] = Server ?? "",
+                    ["ServerName"] = ServerName ?? "",
+                    ["Type"] = Type ?? "",
+                    ["Tag"] = Tag ?? "",
+                    ["Branch"] = Branch ?? "",
+                    ["Id"] = Id.ToString() ?? "",
+                    ["Localisation"] = Localisation.ToString() ?? "",
+                    ["ReadmeIndex"] = ReadmeIndex
+                };
+                JArray modules = new JArray();
+                if(Modules != null && type == "project")
+                {
+                    foreach (Repo mod in Modules)
+                    {
+                        modules.Add(mod.Id);
+                    }
+                    itemToAdd["Modules"] = modules;
+                }
+                list.Add(itemToAdd);
+                if (type == "project")
+                {
+                    File.WriteAllText(config.GetRepoPath(), conf.ToString());
+                }
+                else if (type == "module")
+                {
+                    File.WriteAllText(config.GetModulePath(), conf.ToString());
+                }
+            }
+            catch
+            {
+                return false;
+            }
+            return true;
         }
 
     }
